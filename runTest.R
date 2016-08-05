@@ -12,6 +12,7 @@ Rcpp::compileAttributes ("osmprob", verbose=TRUE)
 #setwd ("~/master_thesis/")
 
 devtools::document ('osmprob')
+#devtools::load_all ("osmprob", export_all=FALSE)
 devtools::load_all ("osmprob")
 #devtools::check ("osmprob")
 
