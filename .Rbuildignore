@@ -1,0 +1,9 @@
+^\.travis\.yml$
+makefile$
+\.md$
+\.Rmd$
+\.html$
+^figure/
+^src/Makevars$
+^runTest.R$
+^tmux-start.bash$
