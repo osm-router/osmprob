@@ -5,15 +5,14 @@
 
 using namespace Rcpp;
 
-// addTest
-int addTest(int a, int b);
-RcppExport SEXP osmprob_addTest(SEXP aSEXP, SEXP bSEXP) {
+// makeCompactGraph
+Rcpp::DataFrame makeCompactGraph(Rcpp::DataFrame graph);
+RcppExport SEXP osmprob_makeCompactGraph(SEXP graphSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< int >::type a(aSEXP);
-    Rcpp::traits::input_parameter< int >::type b(bSEXP);
-    __result = Rcpp::wrap(addTest(a, b));
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type graph(graphSEXP);
+    __result = Rcpp::wrap(makeCompactGraph(graph));
     return __result;
 END_RCPP
 }
