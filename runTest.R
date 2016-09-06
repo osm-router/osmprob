@@ -26,7 +26,7 @@ compile <- function ()
 
     ls ("package:osmprob")
 }
-compile ()
+# compile ()
 
 testGraph <- function ()
 {
@@ -34,14 +34,14 @@ testGraph <- function ()
     # remove vertices with degree < 2
     
     #?igraph
-    ?make_graph
-    gr <- make_graph (c (6, 3, 1, 2, 2, 3, 3, 1, 3, 4, 2, 4, 1, 5, 5, 4), directed = FALSE)
+#    ?make_graph
+    gr <- make_graph (c (6, 3, 1, 2, 2, 3, 3, 1, 3, 4, 2, 4, 1, 5, 5, 4, 7, 8, 8, 9), directed = FALSE)
     degree(gr)
     V(gr)
     grc <- delete.vertices (gr, V (gr)[degree(gr) < 3])
     grc
-    plot (gr)
-    plot (grc)
+#    plot (gr)
+#    plot (grc)
 
     ?delete_vertices
 
@@ -49,25 +49,48 @@ testGraph <- function ()
     grDf <- as_data_frame (gr)
     grDf <- makeCompactGraph (grDf)
     grDf
-    graph_from_data_frame (grDf)
+    grDf <- graph_from_data_frame (grDf)
+    return (grDf)
 
-    plot (gr)
+#    plot (grDf)
     #tkplot (gr)
     #rglplot (gr)
 }
-#testGraph ()
 
-graphFromOsmdatar <- function ()
+compile ()
+grdf <- testGraph ()
+
+#osmG <- graphFromOsmdatar ()
+class (osmG)
+typeof (osmG)
+str (osmG)
+
+
+bbox <- matrix (c (-0.11, 51.51, -0.10, 51.52), nrow=2, ncol=2)
+dat <- get_lines (bbox=bbox, key='highway', value='primary')
+datDf <- dfFromOsmdatar ()
+
+summary (dat)
+dat@lines[[1]]
+
+summary (datDf)
+
+compile ()
+ccc  <- makeCompactGraph (datDf)
+
+#plot (grdf)
+
+dfFromOsmdatar <- function ()
 {
     library (osmdatar)
     library (sp)
-    #bbox <- matrix (c (-0.11, 51.51, -0.10, 51.52), nrow=2, ncol=2)
-    bbox <- matrix (c (-0.15, 51.5, -0.10, 51.6), nrow=2, ncol=2)
+    bbox <- matrix (c (-0.11, 51.51, -0.10, 51.52), nrow=2, ncol=2)
+    #bbox <- matrix (c (-0.15, 51.5, -0.10, 51.6), nrow=2, ncol=2)
     dat <- get_lines (bbox=bbox, key='highway', value='primary')
     dat <- as.SpatialLines.SLDF (dat)
 
-    to <- c ()
-    from <- c ()
+    toID <- c ()
+    fromID <- c ()
 
     for (ln in 1:length (dat))
     {
@@ -76,18 +99,18 @@ graphFromOsmdatar <- function ()
         llines <- lineSlot[[1]]@Lines
         coords <- llines[[1]]@coords
         vert <- attr (coords, "dimnames")[[1]]
-
-        vBeg <- vert[1]
-        vEnd <- vert[length (vert)]
-        to <- c (to, vBeg)
-        from <- c (from, vEnd)
+        vBeg <- as.numeric (vert[1])
+        vEnd <- as.numeric (vert[length (vert)])
+        fromID <- c (fromID, vEnd)
+        toID <- c (toID, vBeg)
     }
-    osmGraph <- graph.data.frame (d=data.frame (A=from, B=to), directed=FALSE)
+    toFromDF <- data.frame (toID, fromID)
+#    osmGraph <- graph.data.frame (d=data.frame (A=from, B=to), directed=FALSE)
 
-    return (osmGraph)
+    return (toFromDF)
 }
 
-makeCompactGraph <- function (graph.in)
+makeCompactGraphProto <- function (graph.in)
 {
     vert <- V (graph.in)
     degrees <- degree (graph.in)
@@ -173,11 +196,11 @@ makeCompactGraph <- function (graph.in)
     graph.in <- simplify (graph.in, remove.multiple = TRUE, remove.loops = TRUE)
     verticesToDelete <- V (graph.in)[degree (graph.in) == 1]
     graph.in <- delete_vertices (graph.in, verticesToDelete)
-    cat ("Making compact graph done.\n")
+    cat ("\rMaking compact graph done.\n")
     return (graph.in)
 }
 #osmGraph <- graphFromOsmdatar ()
-#gr.compact <- makeCompactGraph (osmGraph)
+#system.time (gr.compact <- makeCompactGraph (osmGraph))
 
 
 
