@@ -77,6 +77,8 @@ summary (datDf)
 
 compile ()
 ccc  <- makeCompactGraph (datDf)
+head (ccc)
+ccc
 
 #plot (grdf)
 
