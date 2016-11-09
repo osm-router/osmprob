@@ -1,4 +1,18 @@
 library(igraph)
+library(microbenchmark)
+
+compile ()
+
+gr <- dfFromOsmdatar()
+com <- makeCompactGraphProto (gr, TRUE)
+# microbenchmark::microbenchmark (makeCompactGraphProto (gr, TRUE), times=10)
+showGraph (gr)
+dev.new ()
+showGraph (com)
+
+ccc  <- makeCompactGraph (gr)
+head (ccc)
+ccc
 
 #compile
 compile <- function ()
@@ -26,61 +40,6 @@ compile <- function ()
 
     ls ("package:osmprob")
 }
-# compile ()
-
-testGraph <- function ()
-{
-
-    # remove vertices with degree < 2
-    
-    #?igraph
-#    ?make_graph
-    gr <- make_graph (c (6, 3, 1, 2, 2, 3, 3, 1, 3, 4, 2, 4, 1, 5, 5, 4, 7, 8, 8, 9), directed = FALSE)
-    degree(gr)
-    V(gr)
-    grc <- delete.vertices (gr, V (gr)[degree(gr) < 3])
-    grc
-#    plot (gr)
-#    plot (grc)
-
-    ?delete_vertices
-
-
-    grDf <- as_data_frame (gr)
-    grDf <- makeCompactGraph (grDf)
-    grDf
-    grDf <- graph_from_data_frame (grDf)
-    return (grDf)
-
-#    plot (grDf)
-    #tkplot (gr)
-    #rglplot (gr)
-}
-
-compile ()
-grdf <- testGraph ()
-
-#osmG <- graphFromOsmdatar ()
-class (osmG)
-typeof (osmG)
-str (osmG)
-
-
-bbox <- matrix (c (-0.11, 51.51, -0.10, 51.52), nrow=2, ncol=2)
-dat <- get_lines (bbox=bbox, key='highway', value='primary')
-datDf <- dfFromOsmdatar ()
-
-summary (dat)
-dat@lines[[1]]
-
-summary (datDf)
-
-compile ()
-ccc  <- makeCompactGraph (datDf)
-head (ccc)
-ccc
-
-#plot (grdf)
 
 dfFromOsmdatar <- function ()
 {
@@ -107,12 +66,13 @@ dfFromOsmdatar <- function ()
         toID <- c (toID, vBeg)
     }
     toFromDF <- data.frame (toID, fromID)
-#    osmGraph <- graph.data.frame (d=data.frame (A=from, B=to), directed=FALSE)
+    osmGraph <- graph.data.frame (d=data.frame (A=fromID, B=toID), directed=FALSE)
 
+#    return (osmGraph)
     return (toFromDF)
 }
 
-makeCompactGraphProto <- function (graph.in)
+makeCompactGraphProto <- function (graph.in, verbose=FALSE)
 {
     vert <- V (graph.in)
     degrees <- degree (graph.in)
@@ -120,11 +80,13 @@ makeCompactGraphProto <- function (graph.in)
     verticesToDelete <- c ()
     for (d in 1:length (degrees))
     {
-        cat ("Making compact graph ", d, "/", length (degrees), "\r")
+        if (verbose)
+            cat ("Making compact graph ", d, "/", length (degrees), "\r")
+        
         deg <- degrees[d]
         if (deg == 2)
         {
-            addNew = TRUE
+            addNew <- TRUE
             n <- neighbors (graph.in, vert[d], mode="total")
             n1 <- n[1]
             n2 <- n[2]
@@ -133,7 +95,7 @@ makeCompactGraphProto <- function (graph.in)
             verticesToDelete <- c (verticesToDelete, vert[d])
             n1prev <- vert[d]
             n2prev <- vert[d]
-            while (degN1 < 3)
+            while (degN1 == 2)
             {
                 nn1 <- neighbors (graph.in, vert[n1], mode="total")
                 verticesToDelete <- c (verticesToDelete, n1)
@@ -155,9 +117,8 @@ makeCompactGraphProto <- function (graph.in)
                 n1prev <- n1
                 n1 <- n1new
                 degN1 <- degrees[n1new]
-                #cat (d, " - neighbor1: ", n1, " deg: ", degN1, "\n")
             }
-            while (degN2 < 3)
+            while (degN2 == 2)
             {
                 nn2 <- neighbors (graph.in, vert[n2], mode="total")
                 verticesToDelete <- c (verticesToDelete, n2)
@@ -182,7 +143,6 @@ makeCompactGraphProto <- function (graph.in)
                 n2prev <- n2
                 n2 <- n2new
                 degN2 <- degrees[n2]
-                #cat (d, " - neighbor2: ", n2, " deg: ", degN2, "\n")
             }
             if (addNew)
             {
@@ -196,21 +156,13 @@ makeCompactGraphProto <- function (graph.in)
     verticesToDelete <- verticesToDelete[!verticesToDelete %in% newEdges]
     graph.in <- delete_vertices (graph.in, verticesToDelete)
     graph.in <- simplify (graph.in, remove.multiple = TRUE, remove.loops = TRUE)
-    verticesToDelete <- V (graph.in)[degree (graph.in) == 1]
-    graph.in <- delete_vertices (graph.in, verticesToDelete)
-    cat ("\rMaking compact graph done.\n")
+    if (verbose)
+        cat ("\rMaking compact graph done.\n")
     return (graph.in)
 }
-#osmGraph <- graphFromOsmdatar ()
-#system.time (gr.compact <- makeCompactGraph (osmGraph))
 
-
-
-#gr <- make_graph (c (2, 7, 7, 8, 8, 9, 9, 3, 6, 3, 1, 2, 3, 1, 3, 4, 2, 4, 1, 5, 5, 4), directed = FALSE)
-#plot (osmGraph)
-
-#plot (gr.compact,
-#      vertex.size = 3, vertex.color="red", edge.width=2, edge.color="black")
-#dev.new ()
-#plot (osmGraph,
-#      vertex.size = 3, vertex.color="red", edge.width=2, edge.color="black")
+showGraph <- function (gr)
+{
+    plot.igraph (gr, vertex.size=3, vertex.color="red", edge.width=2,
+          edge.color="black")
+}
