@@ -11,6 +11,7 @@ dev.new ()
 showGraph (com)
 
 ccc  <- makeCompactGraph (gr)
+microbenchmark::microbenchmark (makeCompactGraph (gr))
 head (ccc)
 ccc
 

@@ -1,77 +1,90 @@
 #include <Rcpp.h>
-
-#include "boost/graph/adjacency_list.hpp"
+#include <algorithm>
+#include <vector>
 
 struct osm_vertex_t
 {
-    typedef boost::vertex_property_tag osm_vertex;
+    private:
+        void addNeighbourIn (long long id_in)
+        {
+            if (std::find (ids_in.begin (), ids_in.end (), id_in) != ids_in.end ())
+                ids_in.push_back (id_in);
+        }
+
+    public:
+        long long id, osm_id;
+        std::vector <long long> ids_in, ids_out;
+        int getDegreeIn ()
+        {
+            return ids_in.size ();
+        }
+
+        int getDegreeOut ()
+        {
+            return ids_out.size ();
+        }
+
+        void addNeighbourOut (long long id_out, long long id_in)
+        {
+            if (std::find (ids_out.begin (), ids_out.end (),
+                        id_out) != ids_out.end ())
+                ids_out.push_back (id_out);
+            addNeighbourIn (id_in);
+        }
 };
 
+struct osm_vertex_list_t
+{
+    private:
+        std::vector <osm_vertex_t> vertices;
+
+    public:
+        void add_vertex (long long osm_id, long long to_osm_id, long long *id)
+        {
+            bool addNew = true;
+            std::vector <osm_vertex_t>::iterator it;
+            for (it = vertices.begin (); it < vertices.end (); it ++)
+            {
+                if (osm_id == (*it).osm_id)
+                {
+                    addNew = false;
+                    (*it).addNeighbourOut (to_osm_id, osm_id);
+                    break;
+                }
+            }
+            if (addNew)
+            {
+                osm_vertex_t vertex_new = osm_vertex_t ();
+                vertex_new.id = *id ++;
+                vertex_new.osm_id = osm_id;
+                vertex_new.addNeighbourOut (to_osm_id, osm_id);
+                vertices.push_back (vertex_new);
+            }
+        }
+
+        int getSize () { return vertices.size (); }
+};
 
 // [[Rcpp::export]]
 Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
 {
-    Rcpp::NumericVector from = graph[0];
-    Rcpp::NumericVector to = graph[1];
+    Rcpp::NumericVector from = graph [0];
+    Rcpp::NumericVector to = graph [1];
+    Rcpp::LogicalVector isOneway = graph [2];
     int l = from.length ();
+    long long id = 0;
 
-    // assign vertex ids
-    typedef std::map<long long, long long> VertexIdMap;
-    VertexIdMap vertexIds;
-    long long vertexId = 0;
-    for (int i = 0; i < l; i++)
-    {
-        long long osm = from [i];
-        if (vertexIds.count (osm) == 0)
-            vertexIds [osm] = vertexId++;
-        osm = to [i];
-        if (vertexIds.count (osm) == 0)
-            vertexIds [osm] = vertexId++;
-    }
-
-    // define boost vertex pairs
-    typedef std::pair<long long, long long> Street;
-    Street streets [l];
-    for (int i = 0; i < l; i++)
-        streets [i] = Street (from [i], to [i]);
-
-    // define road graph type
-    typedef boost::property<osm_vertex_t, long long> OsmIdProperty;
-    typedef boost::adjacency_list<boost::vecS, boost::vecS,
-            boost::bidirectionalS, OsmIdProperty> bGraph;
-
-    // make boost graph and add edges
-    bGraph roads;
-
-    //boost::property_map<bGraph, osm_vertex_t>::type
-    //    osm_vertex = boost::get (osm_vertex_t (), roads);
+    osm_vertex_list_t vertices = osm_vertex_list_t ();
 
     for (int i = 0; i < l; i++)
     {
-        long long idStart = vertexIds.at (streets [i].first);
-        long long idEnd = vertexIds.at (streets [i].second);
-        boost::add_edge (idStart, idEnd, roads);
-    //    boost::put (osmID, idStart, streets [i].first);
-    //    boost::put (osmID, idEnd, streets [i].second);
-    //    osm_vertex[streets [i].first] = idStart;   
-    //    osm_vertex[streets [i].second] = idEnd;
+        vertices.add_vertex (from [i], to [i], &id);
+        if (!isOneway [i])
+            vertices.add_vertex (to [i], from [i], &id);
     }
 
+    std::cout << "size: " << vertices.getSize () << std::endl;
 
-
-    // PROCESS GRAPH
-
-
-    // make DataFrame from boost graph
-    boost::graph_traits<boost::adjacency_list<> >::vertex_iterator vi, vi_end, next;
-    boost::tie (vi, vi_end) = boost::vertices (roads);
-    Rcpp::NumericVector vecOut (*vi_end);
-
-    for (next = vi; vi != vi_end; vi = next)
-    {
-        vecOut (*vi) = *vi;
-        next++;
-    }
-
-    return Rcpp::DataFrame::create (Rcpp::_["vertex"] = vecOut);
+    //return Rcpp::DataFrame::create (Rcpp::_["vertex"] = vecOut);
+    return NULL;
 }
