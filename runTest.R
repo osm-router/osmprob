@@ -2,6 +2,7 @@ library(igraph)
 library(microbenchmark)
 
 compile ()
+ccc  <- makeCompactGraph (gr)
 
 gr <- dfFromOsmdatar()
 com <- makeCompactGraphProto (gr, TRUE)
@@ -12,6 +13,7 @@ showGraph (com)
 
 ccc  <- makeCompactGraph (gr)
 microbenchmark::microbenchmark (makeCompactGraph (gr))
+#microbenchmark::microbenchmark (makeCompactGraphProto (grDf, FALSE), times=3)
 head (ccc)
 ccc
 
@@ -66,7 +68,7 @@ dfFromOsmdatar <- function ()
         fromID <- c (fromID, vEnd)
         toID <- c (toID, vBeg)
     }
-    toFromDF <- data.frame (toID, fromID)
+    toFromDF <- data.frame (toID, fromID, FALSE)
     osmGraph <- graph.data.frame (d=data.frame (A=fromID, B=toID), directed=FALSE)
 
 #    return (osmGraph)

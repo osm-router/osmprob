@@ -4,13 +4,6 @@
 
 struct osm_vertex_t
 {
-    private:
-        void addNeighbourIn (long long id_in)
-        {
-            if (std::find (ids_in.begin (), ids_in.end (), id_in) != ids_in.end ())
-                ids_in.push_back (id_in);
-        }
-
     public:
         long long id, osm_id;
         std::vector <long long> ids_in, ids_out;
@@ -26,10 +19,12 @@ struct osm_vertex_t
 
         void addNeighbourOut (long long id_out, long long id_in)
         {
-            if (std::find (ids_out.begin (), ids_out.end (),
-                        id_out) != ids_out.end ())
+            if (!(std::find (ids_out.begin (), ids_out.end (),
+                        id_out) != ids_out.end ()))
+            {
                 ids_out.push_back (id_out);
-            addNeighbourIn (id_in);
+                ids_in.push_back (id_in);
+            }
         }
 };
 
@@ -55,12 +50,38 @@ struct osm_vertex_list_t
             if (addNew)
             {
                 osm_vertex_t vertex_new = osm_vertex_t ();
-                vertex_new.id = *id ++;
+                vertex_new.id = (*id) ++;
                 vertex_new.osm_id = osm_id;
                 vertex_new.addNeighbourOut (to_osm_id, osm_id);
                 vertices.push_back (vertex_new);
             }
         }
+
+        osm_vertex_t getVertexFromId (long long id)
+        {
+            std::vector <osm_vertex_t>::iterator it;
+            for (it = vertices.begin (); it < vertices.end (); it ++)
+            {
+                if (id == (*it).id)
+                {
+                    return (*it);
+                }
+            }
+        }
+
+        osm_vertex_t getVertexFromOsmId (long long osmId)
+        {
+            std::vector <osm_vertex_t>::iterator it;
+            for (it = vertices.begin (); it < vertices.end (); it ++)
+            {
+                if (osmId == (*it).osm_id)
+                {
+                    return (*it);
+                }
+            }
+        }
+
+        std::vector <osm_vertex_t> getVertices () { return vertices; }
 
         int getSize () { return vertices.size (); }
 };
@@ -71,6 +92,7 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
     Rcpp::NumericVector from = graph [0];
     Rcpp::NumericVector to = graph [1];
     Rcpp::LogicalVector isOneway = graph [2];
+    
     int l = from.length ();
     long long id = 0;
 
@@ -85,6 +107,72 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
 
     std::cout << "size: " << vertices.getSize () << std::endl;
 
+    //PROCESS GRAPH
+    
+    osm_vertex_list_t vertices_compact = osm_vertex_list_t ();
+    id = 0;
+    
+    std::vector <osm_vertex_t> allVertices = vertices.getVertices ();
+    std::vector <osm_vertex_t>::iterator it;
+    for (it = allVertices.begin (); it < allVertices.end (); it ++)
+    {
+        if ((*it).getDegreeIn () != 2 || (*it).getDegreeOut () != 2)
+        {
+            osm_vertex_t temp_vertex = (*it);
+            long long osm_id_new = temp_vertex.osm_id;
+
+            std::vector <long long>::iterator vertexIt;
+            for (vertexIt = temp_vertex.ids_out.begin ();
+                    vertexIt < temp_vertex.ids_out.end (); vertexIt ++)
+            {
+                long long neighbourOsmId = *vertexIt;
+                osm_vertex_t neighbourVertex = vertices.getVertexFromOsmId (neighbourOsmId);
+                long long idPrev = temp_vertex.id;
+
+                while (neighbourVertex.getDegreeOut () == 2)
+                {
+                    neighbourVertex = vertices.getVertexFromOsmId 
+                        (neighbourVertex.ids_out.front ());
+                    if (neighbourVertex.id == idPrev)
+                    {
+                        neighbourVertex = vertices.getVertexFromOsmId 
+                            (neighbourVertex.ids_out.back ());
+                    }
+
+                    if (temp_vertex.id == idPrev)
+                    {
+                        break;
+                    }
+                    idPrev = neighbourVertex.id;
+                }
+                vertices_compact.add_vertex (osm_id_new,
+                        neighbourVertex.osm_id, &id);
+
+                neighbourOsmId = *vertexIt;
+                neighbourVertex = vertices.getVertexFromOsmId (neighbourOsmId);
+                idPrev = temp_vertex.id;
+
+                while (neighbourVertex.getDegreeIn () == 2)
+                {
+                    neighbourVertex = vertices.getVertexFromOsmId 
+                        (neighbourVertex.ids_in.front ());
+                    if (neighbourVertex.id == idPrev)
+                    {
+                        neighbourVertex = vertices.getVertexFromOsmId 
+                            (neighbourVertex.ids_in.back ());
+                    }
+
+                    if (temp_vertex.id == idPrev)
+                    {
+                        break;
+                    }
+                    idPrev = neighbourVertex.id;
+                }
+                vertices_compact.add_vertex (osm_id_new,
+                        neighbourVertex.osm_id, &id);
+            }
+        }
+    }
     //return Rcpp::DataFrame::create (Rcpp::_["vertex"] = vecOut);
     return NULL;
 }
