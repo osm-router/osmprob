@@ -92,6 +92,7 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
     Rcpp::NumericVector from = graph [0];
     Rcpp::NumericVector to = graph [1];
     Rcpp::LogicalVector isOneway = graph [2];
+    Rcpp::NumericVector weight = graph [3];
     
     int l = from.length ();
     long long id = 0;
@@ -105,10 +106,7 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
             vertices.add_vertex (to [i], from [i], &id);
     }
 
-    std::cout << "size: " << vertices.getSize () << std::endl;
-
     //PROCESS GRAPH
-    
     osm_vertex_list_t vertices_compact = osm_vertex_list_t ();
     id = 0;
     
@@ -173,6 +171,48 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
             }
         }
     }
-    //return Rcpp::DataFrame::create (Rcpp::_["vertex"] = vecOut);
-    return NULL;
+
+    std::vector <long long> fromNode_out, toNode_out;
+
+    std::vector <osm_vertex_t> vertices_out = vertices_compact.getVertices ();
+    for (it = vertices_out.begin (); it < vertices_out.end (); it ++)
+    {
+        osm_vertex_t vertex_out = *it;
+        long long osm_id = vertex_out.osm_id;
+        std::vector <long long>::iterator v_it;
+
+        for (v_it = vertex_out.ids_out.begin ();
+                v_it < vertex_out.ids_out.end (); v_it ++)
+        {
+            fromNode_out.push_back (osm_id);
+            toNode_out.push_back (*v_it);
+        }
+        for (v_it = vertex_out.ids_in.begin ();
+                v_it < vertex_out.ids_in.end (); v_it ++)
+        {
+            fromNode_out.push_back (*v_it);
+            toNode_out.push_back (osm_id);
+        }
+    }
+
+    Rcpp::NumericVector f (fromNode_out.size ());
+    Rcpp::NumericVector t (toNode_out.size ());
+    std::vector <long long>::iterator node_it;
+
+    int count = 0;
+    for (node_it = fromNode_out.begin (); node_it < fromNode_out.end ();
+            node_it ++)
+    {
+        f [count ++] = *node_it;
+    }
+
+    count = 0;
+    for (node_it = toNode_out.begin (); node_it < toNode_out.end ();
+            node_it ++)
+    {
+        t [count ++] = *node_it;
+    }
+    //return Rcpp::DataFrame::create (Rcpp::_["vertex"] = fromNode_out);
+    return Rcpp::DataFrame::create (Rcpp::_("from") = f, Rcpp::_("to") = t);
+    //return NULL;
 }

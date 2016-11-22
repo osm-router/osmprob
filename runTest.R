@@ -1,5 +1,6 @@
-library(igraph)
-library(microbenchmark)
+library (igraph)
+library (microbenchmark)
+library (osmdata)
 
 compile ()
 ccc  <- makeCompactGraph (gr)
@@ -44,17 +45,22 @@ compile <- function ()
     ls ("package:osmprob")
 }
 
-dfFromOsmdatar <- function ()
+dfFromOsmdata <- function ()
 {
-    library (osmdatar)
-    library (sp)
-    bbox <- matrix (c (-0.11, 51.51, -0.10, 51.52), nrow=2, ncol=2)
-    #bbox <- matrix (c (-0.15, 51.5, -0.10, 51.6), nrow=2, ncol=2)
-    dat <- get_lines (bbox=bbox, key='highway', value='primary')
-    dat <- as.SpatialLines.SLDF (dat)
+#    bbox <- matrix (c (-0.11, 51.51, -0.10, 51.52), nrow=2, ncol=2)
+    bbox <- c (-0.15, 51.5, -0.10, 51.6)
+    q0 <- opq (bbox=bbox)
+    q1 <- add_feature (q0, key='highway', value='primary')
+    roads <- overpass_query (q1)
+    dat <- roads$osm_lines
+
+
+#    dat <- get_lines (bbox=bbox, key='highway', value='primary')
+#    dat <- as.SpatialLines.SLDF (dat)
 
     toID <- c ()
     fromID <- c ()
+    cost <- c ()
 
     for (ln in 1:length (dat))
     {
@@ -68,7 +74,7 @@ dfFromOsmdatar <- function ()
         fromID <- c (fromID, vEnd)
         toID <- c (toID, vBeg)
     }
-    toFromDF <- data.frame (toID, fromID, FALSE)
+    toFromDF <- data.frame (toID, fromID, TRUE)
     osmGraph <- graph.data.frame (d=data.frame (A=fromID, B=toID), directed=FALSE)
 
 #    return (osmGraph)
