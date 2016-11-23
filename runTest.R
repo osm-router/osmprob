@@ -1,11 +1,12 @@
 library (igraph)
 library (microbenchmark)
 library (osmdata)
+library (sp)
 
+gr <- dfFromOsmdata ()
 compile ()
 ccc  <- makeCompactGraph (gr)
 
-gr <- dfFromOsmdatar()
 com <- makeCompactGraphProto (gr, TRUE)
 # microbenchmark::microbenchmark (makeCompactGraphProto (gr, TRUE), times=10)
 showGraph (gr)
@@ -45,19 +46,18 @@ compile <- function ()
     ls ("package:osmprob")
 }
 
-dfFromOsmdata <- function ()
+dfFromOsmdata <- function (bbox=c (-0.15, 51.5, -0.10, 51.6))
 {
-#    bbox <- matrix (c (-0.11, 51.51, -0.10, 51.52), nrow=2, ncol=2)
-    bbox <- c (-0.15, 51.5, -0.10, 51.6)
+#    bbox <- c (-0.11, 51.51, -0.10, 51.52)
     q0 <- opq (bbox=bbox)
     q1 <- add_feature (q0, key='highway', value='primary')
     roads <- overpass_query (q1)
     dat <- roads$osm_lines
 
+    oneWay <- slot (dat, "data")$oneway
+    oneWay <- tolower (oneWay) == "true"
 
-#    dat <- get_lines (bbox=bbox, key='highway', value='primary')
-#    dat <- as.SpatialLines.SLDF (dat)
-
+    dat <- as.SpatialLines.SLDF (dat)
     toID <- c ()
     fromID <- c ()
     cost <- c ()
@@ -68,17 +68,33 @@ dfFromOsmdata <- function ()
         lineSlot <- datln@lines
         llines <- lineSlot[[1]]@Lines
         coords <- llines[[1]]@coords
+        cost <- c (cost, getCost (coords))
         vert <- attr (coords, "dimnames")[[1]]
         vBeg <- as.numeric (vert[1])
         vEnd <- as.numeric (vert[length (vert)])
         fromID <- c (fromID, vEnd)
         toID <- c (toID, vBeg)
     }
-    toFromDF <- data.frame (toID, fromID, TRUE)
-    osmGraph <- graph.data.frame (d=data.frame (A=fromID, B=toID), directed=FALSE)
-
-#    return (osmGraph)
+    toFromDF <- data.frame (toID, fromID, cost, oneWay)
     return (toFromDF)
+}
+
+getCost <- function (coordMatrix)
+{
+    l <- 0
+    lastPoint <- c (coordMatrix [1, 1], coordMatrix [1, 2])
+    if (dim (coordMatrix) [1] >= 2)
+    {
+        for (i in 2:dim (coordMatrix) [1])
+        {
+            diffLon = abs (lastPoint [1] - coordMatrix [i, 1])
+            diffLat = abs (lastPoint [2] - coordMatrix [i, 2])
+            l <- l + sqrt (diffLon ^ 2 + diffLat ^ 2)
+            lastPoint [1] = coordMatrix [i, 1]
+            lastPoint [2] = coordMatrix [i, 2]
+        }
+    }
+    return (l)
 }
 
 makeCompactGraphProto <- function (graph.in, verbose=FALSE)
