@@ -3,22 +3,6 @@ library (microbenchmark)
 library (osmdata)
 library (sp)
 
-gr <- dfFromOsmdata ()
-compile ()
-ccc  <- makeCompactGraph (gr)
-
-com <- makeCompactGraphProto (gr, TRUE)
-# microbenchmark::microbenchmark (makeCompactGraphProto (gr, TRUE), times=10)
-showGraph (gr)
-dev.new ()
-showGraph (com)
-
-ccc  <- makeCompactGraph (gr)
-microbenchmark::microbenchmark (makeCompactGraph (gr))
-#microbenchmark::microbenchmark (makeCompactGraphProto (grDf, FALSE), times=3)
-head (ccc)
-ccc
-
 #compile
 compile <- function ()
 {
@@ -68,7 +52,8 @@ dfFromOsmdata <- function (bbox=c (-0.15, 51.5, -0.10, 51.6))
         lineSlot <- datln@lines
         llines <- lineSlot[[1]]@Lines
         coords <- llines[[1]]@coords
-        cost <- c (cost, getCost (coords))
+        wayCost <- getCost (coords)
+        cost <- c (cost, wayCost)
         vert <- attr (coords, "dimnames")[[1]]
         vBeg <- as.numeric (vert[1])
         vEnd <- as.numeric (vert[length (vert)])
@@ -191,3 +176,7 @@ showGraph <- function (gr)
     plot.igraph (gr, vertex.size=3, vertex.color="red", edge.width=2,
           edge.color="black")
 }
+
+gr <- dfFromOsmdata ()
+compile ()
+ccc  <- makeCompactGraph (gr)
