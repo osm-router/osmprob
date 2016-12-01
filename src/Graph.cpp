@@ -23,20 +23,18 @@ struct osm_edge_t
         osm_vertex_t getFromVertex () { return from; }
         osm_vertex_t getToVertex () { return to; }
 
-    osm_edge_t (osm_vertex_t *from, osm_vertex_t *to)
+    osm_edge_t (osm_vertex_t from, osm_vertex_t to)
     {
-        this -> from = *from;
-        this -> to = *to;
-        from -> out.push_back (to);
-        to -> in.push_back (from);
-        /*
+        this -> from = from;
+        this -> to = to;
+        from.out.push_back (&to);
+        to.in.push_back (&from);
         std::cout << "new edge. ids: " <<
-            from -> id << " - " <<
-            to -> id << ", degIn: " <<
-            from -> getDegreeIn () << ", " << to -> getDegreeIn () << " degOut: " <<
-            from -> getDegreeOut () << ", " << to -> getDegreeOut () <<
+            from.id << " - " <<
+            to.id << ", degIn: " <<
+            from.getDegreeIn () << ", " << to.getDegreeIn () << " degOut: " <<
+            from.getDegreeOut () << ", " << to.getDegreeOut () <<
             std::endl;
-            */
     }
 };
 
@@ -100,12 +98,12 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
         vFrom.id = fromId;
         vTo.osm_id = to [i];
         vTo.id = toId;
-        osm_edge_t edge = osm_edge_t (&vFrom, &vTo);
+        osm_edge_t edge = osm_edge_t (vFrom, vTo);
         edge.weight = weight [i];
         edges.push_back (edge);
         if (!isOneway [i])
         {
-            edge = osm_edge_t (&vTo, &vFrom);
+            edge = osm_edge_t (vTo, vFrom);
             edge.weight = weight [i];
             edges.push_back (edge);
         }
