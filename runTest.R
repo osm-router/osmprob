@@ -176,7 +176,10 @@ showGraph <- function (gr)
     plot.igraph (gr, vertex.size=3, vertex.color="red", edge.width=2,
           edge.color="black")
 }
+igr <- igraph::graph_from_data_frame (gr, directed=FALSE)
+showGraph (igr)
+bbox=c (-0.15, 51.5, -0.14, 51.6)
+gr <- dfFromOsmdata (bbox=bbox)
 
-gr <- dfFromOsmdata ()
 compile ()
 ccc  <- makeCompactGraph (gr)
