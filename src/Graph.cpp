@@ -3,31 +3,49 @@
 #include <vector>
 #include <map>
 
+typedef long long osm_id_t;
+
+typedef int edge_id_t;
+
 struct osm_vertex_t
 {
-    std::vector <osm_vertex_t> in, out;
-    long long osm_id;
-    int id;
+    private:
+        std::vector <osm_id_t> in, out;
 
-    int getDegreeIn () { return in.size (); }
-    int getDegreeOut () { return out.size (); }
+    public:
+        void addNeighborIn (osm_id_t osm_id) {in.push_back (osm_id); }
+        void addNeighborOut (osm_id_t osm_id) {out.push_back (osm_id); }
+        int getDegreeIn () { return in.size (); }
+        int getDegreeOut () { return out.size (); }
+        std::vector <osm_id_t> getNeighborsIn () {return in; }
+        std::vector <osm_id_t> getNeighborsOut () {return out; }
+        const std::vector <osm_id_t> getAllNeighbors ()
+        {
+            std::vector <osm_id_t> allNeighbors = in;
+            allNeighbors.insert (allNeighbors.end (), out.begin (), out.end ());
+            return allNeighbors;
+        }
 };
 
 struct osm_edge_t
 {
     private:
-        osm_vertex_t from, to;
+        osm_id_t from, to;
 
     public:
         double weight;
-        osm_vertex_t getFromVertex () { return from; }
-        osm_vertex_t getToVertex () { return to; }
+        edge_id_t id;
+        osm_id_t getFromVertex () { return from; }
+        osm_id_t getToVertex () { return to; }
 
-    osm_edge_t (osm_vertex_t from, osm_vertex_t to)
-    {
-        this -> from = from;
-        this -> to = to;
-    }
+        osm_edge_t (osm_id_t fromId, osm_id_t toId, double weight,
+                edge_id_t edgeId)
+        {
+            this -> id = edgeId;
+            this -> to = toId;
+            this -> from = fromId;
+            this -> weight = weight;
+        }
 };
 
 // [[Rcpp::export]]
@@ -38,157 +56,121 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
     Rcpp::NumericVector weight = graph [2];
     Rcpp::LogicalVector isOneway = graph [3];
 
-    int l = from.length ();
-    int id = 0;
-    std::map <long long, int> idPairs;
-    for (int i = 0; i < l; i++)
-    {
-        if (idPairs.find (from [i]) == idPairs.end ())
-        {
-            idPairs [from [i]] = id ++;
-        }
-        if (idPairs.find (to [i]) == idPairs.end ())
-        {
-            idPairs [to [i]] = id ++;
-        }
-    }
-
+    std::map <osm_id_t, osm_vertex_t> vertices;
     std::vector <osm_edge_t> edges;
-    std::map <int, osm_vertex_t> allVertexMap;
-    for (int i = 0; i < l; i ++)
+    std::map <osm_id_t, osm_vertex_t>::iterator it;
+    int edge_id = 0;
+    for (int i = 0; i < to.length (); i ++)
     {
-        int fromId = idPairs.at (from [i]);
-        int toId = idPairs.at (to [i]);
-        bool insertvFrom = false;
-        bool insertvTo = false;
+        osm_id_t fromId = from [i];
+        osm_id_t toId = to [i];
 
-        osm_vertex_t vFrom, vTo;
-        if (allVertexMap.find (fromId) != allVertexMap.end ())
-            vFrom = allVertexMap.at (fromId);
-        else
-        {
-            vFrom = osm_vertex_t ();
-            insertvFrom = true;
-        }
-        if (allVertexMap.find (toId) != allVertexMap.end ())
-            vTo = allVertexMap.at (toId);
-        else
-        {
-            vTo = osm_vertex_t ();
-            insertvTo = true;
-        }
+        if (vertices.find (fromId) == vertices.end ())
+            vertices.insert (std::make_pair (fromId, osm_vertex_t ()));
+        it = vertices.find (fromId);
+        osm_vertex_t fromVtx = it -> second;
+        fromVtx.addNeighborOut (toId);
+        if (!isOneway [i])
+            fromVtx.addNeighborIn (toId);
+        vertices [fromId] = fromVtx;
 
-        vFrom.osm_id = from [i];
-        vFrom.id = fromId;
-        vTo.osm_id = to [i];
-        vTo.id = toId;
+        if (vertices.find (toId) == vertices.end ())
+            vertices.insert (std::make_pair (toId, osm_vertex_t ()));
+        it = vertices.find (toId);
+        osm_vertex_t toVtx = it -> second;
+        toVtx.addNeighborIn (fromId);
+        if (!isOneway [i])
+            toVtx.addNeighborOut (toId);
+        vertices [fromId] = toVtx;
 
-        vFrom.out.push_back (vTo);
-        vTo.in.push_back (vFrom);
-
-        osm_edge_t edge = osm_edge_t (vFrom, vTo);
-        edge.weight = weight [i];
+        osm_edge_t edge = osm_edge_t (fromId, toId, weight [i], edge_id ++);
         edges.push_back (edge);
         if (!isOneway [i])
         {
-            vFrom.in.push_back (vTo);
-            vTo.out.push_back (vFrom);
-            edge = osm_edge_t (vTo, vFrom);
-            edge.weight = weight [i];
+            edge = osm_edge_t (toId, fromId, weight [i], edge_id ++);
             edges.push_back (edge);
         }
-        if (insertvFrom)
-            allVertexMap.insert (std::make_pair (fromId, vFrom));
-        if (insertvTo)
-            allVertexMap.insert (std::make_pair (toId, vTo));
     }
 
-    std::vector <osm_edge_t> edges_out;
-    std::vector <osm_edge_t>::iterator itEdges = edges.begin ();
-    for (; itEdges != edges.end (); itEdges ++)
+    // identify largest graph component
+    std::map<osm_id_t, int> components;
+    int component_number = 0;
+
+    for (auto ii = vertices.begin (); ii != vertices.end(); ++ ii)
     {
-        osm_edge_t edge = *itEdges;
-
-        osm_vertex_t vertex = edge.getFromVertex ();
-        int outDeg = vertex.getDegreeOut ();
-        int inDeg = vertex.getDegreeIn ();
-        if (inDeg == outDeg && inDeg < 3 && inDeg > 0)
+        if (components.find (ii -> first) == components.end ())
         {
-            osm_vertex_t neighbourVtx = vertex.out.front ();
-            if (neighbourVtx.id == edge.getToVertex ().id)
+            components.insert (std::make_pair (ii -> first, component_number));
+            for (auto nbi = ii -> second.getNeighborsIn ().begin ();
+                    nbi != ii -> second.getNeighborsIn ().end (); ++ nbi)
             {
-            //    std::cout << "center: " << vertex.id << " F: " << vertex.out.front ().id << " B: " << vertex.out.back ().id << std::endl;
-                neighbourVtx = vertex.out.back ();
-            }
-
-            // remove all edges linked to current vertex
-            std::vector <osm_edge_t>::iterator itEdges2 = edges.begin ();
-            double weightNew = 0;
-            for (; itEdges2 != edges.end (); itEdges2 ++)
-            {
-                osm_edge_t e = *itEdges2;
-                if (e.getFromVertex ().id == vertex.id ||
-                        e.getToVertex ().id == vertex.id)
+                if (components.find (*nbi) == components.end ())
+                    components.insert (std::make_pair (*nbi, component_number));
+                else
                 {
-                    weightNew += e.weight;
-                    edges.erase (itEdges2);
+                    int currentComponent = components.at (*nbi);
+                    for (auto c: components)
+                        if (c.second == component_number)
+                        {
+                            components.at (c.first) = currentComponent;
+                        }
                 }
             }
-            if (inDeg == 2)
-                weightNew /= 2;
-
-            // make new edge(s)
-            osm_edge_t edgeNew = osm_edge_t (neighbourVtx, edge.getToVertex ());
-            edgeNew.weight = weightNew;
-            edges_out.push_back (edgeNew);
-            if (inDeg == 2)
+            for (auto nbi = ii -> second.getNeighborsOut ().begin ();
+                    nbi != ii -> second.getNeighborsOut ().end (); ++ nbi)
             {
-                osm_edge_t edgeNewRev = osm_edge_t (edge.getToVertex (),
-                        neighbourVtx);
-                edgeNewRev.weight = weightNew;
-                edges_out.push_back (edgeNewRev);
+                if (components.find (*nbi) == components.end ())
+                    components.insert (std::make_pair (*nbi, component_number));
+                else
+                {
+                    int currentComponent = components.at (*nbi);
+                    for (auto c: components)
+                        if (c.second == component_number)
+                            components.at (c.first) = currentComponent;
+                }
             }
+            component_number ++;
         }
     }
 
-    std::vector <osm_edge_t>::iterator eIt = edges_out.begin ();
-    for (; eIt != edges_out.end (); eIt ++)
+    std::set <int> uniqueComponents;
+    for (auto c:components)
+        uniqueComponents.insert (c.second);
+
+    int largestComponentValue = -1;
+    int largestComponentNumber = -1;
+    std::map <int, int> componentSize;
+    for (auto uc:uniqueComponents)
     {
-        osm_edge_t e = *eIt;
-        // std::cout << e.getFromVertex ().osm_id << " - " << e.getToVertex ().osm_id << std::endl;
+        int comSize = 0;
+        for (auto c:components)
+        {
+            if (c.second == uc)
+                comSize ++;
+        }
+        if (comSize > largestComponentValue)
+        {
+            largestComponentValue = comSize;
+            largestComponentNumber = uc;
+        }
+        componentSize.insert (std::make_pair (uc, comSize));
     }
 
-    /*
-    int c = 0;
-    std::vector <osm_edge_t>::iterator itEdges = edges.begin ();
-    for (; itEdges != edges.end (); itEdges ++)
+    // Delete smaller graph components
+    int delCount = 0;
+    for (auto edge:edges)
     {
-        osm_edge_t e = *itEdges;
-        std::cout << c++ <<
-            " FROM - id: " << e.getFromVertex ().id <<
-            " deg in: " << e.getFromVertex ().getDegreeIn () <<
-            " - deg out: " << e.getFromVertex ().getDegreeOut () <<
-            " TO - id: " << e.getToVertex ().id <<
-            " deg in: " << e.getToVertex ().getDegreeIn () <<
-            " - deg out: " << e.getToVertex ().getDegreeOut () <<
-            std::endl;
+        osm_id_t from = edge.getFromVertex ();
+        osm_id_t to = edge.getToVertex ();
+        if (components.at (from) != largestComponentNumber ||
+                components.at (to) != largestComponentNumber)
+        {
+            vertices.erase (from);
+            vertices.erase (to);
+            edges.erase (edges.begin () + delCount);
+        }
+        delCount ++;
     }
-    */
 
-    /*
-    std::map <int, osm_vertex_t>::iterator i = allVertexMap.begin ();
-    for (; i != allVertexMap.end (); i ++)
-    {
-        int key = i -> first;
-        osm_vertex_t val = i -> second;
-        std::cout << "key: " << key <<
-            " id: " << val.id <<
-            " deg in: " << val.getDegreeIn () <<
-            " deg out: " << val.getDegreeOut () <<
-            std::endl;
-    }
-    */
-
-    //return Rcpp::DataFrame::create (Rcpp::_("from") = f, Rcpp::_("to") = t);
     return NULL;
 }
