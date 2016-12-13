@@ -2,12 +2,12 @@ library (igraph)
 library (microbenchmark)
 library (osmdata)
 library (sp)
+library (devtools)
+library (Rcpp)
 
 #compile
 compile <- function ()
 {
-    library (devtools)
-    library (Rcpp)
 
     wd <- getwd ()
     while (length (grep ('osmprob', getwd ())) > 0) setwd ("..")
@@ -180,6 +180,8 @@ igr <- igraph::graph_from_data_frame (gr, directed=FALSE)
 showGraph (igr)
 bbox=c (-0.15, 51.5, -0.14, 51.6)
 gr <- dfFromOsmdata (bbox=bbox)
+#gr <- dfFromOsmdata ()
 
 compile ()
 ccc  <- makeCompactGraph (gr)
+#microbenchmark::microbenchmark (makeCompactGraph (gr))
