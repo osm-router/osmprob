@@ -2,9 +2,6 @@ language: r
 warnings_are_errors: true
 sudo: required
 
-apt_packages:
-    libboost-dev
-
 r:
     - devel
 
@@ -13,5 +10,3 @@ r_github_packages:
 
 after_success:
       - Rscript -e 'covr::codecov()'
-
-cache: apt
