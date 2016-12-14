@@ -10,19 +10,19 @@ typedef int edge_id_t;
 struct osm_vertex_t
 {
     private:
-        std::vector <osm_id_t> in, out;
+        std::set <osm_id_t> in, out;
 
     public:
-        void addNeighborIn (osm_id_t osm_id) {in.push_back (osm_id); }
-        void addNeighborOut (osm_id_t osm_id) {out.push_back (osm_id); }
+        void addNeighborIn (osm_id_t osm_id) { in.insert (osm_id); }
+        void addNeighborOut (osm_id_t osm_id) { out.insert (osm_id); }
         int getDegreeIn () { return in.size (); }
         int getDegreeOut () { return out.size (); }
-        std::vector <osm_id_t> getNeighborsIn () {return in; }
-        std::vector <osm_id_t> getNeighborsOut () {return out; }
-        const std::vector <osm_id_t> getAllNeighbors ()
+        std::set <osm_id_t> getNeighborsIn () {return in; }
+        std::set <osm_id_t> getNeighborsOut () {return out; }
+        std::set <osm_id_t> getAllNeighbors ()
         {
-            std::vector <osm_id_t> allNeighbors = in;
-            allNeighbors.insert (allNeighbors.end (), out.begin (), out.end ());
+            std::set <osm_id_t> allNeighbors = in;
+            allNeighbors.insert (out.begin (), out.end ());
             return allNeighbors;
         }
 };
@@ -58,7 +58,6 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
 
     std::map <osm_id_t, osm_vertex_t> vertices;
     std::vector <osm_edge_t> edges;
-    std::map <osm_id_t, osm_vertex_t>::iterator it;
     int edge_id = 0;
     for (int i = 0; i < to.length (); i ++)
     {
@@ -67,8 +66,7 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
 
         if (vertices.find (fromId) == vertices.end ())
             vertices.insert (std::make_pair (fromId, osm_vertex_t ()));
-        it = vertices.find (fromId);
-        osm_vertex_t fromVtx = it -> second;
+        osm_vertex_t fromVtx = vertices.at (fromId);
         fromVtx.addNeighborOut (toId);
         if (!isOneway [i])
             fromVtx.addNeighborIn (toId);
@@ -76,12 +74,11 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
 
         if (vertices.find (toId) == vertices.end ())
             vertices.insert (std::make_pair (toId, osm_vertex_t ()));
-        it = vertices.find (toId);
-        osm_vertex_t toVtx = it -> second;
+        osm_vertex_t toVtx = vertices.at (toId);
         toVtx.addNeighborIn (fromId);
         if (!isOneway [i])
             toVtx.addNeighborOut (toId);
-        vertices [fromId] = toVtx;
+        vertices [toId] = toVtx;
 
         osm_edge_t edge = osm_edge_t (fromId, toId, weight [i], edge_id ++);
         edges.push_back (edge);
@@ -94,33 +91,20 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
 
     // identify largest graph component
     std::map<osm_id_t, int> components;
-    int component_number = 0;
+    int component_number = 1;
 
     for (auto ii = vertices.begin (); ii != vertices.end(); ++ ii)
     {
         if (components.find (ii -> first) == components.end ())
         {
             components.insert (std::make_pair (ii -> first, component_number));
-            for (auto nbi = ii -> second.getNeighborsIn ().begin ();
-                    nbi != ii -> second.getNeighborsIn ().end (); ++ nbi)
+            for (auto nbi = ii -> second.getAllNeighbors ().begin ();
+                    nbi != ii -> second.getAllNeighbors ().end (); ++ nbi)
             {
                 if (components.find (*nbi) == components.end ())
-                    components.insert (std::make_pair (*nbi, component_number));
-                else
                 {
-                    int currentComponent = components.at (*nbi);
-                    for (auto c: components)
-                        if (c.second == component_number)
-                        {
-                            components.at (c.first) = currentComponent;
-                        }
-                }
-            }
-            for (auto nbi = ii -> second.getNeighborsOut ().begin ();
-                    nbi != ii -> second.getNeighborsOut ().end (); ++ nbi)
-            {
-                if (components.find (*nbi) == components.end ())
                     components.insert (std::make_pair (*nbi, component_number));
+                }
                 else
                 {
                     int currentComponent = components.at (*nbi);
