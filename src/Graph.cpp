@@ -88,29 +88,27 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
             edges.push_back (edge);
         }
     }
+    std::cout << "BEFORE ditching smaller components: vertices: " << vertices.size () << " edges: " << edges.size () << std::endl;
 
     // identify largest graph component
     std::map<osm_id_t, int> components;
-    int component_number = 1;
-
-    for (auto ii = vertices.begin (); ii != vertices.end(); ++ ii)
+    int component_number = 0;
+    for (auto it = vertices.begin (); it != vertices.end(); ++ it)
     {
-        if (components.find (ii -> first) == components.end ())
+        if (components.find (it -> first) == components.end ())
         {
-            components.insert (std::make_pair (ii -> first, component_number));
-            for (auto nbi = ii -> second.getAllNeighbors ().begin ();
-                    nbi != ii -> second.getAllNeighbors ().end (); ++ nbi)
+            components.insert (std::make_pair (it -> first, component_number));
+            for (auto nbi = it -> second.getAllNeighbors ().begin ();
+                    nbi != it -> second.getAllNeighbors ().end (); ++ nbi)
             {
                 if (components.find (*nbi) == components.end ())
-                {
                     components.insert (std::make_pair (*nbi, component_number));
-                }
                 else
                 {
-                    int currentComponent = components.at (*nbi);
+                    int neighborComponent = components.at (*nbi);
                     for (auto c: components)
                         if (c.second == component_number)
-                            components.at (c.first) = currentComponent;
+                            components.at (c.first) = neighborComponent;
                 }
             }
             component_number ++;
@@ -140,6 +138,9 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
         componentSize.insert (std::make_pair (uc, comSize));
     }
 
+    for (auto x:componentSize)
+        std::cout << "component " << x.first << " size: " << x.second << std::endl;
+
     // Delete smaller graph components
     int delCount = 0;
     for (auto edge:edges)
@@ -155,6 +156,8 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
         }
         delCount ++;
     }
+
+    std::cout << "AFTER ditching smaller components: vertices: " << vertices.size () << " edges: " << edges.size () << std::endl;
 
     return NULL;
 }
