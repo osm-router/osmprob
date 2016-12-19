@@ -1,6 +1,7 @@
 library (igraph)
 library (microbenchmark)
-library (osmdata)
+#library (osmdata)
+devtools::load_all ("../osmdata", export_all=FALSE)
 library (sp)
 library (devtools)
 library (Rcpp)
@@ -9,25 +10,23 @@ library (Rcpp)
 compile <- function ()
 {
 
-    wd <- getwd ()
-    while (length (grep ('osmprob', getwd ())) > 0) setwd ("..")
     #setwd ("~/master_thesis/osmprob/")
-    #Rcpp::compileAttributes (".", verbose=TRUE)
-    Rcpp::compileAttributes ("osmprob", verbose=TRUE)
+    Rcpp::compileAttributes (".", verbose=TRUE)
 
     #test
     #setwd ("~/master_thesis/")
 
-    devtools::document ('osmprob')
-    #devtools::load_all ("osmprob", export_all=FALSE)
-    devtools::load_all ("osmprob")
-    #devtools::check ("osmprob")
+    #devtools::document ('.')
+    devtools::load_all (".", export_all=FALSE)
+    devtools::load_all (".")
+    #devtools::check (".")
 
-    unlink ("./osmprob/src/*.gcda")
-    unlink ("./osmprob/src/*.gcno")
-    unlink ("./osmprob/src/Makevars")
+    # These unlink commands shouldn't be needed
+    #unlink ("./osmprob/src/*.gcda")
+    #unlink ("./osmprob/src/*.gcno")
+    #unlink ("./osmprob/src/Makevars")
 
-    ls ("package:osmprob")
+    #ls ("package:osmprob")
 }
 
 dfFromOsmdata <- function (bbox=c (-0.15, 51.5, -0.10, 51.6))
@@ -35,7 +34,7 @@ dfFromOsmdata <- function (bbox=c (-0.15, 51.5, -0.10, 51.6))
 #    bbox <- c (-0.11, 51.51, -0.10, 51.52)
     q0 <- opq (bbox=bbox)
     q1 <- add_feature (q0, key='highway', value='primary')
-    roads <- overpass_query (q1)
+    roads <- osmdata_sp (q1)
     dat <- roads$osm_lines
 
     oneWay <- slot (dat, "data")$oneway
