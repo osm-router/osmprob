@@ -65,20 +65,10 @@ dfFromOsmdata <- function (bbox=c (-0.15, 51.5, -0.10, 51.6))
 
 getCost <- function (coordMatrix)
 {
-    l <- 0
-    lastPoint <- c (coordMatrix [1, 1], coordMatrix [1, 2])
-    if (dim (coordMatrix) [1] >= 2)
-    {
-        for (i in 2:dim (coordMatrix) [1])
-        {
-            diffLon = abs (lastPoint [1] - coordMatrix [i, 1])
-            diffLat = abs (lastPoint [2] - coordMatrix [i, 2])
-            l <- l + sqrt (diffLon ^ 2 + diffLat ^ 2)
-            lastPoint [1] = coordMatrix [i, 1]
-            lastPoint [2] = coordMatrix [i, 2]
-        }
-    }
-    return (l)
+    indx <- 2:nrow (coordMatrix)
+    costs <- sqrt ((coordMatrix [indx, 1] - coordMatrix [indx - 1, 1]) ^ 2 +
+                   (coordMatrix [indx, 2] - coordMatrix [indx - 1, 2]) ^ 2)
+    sum (costs)
 }
 
 makeCompactGraphProto <- function (graph.in, verbose=FALSE)
