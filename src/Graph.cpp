@@ -91,28 +91,23 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
     Rcpp::Rcout << "BEFORE ditching smaller components: vertices: " << vertices.size () << " edges: " << edges.size () << std::endl;
 
     // identify largest graph component
-    std::map<osm_id_t, int> components;
+    std::set <int> comps;
+    std::map <osm_id_t, int> components;
     int component_number = 0;
-    for (auto it = vertices.begin (); it != vertices.end(); ++ it)
+
+    for (auto it = vertices.begin (); it != vertices.end (); ++ it)
     {
-        if (components.find (it -> first) == components.end ())
+        components.insert (std::make_pair (it -> first, component_number));
+        for (auto nbi = it -> second.getAllNeighbors ().begin ();
+                nbi != it -> second.getAllNeighbors ().end (); ++ nbi)
+            comps.insert (components.at (*nbi));
+        for (auto cp = components.begin (); cp != components.end (); ++ cp)
         {
-            components.insert (std::make_pair (it -> first, component_number));
-            for (auto nbi = it -> second.getAllNeighbors ().begin ();
-                    nbi != it -> second.getAllNeighbors ().end (); ++ nbi)
-            {
-                if (components.find (*nbi) == components.end ())
-                    components.insert (std::make_pair (*nbi, component_number));
-                else
-                {
-                    int neighborComponent = components.at (*nbi);
-                    for (auto c: components)
-                        if (c.second == component_number)
-                            components.at (c.first) = neighborComponent;
-                }
-            }
-            component_number ++;
+            for (auto cn : comps)
+                if (components.at (cp -> second) == cn)
+                    components.at (cp -> second) = *comps.begin ();
         }
+        component_number ++;
     }
 
     std::set <int> uniqueComponents;

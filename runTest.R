@@ -1,7 +1,7 @@
 library (igraph)
 library (microbenchmark)
-#library (osmdata)
-devtools::load_all ("../osmdata", export_all=FALSE)
+library (osmdata)
+#devtools::load_all ("../osmdata", export_all=FALSE)
 library (sp)
 library (devtools)
 library (Rcpp)
@@ -31,7 +31,7 @@ compile <- function ()
 
 dfFromOsmdata <- function (bbox=c (-0.15, 51.5, -0.10, 51.6))
 {
-#    bbox <- c (-0.11, 51.51, -0.10, 51.52)
+    #    bbox <- c (-0.11, 51.51, -0.10, 51.52)
     q0 <- opq (bbox=bbox)
     q1 <- add_feature (q0, key='highway', value='primary')
     roads <- osmdata_sp (q1)
@@ -81,7 +81,7 @@ makeCompactGraphProto <- function (graph.in, verbose=FALSE)
     {
         if (verbose)
             cat ("Making compact graph ", d, "/", length (degrees), "\r")
-        
+
         deg <- degrees[d]
         if (deg == 2)
         {
@@ -163,7 +163,7 @@ makeCompactGraphProto <- function (graph.in, verbose=FALSE)
 showGraph <- function (gr)
 {
     plot.igraph (gr, vertex.size=3, vertex.color="red", edge.width=2,
-          edge.color="black")
+        edge.color="black")
 }
 #igr <- igraph::graph_from_data_frame (gr, directed=FALSE)
 #showGraph (igr)
