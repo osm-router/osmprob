@@ -98,14 +98,21 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
     for (auto it = vertices.begin (); it != vertices.end (); ++ it)
     {
         components.insert (std::make_pair (it -> first, component_number));
-        for (auto nbi = it -> second.getAllNeighbors ().begin ();
-                nbi != it -> second.getAllNeighbors ().end (); ++ nbi)
-            comps.insert (components.at (*nbi));
+        for (auto nbi : it -> second.getAllNeighbors ())
+        {
+            if (components.find (nbi) != components.end ())
+                comps.insert (components.at (nbi));
+        }
         for (auto cp = components.begin (); cp != components.end (); ++ cp)
         {
             for (auto cn : comps)
-                if (components.at (cp -> second) == cn)
-                    components.at (cp -> second) = *comps.begin ();
+            {
+                if (components.find (cp -> first) != components.end ())
+                {
+                    if (components.at (cp -> first) == cn)
+                        components.at (cp -> first) = *comps.begin ();
+                }
+            }
         }
         component_number ++;
     }
