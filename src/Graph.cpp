@@ -91,23 +91,27 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
     Rcpp::Rcout << "BEFORE ditching smaller components: vertices: " << vertices.size () << " edges: " << edges.size () << std::endl;
 
     // identify largest graph component
-    std::set <int> comps;
     std::map <osm_id_t, int> components;
     int component_number = 0;
+    // initialize components map
+    for (auto it = vertices.begin (); it != vertices.end (); ++ it)
+        components.insert (std::make_pair (it -> first, -1));
 
     for (auto it = vertices.begin (); it != vertices.end (); ++ it)
     {
-        components.insert (std::make_pair (it -> first, component_number));
-        for (auto nbi : it -> second.getAllNeighbors ())
+        components [it -> first] = component_number;
+        std::set <osm_id_t> allNeighbors = it -> second.getAllNeighbors ();
+        std::set <int> comps;
+        for (auto nbi : allNeighbors)
         {
-            if (components.find (nbi) != components.end ())
+            if (components.at (nbi) =! -1)
                 comps.insert (components.at (nbi));
         }
         for (auto cp = components.begin (); cp != components.end (); ++ cp)
         {
             for (auto cn : comps)
             {
-                if (components.find (cp -> first) != components.end ())
+                if (components.at (cp -> first) =! -1)
                 {
                     if (components.at (cp -> first) == cn)
                         components.at (cp -> first) = *comps.begin ();
@@ -139,9 +143,6 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
         }
         componentSize.insert (std::make_pair (uc, comSize));
     }
-
-    for (auto x:componentSize)
-        Rcpp::Rcout << "component " << x.first << " size: " << x.second << std::endl;
 
     // Delete smaller graph components
     int delCount = 0;
