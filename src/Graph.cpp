@@ -77,7 +77,7 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
         osm_vertex_t toVtx = vertices.at (toId);
         toVtx.addNeighborIn (fromId);
         if (!isOneway [i])
-            toVtx.addNeighborOut (toId);
+            toVtx.addNeighborOut (fromId);
         vertices [toId] = toVtx;
 
         osm_edge_t edge = osm_edge_t (fromId, toId, weight [i], edge_id ++);
@@ -88,6 +88,7 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
             edges.push_back (edge);
         }
     }
+
     Rcpp::Rcout << "BEFORE ditching smaller components: vertices: " << vertices.size () << " edges: " << edges.size () << std::endl;
 
     // identify largest graph component
@@ -162,5 +163,55 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
 
     Rcpp::Rcout << "AFTER ditching smaller components: vertices: " << vertices.size () << " edges: " << edges.size () << std::endl;
 
-    return NULL;
+    auto v = vertices.begin ();
+    while (v != vertices.end ())
+    {
+        Rcpp::Rcout << "Checking " << v -> first << std::endl;
+        osm_id_t id = v -> first;
+        osm_vertex_t vt = v -> second;
+
+        std::set <osm_id_t> nIn = vt.getNeighborsIn ();
+        std::set <osm_id_t> nOut = vt.getNeighborsOut ();
+
+        int numNeighbors = vt.getDegreeIn () + vt.getDegreeOut ();
+        float neighborRatio =  (float) numNeighbors / vt.getAllNeighbors ().size ();
+        // TODO properly delete vertices
+        if (numNeighbors == 2 && vt.getAllNeighbors ().size () == 2)
+        {
+            v = vertices.erase (v);
+        } else if (numNeighbors == 4 && vt.getAllNeighbors ().size () == 2)
+        {
+            v = vertices.erase (v);
+        } else
+            ++ v;
+    }
+
+    Rcpp::NumericVector fromOut;
+    Rcpp::NumericVector toOut;
+    Rcpp::NumericVector weightOut;
+    Rcpp::LogicalVector onewayOut;
+
+    osm_id_t lastFrom = -1;
+    osm_id_t lastTo = -1;
+    int ct = 0;
+
+    for (auto e:edges)
+    {
+        osm_id_t from = e.getFromVertex ();
+        osm_id_t to = e.getToVertex ();
+
+        if ((from != lastTo) || (to != lastFrom))
+        {
+            fromOut.push_back (from);
+            toOut.push_back (to);
+            weightOut.push_back (e.weight);
+            onewayOut.push_back (false);
+            lastFrom = from;
+            lastTo = to;
+        }
+    }
+
+    return Rcpp::DataFrame::create (Rcpp::Named ("from") = fromOut, Rcpp::Named ("to") = toOut, Rcpp::Named ("weight") = weightOut, Rcpp::Named ("oneway") = onewayOut);
+    // return NULL;
 }
+
