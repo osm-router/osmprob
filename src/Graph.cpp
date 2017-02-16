@@ -25,6 +25,19 @@ struct osm_vertex_t
             allNeighbors.insert (out.begin (), out.end ());
             return allNeighbors;
         }
+        void replaceNeighbor (osm_id_t nOld, osm_id_t nNew)
+        {
+            if (in.find (nOld) != in.end ())
+            {
+                in.erase (nOld);
+                in.insert (nNew);
+            }
+            if (out.find (nOld) != out.end ())
+            {
+                out.erase (nOld);
+                out.insert (nNew);
+            }
+        }
 };
 
 struct osm_edge_t
@@ -93,6 +106,7 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
 
     // identify largest graph component
     std::map <osm_id_t, int> components;
+
     int component_number = 0;
     // initialize components map
     for (auto it = vertices.begin (); it != vertices.end (); ++ it)
@@ -100,26 +114,26 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
 
     for (auto it = vertices.begin (); it != vertices.end (); ++ it)
     {
-        components [it -> first] = component_number;
-        std::set <osm_id_t> allNeighbors = it -> second.getAllNeighbors ();
         std::set <int> comps;
-        for (auto nbi : allNeighbors)
+        osm_id_t vtxId = it -> first;
+        osm_vertex_t vtx = it -> second;
+        std::set <osm_id_t> neighbors = vtx.getAllNeighbors ();
+        comps.insert (components.at (vtxId));
+        for (auto n:neighbors)
+            comps.insert (components.at (n));
+        int largestCompNum = *comps.rbegin ();
+        if (largestCompNum == -1)
+            largestCompNum = component_number ++;
+        components.at (vtxId) = largestCompNum;
+        for (auto n:neighbors)
+            components.at (n) = largestCompNum;
+        for (auto c = components.begin (); c != components.end (); ++ c)
         {
-            if (components.at (nbi) =! -1)
-                comps.insert (components.at (nbi));
+            osm_id_t cOsm = c -> first;
+            int cNum = c -> second;
+            if (comps.find (cNum) != comps.end () && cNum != -1)
+                components.at (cOsm) = largestCompNum;
         }
-        for (auto cp = components.begin (); cp != components.end (); ++ cp)
-        {
-            for (auto cn : comps)
-            {
-                if (components.at (cp -> first) =! -1)
-                {
-                    if (components.at (cp -> first) == cn)
-                        components.at (cp -> first) = *comps.begin ();
-                }
-            }
-        }
-        component_number ++;
     }
 
     std::set <int> uniqueComponents;
@@ -145,24 +159,22 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
         componentSize.insert (std::make_pair (uc, comSize));
     }
 
-    // Delete smaller graph components
-    int delCount = 0;
-    for (auto edge:edges)
+    // delete smaller graph components
+    for (auto comp = components.begin (); comp != components.end (); comp ++)
+        if (comp -> second != largestComponentNumber)
+            vertices.erase (comp -> first);
+    for (auto eIt = edges.begin (); eIt != edges.end ();)
     {
-        osm_id_t from = edge.getFromVertex ();
-        osm_id_t to = edge.getToVertex ();
-        if (components.at (from) != largestComponentNumber ||
-                components.at (to) != largestComponentNumber)
-        {
-            vertices.erase (from);
-            vertices.erase (to);
-            edges.erase (edges.begin () + delCount);
-        }
-        delCount ++;
+        osm_id_t fId = eIt -> getFromVertex ();
+        if (vertices.find (fId) == vertices.end ())
+            eIt = edges.erase (eIt);
+        else
+            eIt ++;
     }
 
     Rcpp::Rcout << "AFTER ditching smaller components: vertices: " << vertices.size () << " edges: " << edges.size () << std::endl;
 
+    /*
     auto v = vertices.begin ();
     while (v != vertices.end ())
     {
@@ -172,19 +184,32 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
 
         std::set <osm_id_t> nIn = vt.getNeighborsIn ();
         std::set <osm_id_t> nOut = vt.getNeighborsOut ();
+        std::set <osm_id_t> nAll = vt.getAllNeighbors ();
 
         int numNeighbors = vt.getDegreeIn () + vt.getDegreeOut ();
-        float neighborRatio =  (float) numNeighbors / vt.getAllNeighbors ().size ();
         // TODO properly delete vertices
-        if (numNeighbors == 2 && vt.getAllNeighbors ().size () == 2)
+        if (numNeighbors == 2 && nAll.size () == 2)
         {
+            for (auto nId:nAll)
+            {
+                osm_id_t replacementId;
+                for (auto repl:nAll)
+                    if (repl != nId)
+                        replacementId = repl;
+                Rcpp::Rcout << "current id: " << id << " neighbor: " << nId << " replacement: " << replacementId << std::endl;
+                osm_vertex_t nVtx = vertices.at (nId);
+                nVtx.replaceNeighbor (id, replacementId);
+                vertices.at (nId) = nVtx;
+            }
             v = vertices.erase (v);
-        } else if (numNeighbors == 4 && vt.getAllNeighbors ().size () == 2)
+        } else if (numNeighbors == 4 && nAll.size () == 2)
         {
-            v = vertices.erase (v);
+            //v = vertices.erase (v);
+            v ++;
         } else
-            ++ v;
+            v ++;
     }
+    */
 
     Rcpp::NumericVector fromOut;
     Rcpp::NumericVector toOut;
@@ -212,6 +237,5 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
     }
 
     return Rcpp::DataFrame::create (Rcpp::Named ("from") = fromOut, Rcpp::Named ("to") = toOut, Rcpp::Named ("weight") = weightOut, Rcpp::Named ("oneway") = onewayOut);
-    // return NULL;
 }
 
