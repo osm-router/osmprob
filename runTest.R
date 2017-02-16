@@ -174,3 +174,16 @@ gr <- dfFromOsmdata (bbox=bbox)
 compile ()
 ccc  <- makeCompactGraph (gr)
 #microbenchmark::microbenchmark (makeCompactGraph (gr))
+
+# test graph
+toID <- c (2, 1, 3, 4, 4, 5, 11, 11, 6, 7, 7, 9, 12, 13, 14, 2)
+fromID <- c (1, 3, 2, 3, 10, 4, 5, 2, 7, 8, 9, 8, 5, 1, 13, 14)
+cost <- rep (1, length (toID))
+oneWay <- c (T, T, F, T, T, T, F, F, T, T, T, F, T, T, T, T)
+grTest <- data.frame (toID, fromID, cost, oneWay)
+compile ()
+comTest <- makeCompactGraph (grTest)
+
+igr <- igraph::graph_from_data_frame (grTest, directed=grTest$oneWay)
+igr <- igraph::graph_from_data_frame (comTest, directed=TRUE)
+#showGraph (igr)
