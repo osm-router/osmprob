@@ -3,6 +3,8 @@ warnings_are_errors: true
 sudo: required
 
 matrix:
+    allow_failures: # temporarily enabled. TODO: disable
+        -os: osx
     include:
         - os: linux
           r: release
@@ -11,13 +13,10 @@ matrix:
         - os: linux
           r: devel
           dist: trusty
-        - os: osx
-          r: release
-          before_install: ''
-
-r:
-    - release
-    - devel
+          #- os: osx
+          #r: release
+          #before_install: ''
+          #disable_homebrew: true
 
 r_github_packages:
       - jimhester/covr
