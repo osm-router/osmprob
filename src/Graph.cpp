@@ -46,12 +46,12 @@ struct osm_edge_t
         osm_id_t from, to;
 
     public:
-        double weight;
+        float weight;
         edge_id_t id;
         osm_id_t getFromVertex () { return from; }
         osm_id_t getToVertex () { return to; }
 
-        osm_edge_t (osm_id_t fromId, osm_id_t toId, double weight,
+        osm_edge_t (osm_id_t fromId, osm_id_t toId, float weight,
                 edge_id_t edgeId)
         {
             this -> id = edgeId;
@@ -101,8 +101,6 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
             edges.push_back (edge);
         }
     }
-
-    Rcpp::Rcout << "BEFORE ditching smaller components: vertices: " << vertices.size () << " edges: " << edges.size () << std::endl;
 
     // identify largest graph component
     std::map <osm_id_t, int> components;
@@ -163,7 +161,8 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
     for (auto comp = components.begin (); comp != components.end (); comp ++)
         if (comp -> second != largestComponentNumber)
             vertices.erase (comp -> first);
-    for (auto eIt = edges.begin (); eIt != edges.end ();)
+    auto eIt = edges.begin ();
+    while (eIt != edges.end ())
     {
         osm_id_t fId = eIt -> getFromVertex ();
         if (vertices.find (fId) == vertices.end ())
@@ -172,13 +171,9 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
             eIt ++;
     }
 
-    Rcpp::Rcout << "AFTER ditching smaller components: vertices: " << vertices.size () << " edges: " << edges.size () << std::endl;
-
-    /*
     auto v = vertices.begin ();
     while (v != vertices.end ())
     {
-        Rcpp::Rcout << "Checking " << v -> first << std::endl;
         osm_id_t id = v -> first;
         osm_vertex_t vt = v -> second;
 
@@ -186,56 +181,86 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
         std::set <osm_id_t> nOut = vt.getNeighborsOut ();
         std::set <osm_id_t> nAll = vt.getAllNeighbors ();
 
-        int numNeighbors = vt.getDegreeIn () + vt.getDegreeOut ();
-        // TODO properly delete vertices
-        if (numNeighbors == 2 && nAll.size () == 2)
+        bool isIntermediateSingle = (nIn.size () == 1 && nOut.size () == 1 &&
+            nAll.size () == 2);
+        bool isIntermediateDouble = (nIn.size () == 2 && nOut.size () == 2 &&
+            nAll.size () == 2);
+        if (isIntermediateSingle || isIntermediateDouble)
         {
+            osm_id_t idFromNew, idToNew;
+
             for (auto nId:nAll)
             {
                 osm_id_t replacementId;
                 for (auto repl:nAll)
                     if (repl != nId)
                         replacementId = repl;
-                Rcpp::Rcout << "current id: " << id << " neighbor: " << nId << " replacement: " << replacementId << std::endl;
                 osm_vertex_t nVtx = vertices.at (nId);
                 nVtx.replaceNeighbor (id, replacementId);
+                if (isIntermediateDouble)
+                {
+                    idFromNew = nId;
+                    idToNew = replacementId;
+                }
                 vertices.at (nId) = nVtx;
             }
             v = vertices.erase (v);
-        } else if (numNeighbors == 4 && nAll.size () == 2)
-        {
-            //v = vertices.erase (v);
-            v ++;
+
+            // update edges
+            float weightNew = 0;
+            int numFound = 0;
+            int edgesToDelete = 1;
+            if (isIntermediateDouble)
+                edgesToDelete = 3;
+            auto edge = edges.begin ();
+            while (edge != edges.end ())
+            {
+                osm_id_t eFrom = edge -> getFromVertex ();
+                osm_id_t eTo = edge -> getToVertex ();
+                if (eFrom == id || eTo == id)
+                {
+                    if (isIntermediateSingle)
+                    {
+                        if (eFrom == id)
+                            idToNew = eTo;
+                        if (eTo == id)
+                            idFromNew = eFrom;
+                    }
+                    weightNew += edge -> weight;
+                    edge = edges.erase (edge);
+                    if (numFound >= edgesToDelete)
+                    {
+                        if (isIntermediateDouble)
+                        {
+                            weight = weight / 2;
+                            osm_edge_t edgeNew = osm_edge_t (idToNew, idFromNew,
+                                    weightNew, edge_id ++);
+                            edges.push_back (edgeNew);
+                        }
+                        osm_edge_t edgeNew = osm_edge_t (idFromNew, idToNew,
+                                weightNew, edge_id ++);
+                        edges.push_back (edgeNew);
+                        break;
+                    }
+                    numFound ++;
+                } else
+                    edge ++;
+            }
         } else
             v ++;
     }
-    */
 
     Rcpp::NumericVector fromOut;
     Rcpp::NumericVector toOut;
     Rcpp::NumericVector weightOut;
-    Rcpp::LogicalVector onewayOut;
-
-    osm_id_t lastFrom = -1;
-    osm_id_t lastTo = -1;
-    int ct = 0;
-
     for (auto e:edges)
     {
         osm_id_t from = e.getFromVertex ();
         osm_id_t to = e.getToVertex ();
-
-        if ((from != lastTo) || (to != lastFrom))
-        {
-            fromOut.push_back (from);
-            toOut.push_back (to);
-            weightOut.push_back (e.weight);
-            onewayOut.push_back (false);
-            lastFrom = from;
-            lastTo = to;
-        }
+        fromOut.push_back (from);
+        toOut.push_back (to);
+        weightOut.push_back (e.weight);
     }
 
-    return Rcpp::DataFrame::create (Rcpp::Named ("from") = fromOut, Rcpp::Named ("to") = toOut, Rcpp::Named ("weight") = weightOut, Rcpp::Named ("oneway") = onewayOut);
+    return Rcpp::DataFrame::create (Rcpp::Named ("from") = fromOut, Rcpp::Named ("to") = toOut, Rcpp::Named ("weight") = weightOut);
 }
-
