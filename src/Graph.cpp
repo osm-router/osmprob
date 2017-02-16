@@ -38,6 +38,16 @@ struct osm_vertex_t
                 out.insert (nNew);
             }
         }
+        bool isIntermediateSingle ()
+        {
+            return (in.size () == 1 && out.size () == 1 &&
+                    getAllNeighbors ().size () == 2);
+        }
+        bool isIntermediateDouble ()
+        {
+            return (in.size () == 2 && out.size () == 2 &&
+                    getAllNeighbors ().size () == 2);
+        }
 };
 
 struct osm_edge_t
@@ -181,11 +191,21 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
         std::set <osm_id_t> nOut = vt.getNeighborsOut ();
         std::set <osm_id_t> nAll = vt.getAllNeighbors ();
 
-        bool isIntermediateSingle = (nIn.size () == 1 && nOut.size () == 1 &&
-            nAll.size () == 2);
-        bool isIntermediateDouble = (nIn.size () == 2 && nOut.size () == 2 &&
-            nAll.size () == 2);
-        if (isIntermediateSingle || isIntermediateDouble)
+        bool isIntermediateSingle = vt.isIntermediateSingle ();
+        bool isIntermediateDouble = vt.isIntermediateDouble ();
+
+        bool hasSingleNeighbors = false;
+        for (auto nId:nAll)
+        {
+            osm_vertex_t n = vertices.at (nId);
+            if (n.isIntermediateSingle () || n.isIntermediateDouble ())
+            {
+                hasSingleNeighbors = true;
+                break;
+            }
+        }
+
+        if ((isIntermediateSingle || isIntermediateDouble) && hasSingleNeighbors)
         {
             osm_id_t idFromNew, idToNew;
 
