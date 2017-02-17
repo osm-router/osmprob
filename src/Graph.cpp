@@ -107,7 +107,8 @@ void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
     }
 }
 
-void getLargestGraphComponent (vertexMap &v, std::map <osm_id_t, int> &com,        int &largestId)
+void getLargestGraphComponent (vertexMap &v, std::map <osm_id_t, int> &com,
+        int &largestId)
 {
     int component_number = 0;
     // initialize components map
