@@ -271,6 +271,12 @@ void removeIntermediateVertices (vertexMap &v, edgeVector &e)
     }
 }
 
+//' makeCompactGraph
+//'
+//' Removes nodes and edges from a graph that are not needed for routing
+//'
+//' @param graph graph to be processed
+//' @return Rcpp::DataFrame containing the output graph
 // [[Rcpp::export]]
 Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
 {
