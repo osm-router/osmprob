@@ -3,7 +3,9 @@ Type: Package
 Title: What the Package Does in One 'Title Case' Line
 Version: 1.0
 Date: 2016-08-02
-Author: Andreas Petutschnig
+Authors@R: c(
+    person ("Andreas", "Petutschnig", email="andreas@petutschnig.de", role=("aut", "cre")),
+    person ("Mark", "Padgham", role=("aut")))
 Maintainer: Andreas Petutschnig <andreas@petutschnig.de>
 Description: One paragraph description of what the package does as one
     or more full sentences.

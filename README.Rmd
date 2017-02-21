@@ -1,4 +1,16 @@
-# osmprob [![Build Status](https://travis-ci.org/osm-router/osmprob.svg?branch=master)](https://travis-ci.org/osm-router/osmprob)
+```{r opts, echo = FALSE}
+knitr::opts_chunk$set(
+                      collapse = TRUE,
+                      warning = TRUE,
+                      message = TRUE,
+                      width = 120,
+                      comment = "#>"
+                      )
+```
+[![Build Status](https://travis-ci.org/osm-router/osmprob.svg?branch=master)](https://travis-ci.org/osm-router/osmprob)
+[![codecov](https://codecov.io/gh/osm-router/osmprob/branch/master/graph/badge.svg)](https://codecov.io/gh/osm-router/osmprob)
+
+# osmprob
 
 R package for probabilistic OpenStreetMap routing
 
@@ -9,12 +21,4 @@ R package for probabilistic OpenStreetMap routing
 
 ```{r, eval=FALSE}
 devtools::install_github ('osm-router/osmprob')
-```
-```{r, echo=FALSE, message=FALSE}
-setwd ("..")
-#devtools::document ("osmprob")
-#devtools::check ("osmprob")
-devtools::load_all ("osmprob")
-setwd ("./osmprob")
-#testthat::test_package ('osmprob')
 ```
