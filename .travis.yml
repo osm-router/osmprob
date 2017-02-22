@@ -1,6 +1,6 @@
 language: r
 warnings_are_errors: true
-sudo: required
+sudo: false
 
 matrix:
     allow_failures: # temporarily enabled. TODO: disable
@@ -8,11 +8,9 @@ matrix:
     include:
         - os: linux
           r: release
-          dist: trusty # 14.04
           env: R_CODECOV=true
         - os: linux
           r: devel
-          dist: trusty
           #- os: osx
           #r: release
           #before_install: ''

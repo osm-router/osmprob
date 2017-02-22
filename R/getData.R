@@ -1,14 +1,15 @@
-library (osmdata)
-
 #' Download osm data and calculate street lengths
 #' 
+#' @param bbox Numeric bounding box
+#'
 #' @return data.frame containing the osm data
 #' @export
 getData <- function (bbox=c(-0.27,51.47,-0.20,51.50))
 {
-    q0 <- opq (bbox=bbox)
-    q2 <- add_feature (q0, key='highway')
-    h <- osmdata_sf (q2)
+    #q0 <- osmdata::opq (bbox=bbox)
+    #q2 <- osmdata::add_feature (q0, key='highway')
+    #h <- osmdata::osmdata_sf (q2)
+    h <- 1
     lines <- h$osm_lines
     g <- lines$geometry
     mat <- matrix (0, nrow=length (g), ncol=7)

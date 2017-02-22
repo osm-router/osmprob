@@ -28,3 +28,9 @@ R package for probabilistic OpenStreetMap routing
 ```{r, eval=FALSE}
 devtools::install_github ('osm-router/osmprob')
 ```
+
+```{r, echo=FALSE, eval=FALSE}
+devtools::load_all ('.', export_all=FALSE)
+devtools::document ('.')
+devtools::check ('.')
+```
