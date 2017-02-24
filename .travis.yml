@@ -9,8 +9,8 @@ matrix:
         - os: linux
           r: release
           env: R_CODECOV=true
-        - os: linux
-          r: devel
+          #- os: linux #temporarily disabled. TODO: enable
+          #r: devel
           #- os: osx
           #r: release
           #before_install: ''
