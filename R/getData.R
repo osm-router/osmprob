@@ -11,8 +11,10 @@ getData <- function (bbox=c(-0.27,51.47,-0.20,51.50))
     #h <- osmdata::osmdata_sf (q2)
     h <- 1
     lines <- h$osm_lines
+    #ow <- (as.character (levels (lines$oneway)) [lines$oneway]) == "yes"
+    #ow <- !is.na (ow)
     g <- lines$geometry
-    mat <- matrix (0, nrow=length (g), ncol=7)
+    mat <- matrix (0, nrow=length (g), ncol=8)
     for (ln in 1:length (g))
     {
         geom <- g [[ln]]
@@ -24,9 +26,11 @@ getData <- function (bbox=c(-0.27,51.47,-0.20,51.50))
         mat [ln, 5] <- geom [,1] [length (geom [,1])]
         mat [ln, 6] <- geom [,2] [length (geom [,2])]
         mat [ln, 7] <- getDist (geom [,1], geom [,2])
+        mat [ln, 8] <- ow [ln]
     }
     osmData <- as.data.frame (mat)
     colnames (osmData) <- c ("from_id", "to_id", "from_lon", "from_lat",
-                             "to_lon", "to_lat", "distance")
+                             "to_lon", "to_lat", "distance", "isOneway")
+
     return (osmData)
 }
