@@ -14,3 +14,8 @@ Install
 ``` r
 devtools::install_github ('osm-router/osmprob')
 ```
+
+Test road graph
+---------------
+
+A sample graph for testing purposes can be found in `tests/sample_graph.Rda`. It can be accessed with `readRDS (file='tests/sample_graph.Rda')`. The graph contains OSM data including node IDs, node coordinates and edge weight in km. It has already been simplified with `makeCompactGraph ()`.
