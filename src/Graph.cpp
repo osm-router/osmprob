@@ -9,12 +9,17 @@ struct osm_vertex_t
 {
     private:
         std::set <osm_id_t> in, out;
+        double lat, lon;
 
     public:
         void addNeighborIn (osm_id_t osm_id) { in.insert (osm_id); }
         void addNeighborOut (osm_id_t osm_id) { out.insert (osm_id); }
         int getDegreeIn () { return in.size (); }
         int getDegreeOut () { return out.size (); }
+        void setLat (double lat) { this -> lat = lat; }
+        void setLon (double lon) { this -> lon = lon; }
+        double getLat () { return lat; }
+        double getLon () { return lon; }
         std::set <osm_id_t> getNeighborsIn () {return in; }
         std::set <osm_id_t> getNeighborsOut () {return out; }
         std::set <osm_id_t> getAllNeighbors ()
@@ -71,10 +76,14 @@ typedef std::vector <osm_edge_t> edgeVector;
 
 void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
 {
-    Rcpp::NumericVector to = gr [0];
-    Rcpp::NumericVector from = gr [1];
-    Rcpp::NumericVector weight = gr [2];
-    Rcpp::LogicalVector isOneway = gr [3];
+    Rcpp::NumericVector from = gr [0];
+    Rcpp::NumericVector to = gr [1];
+    Rcpp::NumericVector from_lon = gr [2];
+    Rcpp::NumericVector from_lat = gr [3];
+    Rcpp::NumericVector to_lon = gr [4];
+    Rcpp::NumericVector to_lat = gr [5];
+    Rcpp::NumericVector weight = gr [6];
+    Rcpp::LogicalVector isOneway = gr [7];
 
     for (int i = 0; i < to.length (); i ++)
     {
@@ -82,7 +91,12 @@ void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
         osm_id_t toId = to [i];
 
         if (vm.find (fromId) == vm.end ())
-            vm.insert (std::make_pair (fromId, osm_vertex_t ()));
+        {
+            osm_vertex_t fromV = osm_vertex_t ();
+            fromV.setLat (from_lat [i]);
+            fromV.setLon (from_lon [i]);
+            vm.insert (std::make_pair(fromId, fromV));
+        }
         osm_vertex_t fromVtx = vm.at (fromId);
         fromVtx.addNeighborOut (toId);
         if (!isOneway [i])
@@ -90,7 +104,12 @@ void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
         vm [fromId] = fromVtx;
 
         if (vm.find (toId) == vm.end ())
-            vm.insert (std::make_pair (toId, osm_vertex_t ()));
+        {
+            osm_vertex_t toV = osm_vertex_t ();
+            toV.setLat (to_lat [i]);
+            toV.setLon (to_lon [i]);
+            vm.insert (std::make_pair(toId, toV));
+        }
         osm_vertex_t toVtx = vm.at (toId);
         toVtx.addNeighborIn (fromId);
         if (!isOneway [i])
@@ -292,15 +311,32 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
 
     Rcpp::NumericVector fromOut;
     Rcpp::NumericVector toOut;
+    Rcpp::NumericVector from_latOut;
+    Rcpp::NumericVector from_lonOut;
+    Rcpp::NumericVector to_latOut;
+    Rcpp::NumericVector to_lonOut;
     Rcpp::NumericVector weightOut;
     for (auto e:edges)
     {
         osm_id_t from = e.getFromVertex ();
         osm_id_t to = e.getToVertex ();
+        osm_vertex_t fromVtx = vertices.at (from);
+        osm_vertex_t toVtx = vertices.at (to);
         fromOut.push_back (from);
         toOut.push_back (to);
         weightOut.push_back (e.weight);
+        from_latOut.push_back (fromVtx.getLat ());
+        from_lonOut.push_back (fromVtx.getLon ());
+        to_latOut.push_back (toVtx.getLat ());
+        to_lonOut.push_back (toVtx.getLon ());
     }
 
-    return Rcpp::DataFrame::create (Rcpp::Named ("from") = fromOut, Rcpp::Named ("to") = toOut, Rcpp::Named ("weight") = weightOut);
+    return Rcpp::DataFrame::create (
+            Rcpp::Named ("from") = fromOut,
+            Rcpp::Named ("to") = toOut,
+            Rcpp::Named ("weight") = weightOut,
+            Rcpp::Named ("from_lat") = from_latOut,
+            Rcpp::Named ("from_lon") = from_lonOut,
+            Rcpp::Named ("to_lat") = to_latOut,
+            Rcpp::Named ("to_lon") = to_lonOut);
 }
