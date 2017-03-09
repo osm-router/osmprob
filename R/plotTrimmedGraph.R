@@ -1,7 +1,10 @@
-library (shiny)
-library (leaflet)
-library (RColorBrewer)
-library (sf)
+#' Plot the graph network as a Shiny Leaflet app in a browser.
+#'
+#' @export
+plotGraph <- function ()
+{
+    shinyApp(ui, server)
+}
 
 getGraph <- function (fName)
 {
@@ -42,10 +45,11 @@ ui <- bootstrapPage(
   )
 ))
 
-#graph <- head (getGraph ("../tests/sample_graph_raw.Rda"), 100)
-graph <- getGraph ("../tests/sample_graph_raw.Rda")
-
 server <- function(input, output, session) {
+
+#  graph <- head (getGraph ("../tests/sample_graph_raw.Rda"), 100)
+  graph <- getGraph ("../tests/sample_graph_raw.Rda")
+  #TODO: replace this with the path to the actual data once it works.
 
   getCol <- function (trimmed)
   {
@@ -90,5 +94,3 @@ server <- function(input, output, session) {
      }
  })
 }
-
-shinyApp(ui, server)
