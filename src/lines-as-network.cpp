@@ -49,7 +49,7 @@ float haversine (float x1, float y1, float x2, float y2)
 //'
 //' Return OSM data in Simple Features format
 //'
-//' @param sf_lists An sf collection of LINESTRING objects
+//' @param sf_lines An sf collection of LINESTRING objects
 //'
 //' @return Rcpp::List objects of OSM data
 // [[Rcpp::export]]

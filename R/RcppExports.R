@@ -27,7 +27,7 @@ makeCompactGraph <- function(graph) {
 #'
 #' Return OSM data in Simple Features format
 #'
-#' @param sf_lists An sf collection of LINESTRING objects
+#' @param sf_lines An sf collection of LINESTRING objects
 #'
 #' @return Rcpp::List objects of OSM data
 rcpp_lines_as_network <- function(sf_lines) {
