@@ -28,3 +28,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_lines_as_network
+Rcpp::List rcpp_lines_as_network(const Rcpp::List& sf_lines);
+RcppExport SEXP osmprob_rcpp_lines_as_network(SEXP sf_linesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type sf_lines(sf_linesSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_lines_as_network(sf_lines));
+    return rcpp_result_gen;
+END_RCPP
+}

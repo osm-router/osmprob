@@ -14,7 +14,7 @@
 #' x <- osmdata::osmdata_sf(q)
 #' net <- osmlines_as_network (x)
 #' }
-osmlines_as_network <- function (lns) 
+osmlines_as_network <- function (lns)
 {
     if (is (lns, 'osmdata'))
         lns <- lns$osm_lines
@@ -23,13 +23,13 @@ osmlines_as_network <- function (lns)
 
     res <- rcpp_lines_as_network (lns)
     data.frame (
-                from_id = as.character (res [[2]] [,1]),
-                from_x = res [[1]] [,1],
-                from_y = res [[1]] [,2],
-                to_id = as.character (res [[2]] [,2]),
-                to_x = res [[1]] [,3],
-                to_y = res [[1]] [,4],
+                from_id = as.character (res [[2]] [, 1]),
+                from_x = res [[1]] [, 1],
+                from_y = res [[1]] [, 2],
+                to_id = as.character (res [[2]] [, 2]),
+                to_x = res [[1]] [, 3],
+                to_y = res [[1]] [, 4],
+                d = res [[1]] [, 5],
                 stringsAsFactors = FALSE
                 )
 }
-

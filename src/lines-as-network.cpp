@@ -30,8 +30,20 @@
  ***************************************************************************/
 
 #include <string>
+#include <cmath>
 
 #include <Rcpp.h>
+
+// Haversine great circle distance between two points
+float haversine (float x1, float y1, float x2, float y2)
+{
+    float xd = (x2 - x1) * M_PI / 180.0;
+    float yd = (y2 - y1) * M_PI / 180.0;
+    float d = sin (yd / 2.0) * sin (yd / 2.0) + cos (y2 * M_PI / 180.0) *
+        cos (y1 * M_PI / 180.0) * sin (xd / 2.0) * sin (xd / 2.0);
+    d = 2.0 * 3671.0 * asin (sqrt (d));
+    return (d);
+}
 
 //' rcpp_lines_as_network
 //'
@@ -64,7 +76,7 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
         sizes.push_back (gi.nrow ());
     }
 
-    Rcpp::NumericMatrix nmat = Rcpp::NumericMatrix (Rcpp::Dimension (nrows, 4));
+    Rcpp::NumericMatrix nmat = Rcpp::NumericMatrix (Rcpp::Dimension (nrows, 5));
     Rcpp::CharacterMatrix idmat = Rcpp::CharacterMatrix (Rcpp::Dimension (nrows, 2));
     Rcpp::CharacterVector colnames (nrows);
     nrows = 0;
@@ -83,6 +95,8 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
             nmat (nrows, 1) = gi (i-1, 1);
             nmat (nrows, 2) = gi (i, 0);
             nmat (nrows, 3) = gi (i, 1);
+            nmat (nrows, 4) = haversine (gi (i-1, 0), gi (i-1, 1),
+                    gi (i, 0), gi (i, 1));
             idmat (nrows, 0) = rnms (i-1);
             idmat (nrows, 1) = rnms (i);
             nrows++;
