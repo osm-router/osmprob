@@ -34,8 +34,8 @@ getGraph <- function (fName)
 }
 
 ui <- shiny::bootstrapPage(
-  tags <- list (style = c(type = "text/css", "html, body {width:100%;height:100%}
-              .checkbox, .control-label{color: #FFFFFF}")),
+  shiny::tags$style (type = "text/css", "html, body {width:100%;height:100%}
+              .checkbox, .control-label{color: #FFFFFF}"),
   leaflet::leafletOutput ("map", width = "100%", height = "100%"),
   shiny::absolutePanel (top = 10, right = 10,
     shiny::checkboxInput ("trimmed", "Trimmed", FALSE),
