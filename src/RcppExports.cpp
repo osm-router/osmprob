@@ -39,3 +39,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// dijkstra
+void dijkstra(Rcpp::DataFrame graph, long long start, long long end);
+RcppExport SEXP osmprob_dijkstra(SEXP graphSEXP, SEXP startSEXP, SEXP endSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type graph(graphSEXP);
+    Rcpp::traits::input_parameter< long long >::type start(startSEXP);
+    Rcpp::traits::input_parameter< long long >::type end(endSEXP);
+    dijkstra(graph, start, end);
+    return R_NilValue;
+END_RCPP
+}
+// rcpp_router
+Rcpp::NumericMatrix rcpp_router(Rcpp::DataFrame netdf, int start_node, int end_node);
+RcppExport SEXP osmprob_rcpp_router(SEXP netdfSEXP, SEXP start_nodeSEXP, SEXP end_nodeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type netdf(netdfSEXP);
+    Rcpp::traits::input_parameter< int >::type start_node(start_nodeSEXP);
+    Rcpp::traits::input_parameter< int >::type end_node(end_nodeSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_router(netdf, start_node, end_node));
+    return rcpp_result_gen;
+END_RCPP
+}

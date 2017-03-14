@@ -91,5 +91,5 @@ void dijkstra (Rcpp::DataFrame graph, long long start, long long end)
         g.add_vertex (from [i], {{to [i], weight [i]}});
 
     for (long long vtx : g.getPath (start,end))
-        std::cout << vtx << std::endl;
+        Rcpp::Rcout << vtx << std::endl;
 }
