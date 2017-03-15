@@ -73,7 +73,8 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
     Rcpp::CharacterVector owb = sf_lines [oneWayBicycleIndex];
 
     Rcpp::List geoms = sf_lines [nms.size () - 1];
-    bool isOneWay [(const int) geoms.length ()] = {false};
+    std::vector<bool> isOneWay (geoms.length ());
+    std::fill (isOneWay.begin (), isOneWay.end (), false);
     // Get dimension of matrix
     size_t nrows = 0;
     int ngeoms = 0;
