@@ -55,31 +55,49 @@ float haversine (float x1, float y1, float x2, float y2)
 // [[Rcpp::export]]
 Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
 {
-
-    size_t n = sf_lines.size ();
     Rcpp::CharacterVector nms = sf_lines.attr ("names");
     if (nms [nms.size () - 1] != "geometry")
         throw std::runtime_error ("sf_lines have no geometry component");
     if (nms [0] != "osm_id")
         throw std::runtime_error ("sf_lines have no osm_id component");
+    int oneWayIndex = -1;
+    int oneWayBicycleIndex = -1;
+    for (int i = 0; i < nms.size (); i++)
+    {
+        if (nms [i] == "oneway")
+            oneWayIndex = i;
+        if (nms [i] == "oneway.bicycle")
+            oneWayBicycleIndex = i;
+    }
+    Rcpp::CharacterVector ow = sf_lines [oneWayIndex];
+    Rcpp::CharacterVector owb = sf_lines [oneWayBicycleIndex];
 
     Rcpp::List geoms = sf_lines [nms.size () - 1];
-    // First get dimension of matrix, and store vector of sizes of each
-    // linestring object
-    std::vector <int> sizes;
+    bool isOneWay [geoms.length ()] = {false};
+    // Get dimension of matrix
     size_t nrows = 0;
+    int ngeoms = 0;
     for (auto g = geoms.begin (); g != geoms.end (); ++g)
     {
         // Rcpp uses an internal proxy iterator here, NOT a direct copy
         Rcpp::NumericMatrix gi = (*g);
-        nrows += gi.nrow () - 1;
-        sizes.push_back (gi.nrow ());
+        int rows = gi.nrow () - 1;
+        nrows += rows;
+        if (!(ow [ngeoms] == "yes" || ow [ngeoms] == "-1" ||
+                owb [ngeoms] == "yes" || owb [ngeoms] == "-1"))
+        {
+            nrows += rows;
+            isOneWay [ngeoms] = true;
+        }
+        ngeoms ++;
     }
 
     Rcpp::NumericMatrix nmat = Rcpp::NumericMatrix (Rcpp::Dimension (nrows, 5));
     Rcpp::CharacterMatrix idmat = Rcpp::CharacterMatrix (Rcpp::Dimension (nrows, 2));
     Rcpp::CharacterVector colnames (nrows);
+
     nrows = 0;
+    ngeoms = 0;
     for (auto g = geoms.begin (); g != geoms.end (); ++g)
     {
         Rcpp::NumericMatrix gi = (*g);
@@ -91,16 +109,28 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
 
         for (int i=1; i<gi.nrow (); i++)
         {
+            float d = haversine (gi (i-1, 0), gi (i-1, 1), gi (i, 0), gi (i, 1));
             nmat (nrows, 0) = gi (i-1, 0);
             nmat (nrows, 1) = gi (i-1, 1);
             nmat (nrows, 2) = gi (i, 0);
             nmat (nrows, 3) = gi (i, 1);
-            nmat (nrows, 4) = haversine (gi (i-1, 0), gi (i-1, 1),
-                    gi (i, 0), gi (i, 1));
+            nmat (nrows, 4) = d;
             idmat (nrows, 0) = rnms (i-1);
             idmat (nrows, 1) = rnms (i);
             nrows++;
+            if (isOneWay [ngeoms])
+            {
+                nmat (nrows, 0) = gi (i, 0);
+                nmat (nrows, 1) = gi (i, 1);
+                nmat (nrows, 2) = gi (i-1, 0);
+                nmat (nrows, 3) = gi (i-1, 1);
+                nmat (nrows, 4) = d;
+                idmat (nrows, 0) = rnms (i);
+                idmat (nrows, 1) = rnms (i-1);
+                nrows++;
+            }
         }
+        ngeoms ++;
     }
 
     Rcpp::List res (2);
