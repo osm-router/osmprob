@@ -29,11 +29,53 @@
  *  Compiler Options:   -std=c++11 
  ***************************************************************************/
 
+// [[Rcpp::depends(RcppArmadillo)]]
+
 #include "router-mp.h"
+#include <RcppArmadillo.h> // automatically loads Rcpp.h
 
-// [[Rcpp::depends(BH)]]
-#include <Rcpp.h>
 
+void dump_mat (std::vector <std::string> strs, unsigned nspaces, arma::mat * mat,
+        double null_value, unsigned precision)
+{
+    if (mat->n_rows != mat->n_cols)
+        throw std::runtime_error ("matrix is not square");
+    if (strs.size () != mat->n_rows)
+        throw std::runtime_error ("row/col labels not same size as matrix");
+
+    Rcpp::Rcout << "     ";
+    for (auto i : strs)
+    {
+        Rcpp::Rcout << i;
+        for (int j=0; j<nspaces; j++) Rcpp::Rcout << " ";
+    }
+    Rcpp::Rcout << std::endl << "    ";
+    for (int i=0; i<(strs.size () * (nspaces + 1)); i++)
+        Rcpp::Rcout << "-";
+    Rcpp::Rcout << std::endl;
+    for (arma::uword r=0; r < mat->n_rows; ++r)
+    {
+        Rcpp::Rcout << " " << strs [r] << "| ";
+        for (auto it = mat->begin_row (r); 
+                it != mat->end_row (r); ++it)
+        {
+            if ((*it) == null_value)
+            {
+                Rcpp::Rcout << " -";
+                for (int i=0; i<(nspaces - 1); i++) Rcpp::Rcout << " ";
+            } else
+            {
+                if (precision > 0)
+                    Rcpp::Rcout << std::fixed << std::setprecision (2) << 
+                        (*it) << " ";
+                else
+                    Rcpp::Rcout << std::setw (2) << (*it) << " ";
+            }
+        }
+        Rcpp::Rcout << std::endl;
+    }
+    Rcpp::Rcout << std::endl;
+}
 
 /************************************************************************
  ************************************************************************
@@ -69,6 +111,21 @@ Rcpp::NumericMatrix rcpp_router (Rcpp::DataFrame netdf,
     std::vector <weight_t> d = Rcpp::as <std::vector <weight_t> > (d_rcpp);
 
     Graph g (idfrom, idto, d, start_node, end_node);
+
+    Rcpp::Rcout << "----- prob matrix#0 -----" << std::endl;
+    std::vector <std::string> rnames = {"S", "0", "1", "2", "3", "4", "5", "E"};
+    dump_mat (rnames, 4, &g.p_mat, 0.0, 2);
+
+    for (int i=0; i<3; i++)
+    {
+        g.calc_h_vec ();
+        g.calc_n_mat ();
+        g.iterate_pq_mats ();
+
+        rnames = {"S", "0", "1", "2", "3", "4", "5", "E"};
+        Rcpp::Rcout << "----- prob matrix#" << i + 1 << " -----" << std::endl;
+        dump_mat (rnames, 4, &g.p_mat, 0.0, 2);
+    }
 
     std::vector <weight_t> min_distance;
     std::vector <vertex_t> previous;
