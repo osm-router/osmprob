@@ -69,8 +69,22 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
         if (nms [i] == "oneway.bicycle")
             oneWayBicycleIndex = i;
     }
-    Rcpp::CharacterVector ow = sf_lines [oneWayIndex];
-    Rcpp::CharacterVector owb = sf_lines [oneWayBicycleIndex];
+    Rcpp::CharacterVector ow = NULL;
+    Rcpp::CharacterVector owb = NULL;
+    if (oneWayIndex >= 0)
+        ow = sf_lines [oneWayIndex];
+    if (oneWayBicycleIndex >= 0)
+        owb = sf_lines [oneWayBicycleIndex];
+    if (ow.size () > 0)
+    {
+        if (ow.size () == owb.size ())
+        {
+            for (size_t i = 0; i != ow.size (); ++ i)
+                if (ow [i] == "NA" && owb [i] != "NA")
+                    ow [i] = owb [i];
+        } else if (owb.size () > ow.size ())
+            ow = owb;
+    }
 
     Rcpp::List geoms = sf_lines [nms.size () - 1];
     std::vector<bool> isOneWay (geoms.length ());
@@ -84,11 +98,13 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
         Rcpp::NumericMatrix gi = (*g);
         int rows = gi.nrow () - 1;
         nrows += rows;
-        if (!(ow [ngeoms] == "yes" || ow [ngeoms] == "-1" ||
-                owb [ngeoms] == "yes" || owb [ngeoms] == "-1"))
+        if (ngeoms < ow.size ())
         {
-            nrows += rows;
-            isOneWay [ngeoms] = true;
+            if (!(ow [ngeoms] == "yes" || ow [ngeoms] == "-1"))
+            {
+                nrows += rows;
+                isOneWay [ngeoms] = true;
+            }
         }
         ngeoms ++;
     }
