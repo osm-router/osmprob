@@ -52,6 +52,8 @@ float haversine (float x1, float y1, float x2, float y2)
 //' @param sf_lines An sf collection of LINESTRING objects
 //'
 //' @return Rcpp::List objects of OSM data
+//'
+//' @noRd
 // [[Rcpp::export]]
 Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
 {
@@ -120,11 +122,19 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
         Rcpp::NumericMatrix gi = (*g);
 
         Rcpp::List ginames = gi.attr ("dimnames");
-        Rcpp::CharacterVector rnms = ginames [0];
+        Rcpp::CharacterVector rnms;
+        if (ginames.length () > 0)
+            rnms = ginames [0];
+        else
+        {
+            rnms = Rcpp::CharacterVector (gi.nrow ());
+            for (int i = 0; i < gi.nrow (); i ++)
+                rnms [i] = std::to_string (i);
+        }
         if (rnms.size () != gi.nrow ())
             throw std::runtime_error ("geom size differs from rownames");
 
-        for (int i=1; i<gi.nrow (); i++)
+        for (int i = 1; i < gi.nrow (); i ++)
         {
             float d = haversine (gi (i-1, 0), gi (i-1, 1), gi (i, 0), gi (i, 1));
             nmat (nrows, 0) = gi (i-1, 0);
@@ -134,7 +144,7 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
             nmat (nrows, 4) = d;
             idmat (nrows, 0) = rnms (i-1);
             idmat (nrows, 1) = rnms (i);
-            nrows++;
+            nrows ++;
             if (isOneWay [ngeoms])
             {
                 nmat (nrows, 0) = gi (i, 0);
@@ -144,7 +154,7 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
                 nmat (nrows, 4) = d;
                 idmat (nrows, 0) = rnms (i);
                 idmat (nrows, 1) = rnms (i-1);
-                nrows++;
+                nrows ++;
             }
         }
         ngeoms ++;
