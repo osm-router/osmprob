@@ -31,6 +31,7 @@ makeCompactGraph <- function(graph) {
 #'
 #' @return Rcpp::List objects of OSM data
 #'
+#' @noRd
 rcpp_lines_as_network <- function(sf_lines) {
     .Call('osmprob_rcpp_lines_as_network', PACKAGE = 'osmprob', sf_lines)
 }
