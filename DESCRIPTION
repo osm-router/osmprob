@@ -18,9 +18,9 @@ Imports:
     RColorBrewer,
     sf,
     shiny
-LinkingTo:
-    BH,
-    Rcpp
+LinkingTo: 
+    Rcpp,
+    RcppArmadillo
 RoxygenNote: 6.0.1
 SystemRequirements: C++11
 Suggests: testthat

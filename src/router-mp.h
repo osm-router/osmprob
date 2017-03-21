@@ -40,7 +40,8 @@
 #include <algorithm>
 #include <iterator>
 
-#include <boost/numeric/ublas/matrix.hpp>
+#include <RcppArmadillo.h>
+// [[Rcpp::depends(RcppArmadillo)]]
 
 typedef int vertex_t;
 typedef double weight_t;
@@ -55,32 +56,38 @@ struct neighbor {
 };
 
 typedef std::vector <std::vector <neighbor> > adjacency_list_t;
-typedef boost::numeric::ublas::matrix <weight_t> weight_arr;
 
 class Graph
 {
     protected:
         unsigned _start_node, _end_node, _num_vertices;
+        double _eta; // The entropy parameter
         const std::vector <vertex_t> _idfrom, _idto;
         const std::vector <weight_t> _d;
 
     public:
         adjacency_list_t adjlist; // the graph data
-        weight_arr cost_mat;
+        arma::mat d_mat, q_mat, n_mat; // <double>
+        arma::vec h_vec, x_vec, v_vec; // also <double>
 
         Graph (std::vector <vertex_t> idfrom, std::vector <vertex_t> idto,
-                std::vector <weight_t> d, unsigned start_node, unsigned end_node)
+                std::vector <weight_t> d, unsigned start_node, unsigned end_node,
+                double eta)
             : _idfrom (idfrom), _idto (idto), _d (d),
-                _start_node (start_node), _end_node (end_node)
+                _start_node (start_node), _end_node (end_node), _eta (eta)
         {
             _num_vertices = fillGraph (); // fills adjlist with (idfrom, idto, d)
-            make_cost_mat ();
+            make_dq_mats ();
+            make_n_mat ();
         }
         ~Graph ()
         {
             for (int i=0; i<adjlist.size (); i++)
                 adjlist [i].clear ();
             adjlist.clear ();
+            d_mat.reset ();
+            q_mat.reset ();
+            n_mat.reset ();
         }
 
         unsigned return_num_vertices() { return _num_vertices;   }
@@ -89,15 +96,23 @@ class Graph
         std::vector <vertex_t> return_idfrom() { return _idfrom; }
         std::vector <vertex_t> return_idto() { return _idto; }
         std::vector <weight_t> return_d() { return _d; }
+        double return_eta() { return _eta;  }
 
         unsigned fillGraph ();
+        void dumpGraph ();
+        void dumpMat (arma::mat mat, std::string mat_name,
+                std::vector <std::string> cnames);
         void Dijkstra (vertex_t source, 
                 std::vector <weight_t> &min_distance,
                 std::vector <vertex_t> &previous);
         std::vector <vertex_t> GetShortestPathTo (vertex_t vertex, 
                 const std::vector <vertex_t> &previous);
 
-        void make_cost_mat ();
+        void make_dq_mats ();
+        void make_n_mat ();
+        void make_hxv_vecs ();
+        void iterate_q_mat ();
+        int calculate_q_mat (double tol, unsigned max_iter);
 };
 
 
@@ -120,20 +135,42 @@ unsigned Graph::fillGraph ()
     for (int i=0; i<idfrom.size (); i++)
     {
         int idfromi = idfrom [i];
-        if (idfromi == from_here)
-        {
-            nblist.push_back (neighbor (idto [i], d [i]));
-        } else
+        if (idfromi != from_here)
         {
             from_here = idfromi;
             adjlist.push_back (nblist);
             nblist.clear ();
         }
+        nblist.push_back (neighbor (idto [i], d [i]));
     }
+    adjlist.push_back (nblist);
+    nblist.clear ();
     unsigned num_vertices = adjlist.size ();
 
     return num_vertices;
 }
+
+void Graph::dumpGraph ()
+{
+    for (int i=0; i<adjlist.size (); i++)
+    {
+        for (int j=0; j<adjlist [i].size (); j++)
+            Rcpp::Rcout << "[" << i << "] (" <<
+                adjlist [i] [j].target << ", " << adjlist [i] [j].weight <<
+                ")" << std::endl;
+    }
+}
+
+void Graph::dumpMat (arma::mat mat, std::string mat_name,
+        std::vector <std::string> cnames)
+{
+    Rcpp::Rcout << "------  " << mat_name << "_MAT  ------" << std::endl;
+    Rcpp::Rcout << "        ";
+    for (auto i : cnames)
+        Rcpp::Rcout << i << "       ";
+    Rcpp::Rcout << std::endl << mat << std::endl;
+}
+
 
 /************************************************************************
  ************************************************************************
@@ -201,41 +238,3 @@ std::vector <vertex_t> Graph::GetShortestPathTo (vertex_t vertex,
     return path;
 }
 
-/************************************************************************
- ************************************************************************
- **                                                                    **
- **                            MAKECOSTMAT                             **
- **                                                                    **
- ************************************************************************
- ************************************************************************/
-
-void Graph::make_cost_mat ()
-{
-    /* the diagonal of cost_mat is 0, otherwise the first row contains only one
-     * finite entry for escape from start_node. The last column similarly
-     * contains only one finite entry for absorption by end_node. */
-    const unsigned num_vertices = return_num_vertices ();
-    const unsigned start_node = return_start_node ();
-    const unsigned end_node = return_end_node ();
-
-    cost_mat = boost::numeric::ublas::scalar_matrix <weight_t> 
-        (num_vertices + 2, num_vertices + 2, max_weight);
-    // set diagonal to 0:
-    for (unsigned i = 0; i < cost_mat.size1 (); i++)
-        cost_mat (i, i) = 0.0;
-    // set weights from start_node and to end_node:
-    cost_mat (0, start_node + 1) = 0.0;
-    cost_mat (end_node + 1, cost_mat.size1 () - 1) = 0.0;
-
-    for (int i=0; i<num_vertices; i++)
-    {
-        const std::vector <neighbor> &nbs = adjlist [i];
-        for (std::vector <neighbor>::const_iterator nb_iter = nbs.begin ();
-                nb_iter != nbs.end (); nb_iter++)
-        {
-            size_t d = std::distance (nbs.begin (), nb_iter);
-            // TODO: Implement one-way
-            cost_mat (i + 1, d + 1) = cost_mat (d + 1, i + 1) = nb_iter->weight;
-        }
-    }
-}

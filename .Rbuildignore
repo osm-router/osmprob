@@ -4,6 +4,5 @@ makefile$
 \.Rmd$
 \.html$
 ^figure/
-^src/Makevars$
 ^runTest.R$
 ^tmux-start.bash$
