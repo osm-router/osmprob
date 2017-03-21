@@ -5,18 +5,6 @@
 
 using namespace Rcpp;
 
-// getDist
-double getDist(Rcpp::NumericVector xAll, Rcpp::NumericVector yAll);
-RcppExport SEXP osmprob_getDist(SEXP xAllSEXP, SEXP yAllSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type xAll(xAllSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type yAll(yAllSEXP);
-    rcpp_result_gen = Rcpp::wrap(getDist(xAll, yAll));
-    return rcpp_result_gen;
-END_RCPP
-}
 // makeCompactGraph
 Rcpp::DataFrame makeCompactGraph(Rcpp::DataFrame graph);
 RcppExport SEXP osmprob_makeCompactGraph(SEXP graphSEXP) {
