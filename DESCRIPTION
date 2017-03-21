@@ -1,14 +1,14 @@
 Package: osmprob
 Type: Package
-Title: What the Package Does in One 'Title Case' Line
+Title: Calculate Probabilistic Routes
 Version: 1.0
 Date: 2016-08-02
 Authors@R: c(
     person ("Andreas", "Petutschnig", email="andreas@petutschnig.de", role=c("aut", "cre")),
     person ("Mark", "Padgham", role="aut"))
 Maintainer: Andreas Petutschnig <andreas@petutschnig.de>
-Description: One paragraph description of what the package does as one
-    or more full sentences.
+Description: Calculates probabilistic routes on a OSM street graph and displays
+    the resulting probabilities in a shiny/leaflet web app.
 License: GPL (>= 2)
 Imports:
     Rcpp (>= 0.12.6),
@@ -19,7 +19,6 @@ Imports:
     sf,
     shiny
 LinkingTo: 
-    BH,
     Rcpp
 RoxygenNote: 6.0.1
 SystemRequirements: C++11

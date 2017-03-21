@@ -31,7 +31,6 @@
 
 #include "router-mp.h"
 
-// [[Rcpp::depends(BH)]]
 #include <Rcpp.h>
 
 
