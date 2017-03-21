@@ -61,20 +61,23 @@ class Graph
 {
     protected:
         unsigned _start_node, _end_node, _num_vertices;
+        double _eta; // The entropy parameter
         const std::vector <vertex_t> _idfrom, _idto;
         const std::vector <weight_t> _d;
 
     public:
         adjacency_list_t adjlist; // the graph data
         arma::mat d_mat, q_mat, n_mat; // <double>
+        arma::vec h_vec, x_vec, v_vec; // also <double>
 
         Graph (std::vector <vertex_t> idfrom, std::vector <vertex_t> idto,
-                std::vector <weight_t> d, unsigned start_node, unsigned end_node)
+                std::vector <weight_t> d, unsigned start_node, unsigned end_node,
+                double eta)
             : _idfrom (idfrom), _idto (idto), _d (d),
-                _start_node (start_node), _end_node (end_node)
+                _start_node (start_node), _end_node (end_node), _eta (eta)
         {
             _num_vertices = fillGraph (); // fills adjlist with (idfrom, idto, d)
-            make_dq_mat ();
+            make_dq_mats ();
             make_n_mat ();
         }
         ~Graph ()
@@ -93,18 +96,23 @@ class Graph
         std::vector <vertex_t> return_idfrom() { return _idfrom; }
         std::vector <vertex_t> return_idto() { return _idto; }
         std::vector <weight_t> return_d() { return _d; }
+        double return_eta() { return _eta;  }
 
         unsigned fillGraph ();
         void dumpGraph ();
-        void dumpMat (arma::mat mat, std::vector <std::string> cnames);
+        void dumpMat (arma::mat mat, std::string mat_name,
+                std::vector <std::string> cnames);
         void Dijkstra (vertex_t source, 
                 std::vector <weight_t> &min_distance,
                 std::vector <vertex_t> &previous);
         std::vector <vertex_t> GetShortestPathTo (vertex_t vertex, 
                 const std::vector <vertex_t> &previous);
 
-        void make_dq_mat ();
+        void make_dq_mats ();
         void make_n_mat ();
+        void make_hxv_vecs ();
+        void iterate_q_mat ();
+        int calculate_q_mat (double tol, unsigned max_iter);
 };
 
 
@@ -153,11 +161,13 @@ void Graph::dumpGraph ()
     }
 }
 
-void Graph::dumpMat (arma::mat mat, std::vector <std::string> cnames)
+void Graph::dumpMat (arma::mat mat, std::string mat_name,
+        std::vector <std::string> cnames)
 {
+    Rcpp::Rcout << "------  " << mat_name << "_MAT  ------" << std::endl;
     Rcpp::Rcout << "        ";
     for (auto i : cnames)
-        Rcpp::Rcout << i << "      ";
+        Rcpp::Rcout << i << "       ";
     Rcpp::Rcout << std::endl << mat << std::endl;
 }
 

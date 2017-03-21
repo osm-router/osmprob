@@ -53,15 +53,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_router
-Rcpp::NumericMatrix rcpp_router(Rcpp::DataFrame netdf, int start_node, int end_node);
-RcppExport SEXP osmprob_rcpp_router(SEXP netdfSEXP, SEXP start_nodeSEXP, SEXP end_nodeSEXP) {
+Rcpp::NumericMatrix rcpp_router(Rcpp::DataFrame netdf, int start_node, int end_node, double eta);
+RcppExport SEXP osmprob_rcpp_router(SEXP netdfSEXP, SEXP start_nodeSEXP, SEXP end_nodeSEXP, SEXP etaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::DataFrame >::type netdf(netdfSEXP);
     Rcpp::traits::input_parameter< int >::type start_node(start_nodeSEXP);
     Rcpp::traits::input_parameter< int >::type end_node(end_nodeSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_router(netdf, start_node, end_node));
+    Rcpp::traits::input_parameter< double >::type eta(etaSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_router(netdf, start_node, end_node, eta));
     return rcpp_result_gen;
 END_RCPP
 }

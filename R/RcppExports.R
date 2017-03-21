@@ -56,9 +56,12 @@ dijkstra <- function(graph, start, end) {
 #' @param netdf \code{data.frame} containing network connections
 #' @param start_node Starting node for shortest path route
 #' @param end_node Ending node for shortest path route
+#' @param eta The entropy parameter
 #'
 #' @return Rcpp::List objects of OSM data
-rcpp_router <- function(netdf, start_node, end_node) {
-    .Call('osmprob_rcpp_router', PACKAGE = 'osmprob', netdf, start_node, end_node)
+#'
+#' @noRd
+rcpp_router <- function(netdf, start_node, end_node, eta) {
+    .Call('osmprob_rcpp_router', PACKAGE = 'osmprob', netdf, start_node, end_node, eta)
 }
 

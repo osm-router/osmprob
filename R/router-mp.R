@@ -3,6 +3,7 @@
 #' @param netdf \code{data.frame} of network
 #' @param start_node Starting node for shortest path route
 #' @param end_node Ending node for shortest path route
+#' @param eta The parameter controlling the entropy (scale is arbitrary)
 #'
 #' @note Function called 'osm_router' to avoid ambiguities with all other things
 #' that might be called 'router'. \code{netdt} must have just three columns of
@@ -20,7 +21,7 @@
 #'                      d = c (7., 9., 14., 7., 10., 15., 9., 10., 11., 2.,
 #'                             15., 11., 6., 6., 9., 14., 2., 9.))
 #' osm_router (netdf, 1, 5)
-osm_router <- function (netdf, start_node, end_node)
+osm_router <- function (netdf, start_node, end_node, eta=1)
 {
     if (!(is (netdf, 'data.frame') | is (netdf, 'matrix')))
         stop ('netdf must be a data.frame')
@@ -34,5 +35,5 @@ osm_router <- function (netdf, start_node, end_node)
     else
         colnames (netdf) <- cnames
 
-    rcpp_router (netdf, start_node, end_node)
+    rcpp_router (netdf, start_node, end_node, eta)
 }

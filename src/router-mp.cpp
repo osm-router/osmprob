@@ -36,12 +36,12 @@
 /************************************************************************
  ************************************************************************
  **                                                                    **
- **                             MAKE_DQ_MAT                            **
+ **                             MAKE_DQ_MATS                           **
  **                                                                    **
  ************************************************************************
  ************************************************************************/
 
-void Graph::make_dq_mat ()
+void Graph::make_dq_mats ()
 {
     /* the diagonal of d_mat is 0, otherwise the first row contains only one
      * finite entry for escape from start_node. The last column similarly
@@ -104,6 +104,89 @@ void Graph::make_n_mat ()
 /************************************************************************
  ************************************************************************
  **                                                                    **
+ **                           MAKE_HXV_VECS                            **
+ **                                                                    **
+ ************************************************************************
+ ************************************************************************/
+
+void Graph::make_hxv_vecs ()
+{
+    arma::mat lq = -arma::log (q_mat.t ());
+    // q_mat has zeros, so log (q) has non-finite values which are here reset to
+    // zero so they don't contribute to the resultant sums.
+    lq.elem (arma::find_nonfinite (lq)).zeros ();
+    arma::mat temp_mat = q_mat * lq; // arma requires this intermediate stage
+    h_vec = temp_mat.diag ();
+    x_vec = n_mat * h_vec;
+
+    arma::mat dtemp = d_mat;
+    dtemp.elem (arma::find_nonfinite (dtemp)).zeros ();
+    temp_mat = q_mat * dtemp.t ();
+    v_vec = n_mat * temp_mat.diag ();
+}
+
+
+/************************************************************************
+ ************************************************************************
+ **                                                                    **
+ **                           ITERATE_Q_MAT                            **
+ **                                                                    **
+ ************************************************************************
+ ************************************************************************/
+
+void Graph::iterate_q_mat ()
+{
+    const double eta_inv = 1.0 / return_eta ();
+    const arma::rowvec x_row = arma::conv_to <arma::rowvec>::from (x_vec),
+          v_row = arma::conv_to <arma::rowvec>::from (v_vec);
+
+    // TODO: Use arma::sum to get row sums and avoid looping over rows?
+    // - this would require making matrices of x_vec and v_vec, so may not be
+    // any quicker?
+    q_mat.replace (0.0, max_weight);
+    for (arma::uword r=0; r<q_mat.n_rows; ++r)
+    {
+        //arma::rowvec temp_row = q_mat.row (r);
+        //arma::rowvec temp_row = q_mat.row (r);
+        //temp_row.replace (0.0, max_weight);
+        //temp_row = arma::exp (-eta_inv * (temp_row + v_row) + x_row);
+        arma::rowvec temp_row = arma::exp (-eta_inv * (q_mat.row (r) + 
+                    v_row) + x_row);
+        q_mat.row (r) = temp_row / arma::sum (temp_row);
+    }
+}
+
+/************************************************************************
+ ************************************************************************
+ **                                                                    **
+ **                         CALCULATE_Q_MAT                            **
+ **                                                                    **
+ ************************************************************************
+ ************************************************************************/
+
+int Graph::calculate_q_mat (double tol, unsigned max_iter)
+{
+    int nloops = 0; 
+
+    arma::mat q_mat_old;
+
+    double delta = 1.0;
+    while (delta > tol & nloops < max_iter)
+    {
+        q_mat_old = q_mat;
+        make_hxv_vecs ();
+        iterate_q_mat ();
+        delta = arma::accu (arma::abs (q_mat_old - q_mat));
+        nloops++;
+    }
+
+    return nloops;
+}
+
+
+/************************************************************************
+ ************************************************************************
+ **                                                                    **
  **                          RCPP_ROUTER                               **
  **                                                                    **
  ************************************************************************
@@ -116,11 +199,14 @@ void Graph::make_n_mat ()
 //' @param netdf \code{data.frame} containing network connections
 //' @param start_node Starting node for shortest path route
 //' @param end_node Ending node for shortest path route
+//' @param eta The entropy parameter
 //'
 //' @return Rcpp::List objects of OSM data
+//'
+//' @noRd
 // [[Rcpp::export]]
 Rcpp::NumericMatrix rcpp_router (Rcpp::DataFrame netdf, 
-        int start_node, int end_node)
+        int start_node, int end_node, double eta)
 {
     // Extract vectors from netdf and convert to std:: types
     Rcpp::NumericVector idfrom_rcpp = netdf ["xfr"];
@@ -134,13 +220,12 @@ Rcpp::NumericMatrix rcpp_router (Rcpp::DataFrame netdf,
     Rcpp::NumericVector d_rcpp = netdf ["d"];
     std::vector <weight_t> d = Rcpp::as <std::vector <weight_t> > (d_rcpp);
 
-    Graph g (idfrom, idto, d, start_node, end_node);
+    Graph g (idfrom, idto, d, start_node, end_node, eta);
 
+    int nloops = g.calculate_q_mat (1.0e-6, 1000000);
+    Rcpp::Rcout << "---converged in " << nloops << " loops" << std::endl;
     std::vector <std::string> cnames = {"S", "0", "1", "2", "3", "4", "5", "E"};
-    Rcpp::Rcout << "------  Q_MAT  ------" << std::endl;
-    g.dumpMat (g.q_mat, cnames);
-    Rcpp::Rcout << "------  N_MAT  ------" << std::endl;
-    g.dumpMat (g.n_mat, cnames);
+    g.dumpMat (g.q_mat, "Q1", cnames);
 
     std::vector <weight_t> min_distance;
     std::vector <vertex_t> previous;

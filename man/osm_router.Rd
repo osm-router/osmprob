@@ -4,7 +4,7 @@
 \alias{osm_router}
 \title{router test}
 \usage{
-osm_router(netdf, start_node, end_node)
+osm_router(netdf, start_node, end_node, eta = 1)
 }
 \arguments{
 \item{netdf}{\code{data.frame} of network}
@@ -12,6 +12,8 @@ osm_router(netdf, start_node, end_node)
 \item{start_node}{Starting node for shortest path route}
 
 \item{end_node}{Ending node for shortest path route}
+
+\item{eta}{The parameter controlling the entropy (scale is arbitrary)}
 }
 \description{
 router test
