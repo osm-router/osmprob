@@ -11,5 +11,5 @@ test_that ("makeCompactGraph", {
                weight <- c (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3)
                val <- rep (1, length (weight))
                graph_test <- data.frame (from, to, weight, val, val, val, val)
-               expect_equivalent (graph_out, graph_test)
+               testthat::expect_equivalent (graph_out, graph_test)
 })
