@@ -4,7 +4,11 @@
 \alias{plotGraph}
 \title{Plot the graph network as a Shiny Leaflet app in a browser.}
 \usage{
-plotGraph()
+plotGraph(osmFile = "../tests/sample_graph_raw.Rda")
+}
+\arguments{
+\item{osmFile}{A \code{data.frame} containing the street graph to be
+displayed}
 }
 \description{
 Plot the graph network as a Shiny Leaflet app in a browser.

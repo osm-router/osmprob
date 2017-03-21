@@ -1,7 +1,9 @@
 #' Plot the graph network as a Shiny Leaflet app in a browser.
 #'
+#' @param osmFile A \code{data.frame} containing the street graph to be
+#' displayed
+#'
 #' @export
-
 plotGraph <- function (osmFile="../tests/sample_graph_raw.Rda")
 {
     inputGraph <<- osmFile
