@@ -1,8 +1,10 @@
 #' Plot the graph network as a Shiny Leaflet app in a browser.
 #'
 #' @export
-plotGraph <- function ()
+
+plotGraph <- function (osmFile="../tests/sample_graph_raw.Rda")
 {
+    inputGraph <<- osmFile
     shiny::shinyApp(ui, server)
 }
 
@@ -45,12 +47,9 @@ ui <- shiny::bootstrapPage(
   )
 ))
 
-server <- function(input, output, session) {
-
-#  graph <- head (getGraph ("../tests/sample_graph_raw.Rda"), 100)
-  graph <- getGraph ("../tests/sample_graph_raw.Rda")
-  #TODO: replace this with the path to the actual data once it works.
-
+server <- function(input, output, session)
+{
+  graph <- getGraph (inputGraph)
   getCol <- function (trimmed)
   {
       keep <- "#FF0000"
