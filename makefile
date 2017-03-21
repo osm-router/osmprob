@@ -1,4 +1,4 @@
-RFILE = README
+RFILE = aaa
 
 all: knith open 
 

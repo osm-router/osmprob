@@ -26,6 +26,7 @@ osm_router <- function (netdf, start_node, end_node)
         stop ('netdf must be a data.frame')
     if (ncol (netdf) != 3)
         stop ('netdf must have 3 columns')
+
     # force names for rcpp call
     cnames <- c ('xfr', 'xto', 'd')
     if (is.data.frame (netdf))
@@ -33,5 +34,5 @@ osm_router <- function (netdf, start_node, end_node)
     else
         colnames (netdf) <- cnames
 
-    rcpp_router (netdf, start_node - 1, end_node - 1)
+    rcpp_router (netdf, start_node, end_node)
 }

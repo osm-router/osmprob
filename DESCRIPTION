@@ -19,8 +19,8 @@ Imports:
     sf,
     shiny
 LinkingTo: 
-    BH,
-    Rcpp
+    Rcpp,
+    RcppArmadillo
 RoxygenNote: 6.0.1
 SystemRequirements: C++11
 Suggests: testthat
