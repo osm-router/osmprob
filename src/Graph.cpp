@@ -3,7 +3,7 @@
 #include <vector>
 #include <map>
 
-typedef long long osm_id_t;
+typedef std::string osm_id_t;
 
 struct osm_vertex_t
 {
@@ -76,8 +76,8 @@ typedef std::vector <osm_edge_t> edgeVector;
 
 void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
 {
-    Rcpp::NumericVector from = gr [0];
-    Rcpp::NumericVector to = gr [3];
+    Rcpp::StringVector from = gr [0];
+    Rcpp::StringVector to = gr [3];
     Rcpp::NumericVector from_lon = gr [1];
     Rcpp::NumericVector from_lat = gr [2];
     Rcpp::NumericVector to_lon = gr [4];
@@ -86,8 +86,8 @@ void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
 
     for (int i = 0; i < to.length (); i ++)
     {
-        osm_id_t fromId = from [i];
-        osm_id_t toId = to [i];
+        osm_id_t fromId = std::string (from [i]);
+        osm_id_t toId = std::string (to [i]);
 
         if (vm.find (fromId) == vm.end ())
         {
@@ -299,8 +299,8 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
     removeSmallGraphComponents (vertices, edges, components, largestComponent);
     removeIntermediateVertices (vertices, edges);
 
-    Rcpp::NumericVector fromOut;
-    Rcpp::NumericVector toOut;
+    Rcpp::StringVector fromOut;
+    Rcpp::StringVector toOut;
     Rcpp::NumericVector from_latOut;
     Rcpp::NumericVector from_lonOut;
     Rcpp::NumericVector to_latOut;
