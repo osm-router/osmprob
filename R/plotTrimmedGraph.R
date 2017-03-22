@@ -6,6 +6,8 @@
 #' @export
 plotGraph <- function (osmFile="../tests/sample_graph_raw.Rda")
 {
+    # osmFile can't be passed as a parameter, so it is passed to the server
+    # function via an environment variable
     inputGraph <<- osmFile
     shiny::shinyApp(ui, server)
 }
@@ -52,12 +54,6 @@ ui <- shiny::bootstrapPage(
 server <- function(input, output, session)
 {
   graph <- getGraph (inputGraph)
-  getCol <- function (trimmed)
-  {
-      keep <- "#FF0000"
-      trim <- "#00FF00"
-      sapply (trimmed, function (x) if (x) trim else keep)
-  }
 
   colorpal <- shiny::reactive({
     dat <- filtered ()
