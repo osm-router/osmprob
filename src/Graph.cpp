@@ -77,13 +77,12 @@ typedef std::vector <osm_edge_t> edgeVector;
 void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
 {
     Rcpp::NumericVector from = gr [0];
-    Rcpp::NumericVector to = gr [1];
-    Rcpp::NumericVector from_lon = gr [2];
-    Rcpp::NumericVector from_lat = gr [3];
+    Rcpp::NumericVector to = gr [3];
+    Rcpp::NumericVector from_lon = gr [1];
+    Rcpp::NumericVector from_lat = gr [2];
     Rcpp::NumericVector to_lon = gr [4];
     Rcpp::NumericVector to_lat = gr [5];
     Rcpp::NumericVector weight = gr [6];
-    Rcpp::LogicalVector isOneway = gr [7];
 
     for (int i = 0; i < to.length (); i ++)
     {
@@ -99,8 +98,6 @@ void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
         }
         osm_vertex_t fromVtx = vm.at (fromId);
         fromVtx.addNeighborOut (toId);
-        if (!isOneway [i])
-            fromVtx.addNeighborIn (toId);
         vm [fromId] = fromVtx;
 
         if (vm.find (toId) == vm.end ())
@@ -112,17 +109,10 @@ void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
         }
         osm_vertex_t toVtx = vm.at (toId);
         toVtx.addNeighborIn (fromId);
-        if (!isOneway [i])
-            toVtx.addNeighborOut (fromId);
         vm [toId] = toVtx;
 
         osm_edge_t edge = osm_edge_t (fromId, toId, weight [i]);
         e.push_back (edge);
-        if (!isOneway [i])
-        {
-            edge = osm_edge_t (toId, fromId, weight [i]);
-            e.push_back (edge);
-        }
     }
 }
 
