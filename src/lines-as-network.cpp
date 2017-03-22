@@ -117,6 +117,7 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
 
     nrows = 0;
     ngeoms = 0;
+    int fakeId = 0;
     for (auto g = geoms.begin (); g != geoms.end (); ++g)
     {
         Rcpp::NumericMatrix gi = (*g);
@@ -129,7 +130,7 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
         {
             rnms = Rcpp::CharacterVector (gi.nrow ());
             for (int i = 0; i < gi.nrow (); i ++)
-                rnms [i] = std::to_string (i);
+                rnms [i] = fakeId ++;
         }
         if (rnms.size () != gi.nrow ())
             throw std::runtime_error ("geom size differs from rownames");

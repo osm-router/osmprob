@@ -4,24 +4,28 @@
 #' displayed
 #'
 #' @export
-plotGraph <- function (osmFile="../tests/sample_graph_raw.Rda")
+plotGraph <- function (osmFile="../tests/compact-ways-munich.Rda")
 {
     # osmFile can't be passed as a parameter, so it is passed to the server
     # function via an environment variable
     inputGraph <<- osmFile
     shiny::shinyApp(ui, server)
 }
+inputGraph <- ""
 
 getGraph <- function (fName)
 {
-    datRaw <- readRDS (fName)
-    datRaw$from_lat <- sapply (datRaw$from_lat, function (x) as.numeric (as.character (x)))
-    datRaw$from_lon <- sapply (datRaw$from_lon, function (x) as.numeric (as.character (x)))
-    datRaw$to_lat <- sapply (datRaw$to_lat, function (x) as.numeric (as.character (x)))
-    datRaw$to_lon <- sapply (datRaw$to_lon, function (x) as.numeric (as.character (x)))
+    if (is (fName, "data.frame"))
+        dat <- fName
+    else
+        dat <- readRDS (file = fName)
+    dat$from_lat <- sapply (dat$from_lat, function (x) as.numeric (as.character (x)))
+    dat$from_lon <- sapply (dat$from_lon, function (x) as.numeric (as.character (x)))
+    dat$to_lat <- sapply (dat$to_lat, function (x) as.numeric (as.character (x)))
+    dat$to_lon <- sapply (dat$to_lon, function (x) as.numeric (as.character (x)))
 
-    from <- cbind (datRaw$from_lon, datRaw$from_lat)
-    to <- cbind (datRaw$to_lon, datRaw$to_lat)
+    from <- cbind (dat$from_lon, dat$from_lat)
+    to <- cbind (dat$to_lon, dat$to_lat)
     fromTo <- cbind (from, to)
     graphLines <- list ("LINESTRING", dim (fromTo)[1])
     for (i in 1:dim (fromTo)[1])
@@ -31,11 +35,11 @@ getGraph <- function (fName)
     }
 
     graph <- sf::st_sfc (graphLines, crs = 4326)
-    datRaw$from_lat <- NULL
-    datRaw$from_lon <- NULL
-    datRaw$to_lat <- NULL
-    datRaw$to_lon <- NULL
-    graph <- sf::st_sf (graph, datRaw)
+    dat$from_lat <- NULL
+    dat$from_lon <- NULL
+    dat$to_lat <- NULL
+    dat$to_lon <- NULL
+    graph <- sf::st_sf (graph, dat)
     graph
 }
 
@@ -44,8 +48,8 @@ ui <- shiny::bootstrapPage(
               .checkbox, .control-label{color: #FFFFFF}"),
   leaflet::leafletOutput ("map", width = "100%", height = "100%"),
   shiny::absolutePanel (top = 10, right = 10,
-    shiny::checkboxInput ("trimmed", "Trimmed", FALSE),
-    shiny::checkboxInput ("rest", "Remaining", FALSE),
+    # shiny::checkboxInput ("trimmed", "Trimmed", FALSE),
+    # shiny::checkboxInput ("rest", "Remaining", FALSE),
     shiny::selectInput("colors", "Color Scheme", selected = 'Paired',
     rownames(subset(RColorBrewer::brewer.pal.info, colorblind == TRUE))
   )
@@ -70,20 +74,23 @@ server <- function(input, output, session)
     bb <- as.vector (sf::st_bbox (graph))
     leaflet::leaflet (graph, options = leaflet::leafletOptions (maxZoom = 30)) %>%
     leaflet::addProviderTiles ('CartoDB.DarkMatter') %>%
-    leaflet::fitBounds(bb[1], bb[2], bb[3], bb[4])
+    leaflet::fitBounds(bb[1], bb[2], bb[3], bb[4]) %>%
+    leaflet::addPolylines (color = "#3399FF", opacity = 0.6, weight = 3)
   })
 
 shiny::observe ({
-     dat <- filtered ()
+#     dat <- filtered ()
+     dat <- graph
      if (!is.null (dat))
      {
-         pal <- colorpal ()
+#         pal <- colorpal ()
          leaflet::leafletProxy ("map", data = dat) %>%
          leaflet::clearShapes () %>%
-         leaflet::addPolylines (color=pal (dat$trimmed), opacity = 1, weight = 3,
-         popup = paste0 ("<b>From: </b>", graph$from,
-                        "<br /><b>To: </b>", graph$to,
-                        "<br /><b>Oneway: </b/>", graph$isOneway))
+         leaflet::addPolylines (color = "#3399FF", opacity = 1, weight = 3)
+#         leaflet::addPolylines (color=pal (dat$trimmed), opacity = 1, weight = 3,
+#         popup = paste0 ("<b>From: </b>", graph$from,
+#                        "<br /><b>To: </b>", graph$to,
+#                        "<br /><b>Oneway: </b/>", graph$isOneway))
      } else
      {
          leafletProxy ("map", data = dat) %>%

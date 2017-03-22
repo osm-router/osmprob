@@ -1,5 +1,5 @@
 test_that ("osmlines_as_network", {
-               fname <- "../osm-ways.osm"
+               fname <- "../osm-ways-munich.osm"
                dat <- sf::read_sf (fname, layer = "lines", quiet = TRUE)
                graph <- osmlines_as_network (dat)
                isDf <- is (graph, "data.frame")
