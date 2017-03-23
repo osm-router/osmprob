@@ -50,13 +50,20 @@ float haversine (float x1, float y1, float x2, float y2)
 //' Return OSM data in Simple Features format
 //'
 //' @param sf_lines An sf collection of LINESTRING objects
+//' @param pr Rcpp::DataFrame containing the weighting profile
 //'
 //' @return Rcpp::List objects of OSM data
 //'
 //' @noRd
 // [[Rcpp::export]]
-Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
+Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines, Rcpp::DataFrame pr)
 {
+    std::map <std::string, float> profile;
+    Rcpp::StringVector hw = pr [1];
+    Rcpp::NumericVector val = pr [2];
+    for (int i = 0; i != hw.size (); i ++)
+        profile.insert (std::make_pair (std::string (hw [i]), val [i]));
+
     Rcpp::CharacterVector nms = sf_lines.attr ("names");
     if (nms [nms.size () - 1] != "geometry")
         throw std::runtime_error ("sf_lines have no geometry component");
@@ -64,19 +71,25 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
         throw std::runtime_error ("sf_lines have no osm_id component");
     int oneWayIndex = -1;
     int oneWayBicycleIndex = -1;
+    int highwayIndex = -1;
     for (int i = 0; i < nms.size (); i++)
     {
         if (nms [i] == "oneway")
             oneWayIndex = i;
         if (nms [i] == "oneway.bicycle")
             oneWayBicycleIndex = i;
+        if (nms [i] == "highway")
+            highwayIndex = i;
     }
     Rcpp::CharacterVector ow = NULL;
     Rcpp::CharacterVector owb = NULL;
+    Rcpp::CharacterVector highway = NULL;
     if (oneWayIndex >= 0)
         ow = sf_lines [oneWayIndex];
     if (oneWayBicycleIndex >= 0)
         owb = sf_lines [oneWayBicycleIndex];
+    if (highwayIndex >= 0)
+        highway = sf_lines [highwayIndex];
     if (ow.size () > 0)
     {
         if (ow.size () == owb.size ())
@@ -111,7 +124,7 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
         ngeoms ++;
     }
 
-    Rcpp::NumericMatrix nmat = Rcpp::NumericMatrix (Rcpp::Dimension (nrows, 5));
+    Rcpp::NumericMatrix nmat = Rcpp::NumericMatrix (Rcpp::Dimension (nrows, 6));
     Rcpp::CharacterMatrix idmat = Rcpp::CharacterMatrix (Rcpp::Dimension (nrows, 2));
     Rcpp::CharacterVector colnames (nrows);
 
@@ -121,6 +134,8 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
     for (auto g = geoms.begin (); g != geoms.end (); ++g)
     {
         Rcpp::NumericMatrix gi = (*g);
+        std::string hway = std::string (highway [ngeoms]);
+        float hwFactor = profile [hway];
 
         Rcpp::List ginames = gi.attr ("dimnames");
         Rcpp::CharacterVector rnms;
@@ -143,6 +158,7 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
             nmat (nrows, 2) = gi (i, 0);
             nmat (nrows, 3) = gi (i, 1);
             nmat (nrows, 4) = d;
+            nmat (nrows, 5) = d * hwFactor;
             idmat (nrows, 0) = rnms (i-1);
             idmat (nrows, 1) = rnms (i);
             nrows ++;
@@ -153,6 +169,7 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines)
                 nmat (nrows, 2) = gi (i-1, 0);
                 nmat (nrows, 3) = gi (i-1, 1);
                 nmat (nrows, 4) = d;
+                nmat (nrows, 5) = d * hwFactor;
                 idmat (nrows, 0) = rnms (i);
                 idmat (nrows, 1) = rnms (i-1);
                 nrows ++;

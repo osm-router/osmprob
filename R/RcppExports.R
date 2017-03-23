@@ -16,12 +16,13 @@ makeCompactGraph <- function(graph) {
 #' Return OSM data in Simple Features format
 #'
 #' @param sf_lines An sf collection of LINESTRING objects
+#' @param pr Rcpp::DataFrame containing the weighting profile
 #'
 #' @return Rcpp::List objects of OSM data
 #'
 #' @noRd
-rcpp_lines_as_network <- function(sf_lines) {
-    .Call('osmprob_rcpp_lines_as_network', PACKAGE = 'osmprob', sf_lines)
+rcpp_lines_as_network <- function(sf_lines, pr) {
+    .Call('osmprob_rcpp_lines_as_network', PACKAGE = 'osmprob', sf_lines, pr)
 }
 
 #' dijkstra

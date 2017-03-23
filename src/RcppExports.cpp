@@ -18,13 +18,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_lines_as_network
-Rcpp::List rcpp_lines_as_network(const Rcpp::List& sf_lines);
-RcppExport SEXP osmprob_rcpp_lines_as_network(SEXP sf_linesSEXP) {
+Rcpp::List rcpp_lines_as_network(const Rcpp::List& sf_lines, Rcpp::DataFrame pr);
+RcppExport SEXP osmprob_rcpp_lines_as_network(SEXP sf_linesSEXP, SEXP prSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::List& >::type sf_lines(sf_linesSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_lines_as_network(sf_lines));
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type pr(prSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_lines_as_network(sf_lines, pr));
     return rcpp_result_gen;
 END_RCPP
 }

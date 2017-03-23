@@ -59,14 +59,16 @@ struct osm_edge_t
         osm_id_t from, to;
 
     public:
+        float dist;
         float weight;
         osm_id_t getFromVertex () { return from; }
         osm_id_t getToVertex () { return to; }
 
-        osm_edge_t (osm_id_t fromId, osm_id_t toId, float weight)
+        osm_edge_t (osm_id_t fromId, osm_id_t toId, float dist, float weight)
         {
             this -> to = toId;
             this -> from = fromId;
+            this -> dist = dist;
             this -> weight = weight;
         }
 };
@@ -82,7 +84,8 @@ void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
     Rcpp::NumericVector from_lat = gr [2];
     Rcpp::NumericVector to_lon = gr [4];
     Rcpp::NumericVector to_lat = gr [5];
-    Rcpp::NumericVector weight = gr [6];
+    Rcpp::NumericVector dist = gr [6];
+    Rcpp::NumericVector weight = gr [7];
 
     for (int i = 0; i < to.length (); i ++)
     {
@@ -111,7 +114,7 @@ void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
         toVtx.addNeighborIn (fromId);
         vm [toId] = toVtx;
 
-        osm_edge_t edge = osm_edge_t (fromId, toId, weight [i]);
+        osm_edge_t edge = osm_edge_t (fromId, toId, dist [i], weight [i]);
         e.push_back (edge);
     }
 }
@@ -236,6 +239,7 @@ void removeIntermediateVertices (vertexMap &v, edgeVector &e)
             vert = v.erase (vert);
 
             // update edges
+            float distNew = 0;
             float weightNew = 0;
             int numFound = 0;
             int edgesToDelete = 1;
@@ -255,19 +259,21 @@ void removeIntermediateVertices (vertexMap &v, edgeVector &e)
                         if (eTo == id)
                             idFromNew = eFrom;
                     }
+                    distNew += edge -> dist;
                     weightNew += edge -> weight;
                     edge = e.erase (edge);
                     if (numFound >= edgesToDelete)
                     {
                         if (isIntermediateDouble)
                         {
+                            distNew = distNew / 2;
                             weightNew = weightNew / 2;
                             osm_edge_t edgeNew = osm_edge_t (idToNew, idFromNew,
-                                    weightNew);
+                                    distNew, weightNew);
                             e.push_back (edgeNew);
                         }
                         osm_edge_t edgeNew = osm_edge_t (idFromNew, idToNew,
-                                weightNew);
+                                distNew, weightNew);
                         e.push_back (edgeNew);
                         break;
                     }
@@ -305,6 +311,7 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
     Rcpp::NumericVector from_lonOut;
     Rcpp::NumericVector to_latOut;
     Rcpp::NumericVector to_lonOut;
+    Rcpp::NumericVector distOut;
     Rcpp::NumericVector weightOut;
     for (auto e:edges)
     {
@@ -314,6 +321,7 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
         osm_vertex_t toVtx = vertices.at (to);
         fromOut.push_back (from);
         toOut.push_back (to);
+        distOut.push_back (e.dist);
         weightOut.push_back (e.weight);
         from_latOut.push_back (fromVtx.getLat ());
         from_lonOut.push_back (fromVtx.getLon ());
@@ -322,9 +330,10 @@ Rcpp::DataFrame makeCompactGraph (Rcpp::DataFrame graph)
     }
 
     return Rcpp::DataFrame::create (
-            Rcpp::Named ("from") = fromOut,
-            Rcpp::Named ("to") = toOut,
-            Rcpp::Named ("weight") = weightOut,
+            Rcpp::Named ("from_id") = fromOut,
+            Rcpp::Named ("to_id") = toOut,
+            Rcpp::Named ("d") = distOut,
+            Rcpp::Named ("d_weighted") = weightOut,
             Rcpp::Named ("from_lat") = from_latOut,
             Rcpp::Named ("from_lon") = from_lonOut,
             Rcpp::Named ("to_lat") = to_latOut,
