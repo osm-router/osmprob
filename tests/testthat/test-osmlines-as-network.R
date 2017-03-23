@@ -1,6 +1,6 @@
 test_that ("osmlines_as_network", {
                fname <- "../osm-ways-munich.osm"
-               pr <- "../../data/weightingProfiles.csv"
+               pr <- "../../data/weightingProfiles.rda"
                dat <- sf::read_sf (fname, layer = "lines", quiet = TRUE)
                graph <- osmlines_as_network (dat, profileFile = pr)
                isDf <- is (graph, "data.frame")

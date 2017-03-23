@@ -5,7 +5,7 @@
 \title{Convert osm_lines to a data.frame of sequential network connections}
 \usage{
 osmlines_as_network(lns, profileName = "bicycle",
-  profileFile = "../data/weightingProfiles.csv")
+  profileFile = "../data/weightingProfiles.rda")
 }
 \arguments{
 \item{lns}{An \code{sf} collection of \code{LINESTRING} objects, obtained for

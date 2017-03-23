@@ -17,14 +17,15 @@
 #' net <- osmlines_as_network (x)
 #' }
 osmlines_as_network <- function (lns, profileName = "bicycle",
-                                 profileFile = "../data/weightingProfiles.csv")
+                                 profileFile = "../data/weightingProfiles.rda")
 {
     if (is (lns, 'osmdata'))
         lns <- lns$osm_lines
     else if (!is (lns$geometry, 'sfc_LINESTRING'))
         stop ("lns must be an 'sf' collection of 'LINESTRING' objects")
 
-    profiles <- read.csv2 (profileFile)
+    profiles <- load (profileFile)
+    profiles <- get (profiles)
     profiles <- profiles [profiles$name == profileName, ]
     profiles$value <- 1/profiles$value
     res <- rcpp_lines_as_network (lns, profiles)
