@@ -29,3 +29,15 @@ dat <- osmdata::osmdata_xml (q, "osm-ways-munich.osm")
 To prepare the graph for routing, all non-accessible edges are removed using `makeCompactGraph ()`, so only the largest connected part of the original graph remains. The resulting graph is stored as a `data.frame`. A sample can be found in `tests/compact-ways-munich.Rda`.
 
 After the preprocessing is done, `plotGraph ()` can be used to display the compact sample graph in a `shiny`/`leaflet` web app.
+
+To download, process and display a complete graph from scratch, run
+
+``` r
+devtools::load_all ()
+q <- osmdata::opq (bbox = c (11.58, 48.14, 11.585, 48.145))
+q <- osmdata::add_feature (q, key = 'highway')
+dat <- osmdata::osmdata_sf (q)
+graph <- osmlines_as_network (dat)
+graph <- makeCompactGraph (graph)
+plotGraph (graph)
+```
