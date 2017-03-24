@@ -11,6 +11,7 @@ plotGraph <- function (osmFile="../tests/compact-ways-munich.Rda")
     inputGraph <<- osmFile
     shiny::shinyApp(ui, server)
 }
+
 inputGraph <- ""
 
 getGraph <- function (fName)
@@ -31,7 +32,8 @@ getGraph <- function (fName)
     for (i in 1:dim (fromTo)[1])
     {
         pair <- fromTo [i,]
-        graphLines [[i]] <- sf::st_linestring (rbind (c (pair[1], pair[2]), c (pair[3], pair[4])))
+        graphLines [[i]] <- sf::st_linestring (rbind (c (pair[1], pair[2]),
+                                                      c (pair[3], pair[4])))
     }
 
     graph <- sf::st_sfc (graphLines, crs = 4326)
@@ -43,58 +45,57 @@ getGraph <- function (fName)
     graph
 }
 
-ui <- shiny::bootstrapPage(
+ui <- shiny::bootstrapPage (
   shiny::tags$style (type = "text/css", "html, body {width:100%;height:100%}
               .checkbox, .control-label{color: #FFFFFF}"),
   leaflet::leafletOutput ("map", width = "100%", height = "100%"),
   shiny::absolutePanel (top = 10, right = 10,
-    # shiny::checkboxInput ("trimmed", "Trimmed", FALSE),
-    # shiny::checkboxInput ("rest", "Remaining", FALSE),
-    shiny::selectInput("colors", "Color Scheme", selected = 'Paired',
-    rownames(subset(RColorBrewer::brewer.pal.info, colorblind == TRUE))
+  shiny::selectInput ("colors", "Color Scheme", selected = 'Paired',
+  rownames (subset (RColorBrewer::brewer.pal.info, colorblind == TRUE))
   )
 ))
 
-server <- function(input, output, session)
+server <- function (input, output, session)
 {
   graph <- getGraph (inputGraph)
 
-  colorpal <- shiny::reactive({
+  colorpal <- shiny::reactive ({
     dat <- filtered ()
-    leaflet::colorNumeric(input$colors, graph$trimmed)
+    leaflet::colorNumeric (input$colors, graph$trimmed)
   })
 
- filtered <- shiny::reactive ({
-     if (!input$trimmed && !input$rest)
-         return ()
-     graph [graph$trimmed == input$trimmed | graph$trimmed != input$rest,]
- })
-
-  output$map <- leaflet::renderLeaflet({
+  output$map <- leaflet::renderLeaflet ({
     bb <- as.vector (sf::st_bbox (graph))
     leaflet::leaflet (graph, options = leaflet::leafletOptions (maxZoom = 30)) %>%
     leaflet::addProviderTiles ('CartoDB.DarkMatter') %>%
-    leaflet::fitBounds(bb[1], bb[2], bb[3], bb[4]) %>%
-    leaflet::addPolylines (color = "#3399FF", opacity = 0.6, weight = 3)
+    leaflet::fitBounds (bb[1], bb[2], bb[3], bb[4]) %>%
+    leaflet::addPolylines (color = "#3399FF", opacity = 0.2, weight = 3)
+  })
+
+ lnColor <- shiny::reactive ({
+   leaflet::colorNumeric (input$colors, graph$d)
+ })
+
+  shiny::observe ({
+    pal <- lnColor ()
+    dat <- graph$d
+    leaflet::leafletProxy ("map", data = graph) %>%
+    leaflet::clearControls () %>%
+    leaflet::addLegend (position = "bottomright", pal = pal, values = dat)
   })
 
 shiny::observe ({
-#     dat <- filtered ()
-     dat <- graph
-     if (!is.null (dat))
-     {
-#         pal <- colorpal ()
-         leaflet::leafletProxy ("map", data = dat) %>%
-         leaflet::clearShapes () %>%
-         leaflet::addPolylines (color = "#3399FF", opacity = 1, weight = 3)
-#         leaflet::addPolylines (color=pal (dat$trimmed), opacity = 1, weight = 3,
-#         popup = paste0 ("<b>From: </b>", graph$from,
-#                        "<br /><b>To: </b>", graph$to,
-#                        "<br /><b>Oneway: </b/>", graph$isOneway))
-     } else
-     {
-         leafletProxy ("map", data = dat) %>%
-         clearShapes ()
-     }
+  dat <- graph
+  if (!is.null (dat))
+  {
+    pal <- lnColor ()
+    leaflet::leafletProxy ("map", data = dat) %>%
+    leaflet::clearShapes () %>%
+    leaflet::addPolylines (color = ~pal (dat$d), opacity = 0.6, weight = 3)
+  } else
+  {
+    leafletProxy ("map", data = dat) %>%
+    clearShapes ()
+  }
  })
 }
