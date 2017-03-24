@@ -60,7 +60,6 @@ server <- function (input, output, session)
   graph <- getGraph (inputGraph)
 
   colorpal <- shiny::reactive ({
-    dat <- filtered ()
     leaflet::colorNumeric (input$colors, graph$trimmed)
   })
 
