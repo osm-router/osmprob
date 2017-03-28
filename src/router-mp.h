@@ -60,8 +60,9 @@ typedef std::vector <std::vector <neighbor> > adjacency_list_t;
 class Graph
 {
     protected:
-        unsigned _start_node, _end_node, _num_vertices;
-        double _eta; // The entropy parameter
+        const unsigned _start_node, _end_node;
+        unsigned _num_vertices;
+        const double _eta; // The entropy parameter
         const std::vector <vertex_t> _idfrom, _idto;
         const std::vector <weight_t> _d;
 
@@ -76,9 +77,10 @@ class Graph
             : _idfrom (idfrom), _idto (idto), _d (d),
                 _start_node (start_node), _end_node (end_node), _eta (eta)
         {
-            _num_vertices = fillGraph (); // fills adjlist with (idfrom, idto, d)
-            make_dq_mats ();
-            make_n_mat ();
+            //_num_vertices = fillGraph (); // fills adjlist with (idfrom, idto, d)
+            //make_dq_mats ();
+            //make_n_mat ();
+            Rcpp::Rcout << "***** constructor finished *****" << std::endl;
         }
         ~Graph ()
         {
@@ -126,6 +128,7 @@ class Graph
 
 unsigned Graph::fillGraph ()
 {
+    /*
     std::vector <vertex_t> idfrom = return_idfrom ();
     std::vector <vertex_t> idto = return_idto ();
     std::vector <weight_t> d = return_d ();
@@ -146,6 +149,8 @@ unsigned Graph::fillGraph ()
     adjlist.push_back (nblist);
     nblist.clear ();
     unsigned num_vertices = adjlist.size ();
+    */
+    unsigned num_vertices = 0;
 
     return num_vertices;
 }

@@ -196,7 +196,7 @@ int Graph::calculate_q_mat (double tol, unsigned max_iter)
 //'
 //' Return OSM data in Simple Features format
 //'
-//' @param netdf \code{data.frame} containing network connections
+//' @param netmat A \code{matrix} containing network connections
 //' @param start_node Starting node for shortest path route
 //' @param end_node Ending node for shortest path route
 //' @param eta The entropy parameter
@@ -205,10 +205,10 @@ int Graph::calculate_q_mat (double tol, unsigned max_iter)
 //'
 //' @noRd
 // [[Rcpp::export]]
-Rcpp::NumericMatrix rcpp_router (Rcpp::DataFrame netdf, 
-        int start_node, int end_node, double eta)
+void rcpp_router (Rcpp::DataFrame netdf, 
+        int start_nodei, int end_nodei, double eta)
 {
-    // Extract vectors from netdf and convert to std:: types
+    // Extract vectors from netmat and convert to std:: types
     Rcpp::NumericVector idfrom_rcpp = netdf ["xfr"];
     std::vector <vertex_t> idfrom = 
         Rcpp::as <std::vector <vertex_t> > (idfrom_rcpp);
@@ -219,6 +219,9 @@ Rcpp::NumericMatrix rcpp_router (Rcpp::DataFrame netdf,
 
     Rcpp::NumericVector d_rcpp = netdf ["d"];
     std::vector <weight_t> d = Rcpp::as <std::vector <weight_t> > (d_rcpp);
+
+    const unsigned start_node = (unsigned) start_nodei;
+    const unsigned end_node = (unsigned) end_nodei;
 
     Graph g (idfrom, idto, d, start_node, end_node, eta);
 
@@ -240,7 +243,7 @@ Rcpp::NumericMatrix rcpp_router (Rcpp::DataFrame netdf,
 
     Rcpp::NumericMatrix res (path.size (), 2);
     std::copy (path.begin (), path.end (), res.begin ());
-    std::copy (dout.begin (), dout.end (), path.size () + res.begin ());
+    std::copy (dout.begin (), dout.end (), res.begin () + path.size ());
 
-    return res;
+    //return res;
 }

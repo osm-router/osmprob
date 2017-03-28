@@ -35,5 +35,7 @@ osm_router <- function (netdf, start_node, end_node, eta=1)
     else
         colnames (netdf) <- cnames
 
-    rcpp_router (netdf, start_node, end_node, eta)
+    eta <- eta * nrow (netdf)
+    rcpp_router (netdf, as.integer (start_node), as.integer (end_node), 
+                 as.numeric (eta))
 }
