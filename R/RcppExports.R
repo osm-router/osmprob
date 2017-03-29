@@ -51,6 +51,6 @@ dijkstra <- function(graph, start, end) {
 #'
 #' @noRd
 rcpp_router <- function(netdf, start_nodei, end_nodei, eta) {
-    invisible(.Call('osmprob_rcpp_router', PACKAGE = 'osmprob', netdf, start_nodei, end_nodei, eta))
+    .Call('osmprob_rcpp_router', PACKAGE = 'osmprob', netdf, start_nodei, end_nodei, eta)
 }
 

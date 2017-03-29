@@ -57,7 +57,7 @@ struct neighbor {
 
 typedef std::vector <std::vector <neighbor> > adjacency_list_t;
 
-class Graph
+class Graphmp
 {
     protected:
         const unsigned _start_node, _end_node;
@@ -71,18 +71,17 @@ class Graph
         arma::mat d_mat, q_mat, n_mat; // <double>
         arma::vec h_vec, x_vec, v_vec; // also <double>
 
-        Graph (std::vector <vertex_t> idfrom, std::vector <vertex_t> idto,
+        Graphmp (std::vector <vertex_t> idfrom, std::vector <vertex_t> idto,
                 std::vector <weight_t> d, unsigned start_node, unsigned end_node,
                 double eta)
             : _idfrom (idfrom), _idto (idto), _d (d),
                 _start_node (start_node), _end_node (end_node), _eta (eta)
         {
-            //_num_vertices = fillGraph (); // fills adjlist with (idfrom, idto, d)
-            //make_dq_mats ();
-            //make_n_mat ();
-            Rcpp::Rcout << "***** constructor finished *****" << std::endl;
+            _num_vertices = fillGraph (); // fills adjlist with (idfrom, idto, d)
+            make_dq_mats ();
+            make_n_mat ();
         }
-        ~Graph ()
+        ~Graphmp ()
         {
             for (int i=0; i<adjlist.size (); i++)
                 adjlist [i].clear ();
@@ -126,9 +125,8 @@ class Graph
  ************************************************************************
  ************************************************************************/
 
-unsigned Graph::fillGraph ()
+unsigned Graphmp::fillGraph ()
 {
-    /*
     std::vector <vertex_t> idfrom = return_idfrom ();
     std::vector <vertex_t> idto = return_idto ();
     std::vector <weight_t> d = return_d ();
@@ -149,13 +147,11 @@ unsigned Graph::fillGraph ()
     adjlist.push_back (nblist);
     nblist.clear ();
     unsigned num_vertices = adjlist.size ();
-    */
-    unsigned num_vertices = 0;
 
     return num_vertices;
 }
 
-void Graph::dumpGraph ()
+void Graphmp::dumpGraph ()
 {
     for (int i=0; i<adjlist.size (); i++)
     {
@@ -166,7 +162,7 @@ void Graph::dumpGraph ()
     }
 }
 
-void Graph::dumpMat (arma::mat mat, std::string mat_name,
+void Graphmp::dumpMat (arma::mat mat, std::string mat_name,
         std::vector <std::string> cnames)
 {
     Rcpp::Rcout << "------  " << mat_name << "_MAT  ------" << std::endl;
@@ -185,7 +181,7 @@ void Graph::dumpMat (arma::mat mat, std::string mat_name,
  ************************************************************************
  ************************************************************************/
 
-void Graph::Dijkstra (vertex_t source,
+void Graphmp::Dijkstra (vertex_t source,
         std::vector <weight_t> &min_distance,
         std::vector <vertex_t> &previous)
 {
@@ -233,7 +229,7 @@ void Graph::Dijkstra (vertex_t source,
  ************************************************************************
  ************************************************************************/
 
-std::vector <vertex_t> Graph::GetShortestPathTo (vertex_t vertex, 
+std::vector <vertex_t> Graphmp::GetShortestPathTo (vertex_t vertex, 
         const std::vector <vertex_t> &previous)
 {
     std::vector <vertex_t> path;

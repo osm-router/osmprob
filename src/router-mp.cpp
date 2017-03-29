@@ -41,7 +41,7 @@
  ************************************************************************
  ************************************************************************/
 
-void Graph::make_dq_mats ()
+void Graphmp::make_dq_mats ()
 {
     /* the diagonal of d_mat is 0, otherwise the first row contains only one
      * finite entry for escape from start_node. The last column similarly
@@ -89,7 +89,7 @@ void Graph::make_dq_mats ()
  ************************************************************************
  ************************************************************************/
 
-void Graph::make_n_mat ()
+void Graphmp::make_n_mat ()
 {
     // The most computationally expensive part of all, and the only place
     // requiring matrix inversion. This is, however, only required once, and is
@@ -109,7 +109,7 @@ void Graph::make_n_mat ()
  ************************************************************************
  ************************************************************************/
 
-void Graph::make_hxv_vecs ()
+void Graphmp::make_hxv_vecs ()
 {
     arma::mat lq = -arma::log (q_mat.t ());
     // q_mat has zeros, so log (q) has non-finite values which are here reset to
@@ -134,7 +134,7 @@ void Graph::make_hxv_vecs ()
  ************************************************************************
  ************************************************************************/
 
-void Graph::iterate_q_mat ()
+void Graphmp::iterate_q_mat ()
 {
     const double eta_inv = 1.0 / return_eta ();
     const arma::rowvec x_row = arma::conv_to <arma::rowvec>::from (x_vec),
@@ -164,7 +164,7 @@ void Graph::iterate_q_mat ()
  ************************************************************************
  ************************************************************************/
 
-int Graph::calculate_q_mat (double tol, unsigned max_iter)
+int Graphmp::calculate_q_mat (double tol, unsigned max_iter)
 {
     int nloops = 0; 
 
@@ -205,7 +205,7 @@ int Graph::calculate_q_mat (double tol, unsigned max_iter)
 //'
 //' @noRd
 // [[Rcpp::export]]
-void rcpp_router (Rcpp::DataFrame netdf, 
+Rcpp::NumericMatrix rcpp_router (Rcpp::DataFrame netdf, 
         int start_nodei, int end_nodei, double eta)
 {
     // Extract vectors from netmat and convert to std:: types
@@ -223,7 +223,7 @@ void rcpp_router (Rcpp::DataFrame netdf,
     const unsigned start_node = (unsigned) start_nodei;
     const unsigned end_node = (unsigned) end_nodei;
 
-    Graph g (idfrom, idto, d, start_node, end_node, eta);
+    Graphmp g (idfrom, idto, d, start_node, end_node, eta);
 
     int nloops = g.calculate_q_mat (1.0e-6, 1000000);
     Rcpp::Rcout << "---converged in " << nloops << " loops" << std::endl;
@@ -245,5 +245,5 @@ void rcpp_router (Rcpp::DataFrame netdf,
     std::copy (path.begin (), path.end (), res.begin ());
     std::copy (dout.begin (), dout.end (), res.begin () + path.size ());
 
-    //return res;
+    return res;
 }
