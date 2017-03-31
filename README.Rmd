@@ -15,6 +15,9 @@ knitr::opts_chunk$set(
 ```
 [![Build Status](https://travis-ci.org/osm-router/osmprob.svg?branch=master)](https://travis-ci.org/osm-router/osmprob)
 [![codecov](https://codecov.io/gh/osm-router/osmprob/branch/master/graph/badge.svg)](https://codecov.io/gh/osm-router/osmprob)
+[![Project Status: WIP - Initial development is in progress, but there has not yet been a stable, usable release suitable for the
+public.](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
+[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/osmprob)](http://cran.r-project.org/web/packages/osmprob)
 
 # osmprob
 
