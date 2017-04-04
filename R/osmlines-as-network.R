@@ -24,7 +24,6 @@ osmlines_as_network <- function (lns, profileName = "bicycle")
 
     profiles <- osmprob::weightingProfiles
     profiles <- profiles [profiles$name == profileName, ]
-    profiles$value <- 1/profiles$value
     res <- rcpp_lines_as_network (lns, profiles)
     data.frame (
                 from_id = as.character (res [[2]] [, 1]),
@@ -35,6 +34,7 @@ osmlines_as_network <- function (lns, profileName = "bicycle")
                 to_y = res [[1]] [, 4],
                 d = res [[1]] [, 5],
                 d_weighted = res [[1]] [, 6],
+                highway = as.character (res [[2]] [, 3]),
                 stringsAsFactors = FALSE
                 )
 }

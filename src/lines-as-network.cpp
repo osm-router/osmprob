@@ -125,13 +125,12 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines, Rcpp::DataFrame pr
     }
 
     Rcpp::NumericMatrix nmat = Rcpp::NumericMatrix (Rcpp::Dimension (nrows, 6));
-    Rcpp::CharacterMatrix idmat = Rcpp::CharacterMatrix (Rcpp::Dimension (nrows, 2));
-    Rcpp::CharacterVector colnames (nrows);
+    Rcpp::CharacterMatrix idmat = Rcpp::CharacterMatrix (Rcpp::Dimension (nrows, 3));
 
     nrows = 0;
     ngeoms = 0;
     int fakeId = 0;
-    for (auto g = geoms.begin (); g != geoms.end (); ++g)
+    for (auto g = geoms.begin (); g != geoms.end (); ++ g)
     {
         Rcpp::NumericMatrix gi = (*g);
         std::string hway = std::string (highway [ngeoms]);
@@ -161,6 +160,7 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines, Rcpp::DataFrame pr
             nmat (nrows, 5) = d * hwFactor;
             idmat (nrows, 0) = rnms (i-1);
             idmat (nrows, 1) = rnms (i);
+            idmat (nrows, 2) = hway;
             nrows ++;
             if (isOneWay [ngeoms])
             {
@@ -172,6 +172,7 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines, Rcpp::DataFrame pr
                 nmat (nrows, 5) = d * hwFactor;
                 idmat (nrows, 0) = rnms (i);
                 idmat (nrows, 1) = rnms (i-1);
+                idmat (nrows, 2) = hway;
                 nrows ++;
             }
         }
