@@ -44,21 +44,21 @@ getGraph <- function (fName)
     dat$to_lat <- NULL
     dat$to_lon <- NULL
     graph <- sf::st_sf (graph, dat)
-    graph$d_weighted [graph$d_weighted == Inf] <- 1
-    dists <- graph$d_weighted
-    mn <- min (dists)
-    mx <- max (dists [dists != Inf])
-    graph$d_weighted <- (dists - mn) / (mx - mn)
+
+    # add mock probability values for testing
+    graph$probability <- (sample.int (101,size=dim (graph) [1],
+                                      replace=TRUE) -1) / 100
     graph
 }
 
+cRamp <- subset (RColorBrewer::brewer.pal.info, category == "qual")
 ui <- shiny::bootstrapPage (
   shiny::tags$style (type = "text/css", "html, body {width:100%;height:100%}
               .checkbox, .control-label{color: #FFFFFF}"),
   leaflet::leafletOutput ("map", width = "100%", height = "100%"),
   shiny::absolutePanel (top = 10, right = 10,
-  shiny::selectInput ("colors", "Color Scheme", selected = 'Paired',
-  rownames (subset (RColorBrewer::brewer.pal.info, colorblind == TRUE))
+  shiny::selectInput ("colors", "Color Scheme", selected = rownames (cRamp) [1],
+  rownames (cRamp)
   )
 ))
 
@@ -104,7 +104,7 @@ server <- function (input, output, session)
     leaflet::fitBounds (bb[1], bb[2], bb[3], bb[4])
   })
 
- lnColor <- function (x) { leaflet::colorFactor (x, graph$highway) }
+lnColor <- function (x) { leaflet::colorFactor (x, graph$highway) }
 
   shiny::observe ({
     pal <- lnColor (input$colors)
@@ -114,7 +114,7 @@ server <- function (input, output, session)
     leaflet::addLegend (position = "bottomright", pal = pal, values = dat)
   })
 
-getWidth <- function (weight, base, fac) { return (base + fac * weight) }
+getWidth <- function (base, fac, weight) { return (base + fac * weight) }
 
 shiny::observe ({
   dat <- graph
@@ -123,10 +123,10 @@ shiny::observe ({
     pal <- lnColor (input$colors)
     leaflet::leafletProxy ("map", data = dat) %>%
     leaflet::clearShapes () %>%
-    leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0,
-                           weight = getWidth (dat$d_weighted, 1, 20)) %>%
     leaflet::addPolylines (color = ~pal (dat$highway), opacity = 1.0,
-                           weight = getWidth (dat$d_weighted, 1, 10))
+                           weight = getWidth (1, 10, dat$probability))
+    #leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0,
+    #                       weight = getWidth (1, 20, dat$d))
   } else
   {
     leafletProxy ("map", data = dat) %>%
