@@ -8,7 +8,7 @@ Authors@R: c(
 Maintainer: Andreas Petutschnig <andreas@petutschnig.de>
 Description: Calculates probabilistic routes on a OSM street graph and displays
     the resulting probabilities in a shiny/leaflet web app.
-License: GPL (>= 2)
+License: GPL-3 + file LICENSE
 Imports:
     Rcpp (>= 0.12.6),
     leaflet,
