@@ -17,7 +17,8 @@ test_that ("osmlines_as_network", {
                    "sf_lines have no osm_id component")
                datTest <- dat
                rows <- as.numeric (row.names (datTest))
-               ow <- sapply (rows, function (x) if (x%%2 == 0) "yes" else "no")
+               ow <- vapply (rows, function (x)
+                             if (x%%2 == 0) "yes" else "no", "")
                datTest$oneway <- ow
                datTest$oneway.bicycle <- ow
                datTest <- datTest [,c (1:9, 11, 12, 10)]

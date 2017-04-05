@@ -2,7 +2,6 @@ Package: osmprob
 Type: Package
 Title: Calculate Probabilistic Routes
 Version: 1.0
-Date: 2016-08-02
 Authors@R: c(
     person ("Andreas", "Petutschnig", email="andreas@petutschnig.de", role=c("aut", "cre")),
     person ("Mark", "Padgham", role="aut"))
@@ -21,6 +20,8 @@ Imports:
 LinkingTo: 
     Rcpp,
     RcppArmadillo
+URL: https://github.com/osm-router/osmprob
+BugReports: https://github.com/osm-router/osmprob
 RoxygenNote: 6.0.1
 SystemRequirements: C++11
 Suggests: testthat
