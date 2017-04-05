@@ -6,3 +6,4 @@ makefile$
 ^figure/
 ^runTest.R$
 ^tmux-start.bash$
+^appveyor\.yml$

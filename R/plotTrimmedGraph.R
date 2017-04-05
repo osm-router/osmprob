@@ -14,16 +14,18 @@ plotGraph <- function (osmFile="../tests/compact-ways-munich.Rda")
 
 inputGraph <- ""
 
+charToNum <- function (x) { as.numeric (as.character (x)) }
+
 getGraph <- function (fName)
 {
     if (is (fName, "data.frame"))
         dat <- fName
     else
         dat <- readRDS (file = fName)
-    dat$from_lat <- sapply (dat$from_lat, function (x) as.numeric (as.character (x)))
-    dat$from_lon <- sapply (dat$from_lon, function (x) as.numeric (as.character (x)))
-    dat$to_lat <- sapply (dat$to_lat, function (x) as.numeric (as.character (x)))
-    dat$to_lon <- sapply (dat$to_lon, function (x) as.numeric (as.character (x)))
+    dat$from_lat <- vapply (dat$from_lat, charToNum, 0.)
+    dat$from_lon <- vapply (dat$from_lon, charToNum, 0.)
+    dat$to_lat <- vapply (dat$to_lat, charToNum, 0.)
+    dat$to_lon <- vapply (dat$to_lon, charToNum, 0.)
 
     from <- cbind (dat$from_lon, dat$from_lat)
     to <- cbind (dat$to_lon, dat$to_lat)
@@ -42,6 +44,11 @@ getGraph <- function (fName)
     dat$to_lat <- NULL
     dat$to_lon <- NULL
     graph <- sf::st_sf (graph, dat)
+    graph$d_weighted [graph$d_weighted == Inf] <- 1
+    dists <- graph$d_weighted
+    mn <- min (dists)
+    mx <- max (dists [dists != Inf])
+    graph$d_weighted <- (dists - mn) / (mx - mn)
     graph
 }
 
@@ -59,38 +66,67 @@ server <- function (input, output, session)
 {
   graph <- getGraph (inputGraph)
 
-  colorpal <- shiny::reactive ({
-    leaflet::colorNumeric (input$colors, graph$trimmed)
+  filtered <- shiny::reactive ({
+      n <- 1000
+      bounds <- input$map_bounds
+      if (is.null (bounds))
+          bbx <- sf::st_bbox (graph)
+      else
+      {
+          xmin <- min (bounds$east, bounds$west)
+          xmax <- max (bounds$east, bounds$west)
+          bbx <- matrix (c (xmin, bounds$south, xmax, bounds$north))
+      }
+      pol <- matrix (c (bbx [1], bbx [2],
+      bbx [3], bbx [2],
+      bbx [3], bbx [4],
+      bbx [1], bbx [4],
+      bbx [1], bbx [2]),
+      ncol = 2, byrow = TRUE)
+      bbx <- sf::st_polygon (list (pol))
+      int <- sf::st_intersects (graph, bbx) == 1
+      g <- graph [which (int), ]
+      len <- dim (g) [1]
+      if (n >= len || len < 1)
+          return (graph)
+      prt <- len - n
+      idxHighest <- which (g$d_weighted > sort (g$d_weighted,
+                                                partial = prt) [prt])
+      return (g [idxHighest, ])
   })
 
   output$map <- leaflet::renderLeaflet ({
-    bb <- as.vector (sf::st_bbox (graph))
-    leaflet::leaflet (graph, options = leaflet::leafletOptions (maxZoom = 30)) %>%
+    dat <- graph
+    bb <- as.vector (sf::st_bbox (dat))
+    leaflet::leaflet (data = dat,
+                      options = leaflet::leafletOptions (maxZoom = 30)) %>%
     leaflet::addProviderTiles ('CartoDB.DarkMatter') %>%
-    leaflet::fitBounds (bb[1], bb[2], bb[3], bb[4]) %>%
-    leaflet::addPolylines (color = "#3399FF", opacity = 0.2, weight = 3)
+    leaflet::fitBounds (bb[1], bb[2], bb[3], bb[4])
   })
 
- lnColor <- shiny::reactive ({
-   leaflet::colorNumeric (input$colors, graph$d)
- })
+ lnColor <- function (x) { leaflet::colorFactor (x, graph$highway) }
 
   shiny::observe ({
-    pal <- lnColor ()
-    dat <- graph$d
+    pal <- lnColor (input$colors)
+    dat <- graph$highway
     leaflet::leafletProxy ("map", data = graph) %>%
     leaflet::clearControls () %>%
     leaflet::addLegend (position = "bottomright", pal = pal, values = dat)
   })
 
+getWidth <- function (weight, base, fac) { return (base + fac * weight) }
+
 shiny::observe ({
   dat <- graph
   if (!is.null (dat))
   {
-    pal <- lnColor ()
+    pal <- lnColor (input$colors)
     leaflet::leafletProxy ("map", data = dat) %>%
     leaflet::clearShapes () %>%
-    leaflet::addPolylines (color = ~pal (dat$d), opacity = 0.6, weight = 3)
+    leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0,
+                           weight = getWidth (dat$d_weighted, 1, 20)) %>%
+    leaflet::addPolylines (color = ~pal (dat$highway), opacity = 1.0,
+                           weight = getWidth (dat$d_weighted, 1, 10))
   } else
   {
     leafletProxy ("map", data = dat) %>%
