@@ -11,12 +11,12 @@ matrix:
           r: release
           dist: trusty # 14.04
           env: R_CODECOV=true
-        - os: linux
-          r: devel
-          #- os: osx
-          #r: release
-          #before_install: ''
-          #disable_homebrew: true
+          #- os: linux #temporarily disabled. TODO: enable
+          #r: devel
+        - os: osx
+          r: release
+          before_install: ''
+          disable_homebrew: true
 
 before_install:
     - sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable --yes
