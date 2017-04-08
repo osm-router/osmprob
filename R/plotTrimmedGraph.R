@@ -129,8 +129,8 @@ shiny::observe ({
     #                       weight = getWidth (1, 20, dat$d))
   } else
   {
-    leafletProxy ("map", data = dat) %>%
-    clearShapes ()
+      leaflet::leafletProxy ("map", data = dat) %>%
+      leaflet::clearShapes ()
   }
  })
 }
