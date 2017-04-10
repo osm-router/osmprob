@@ -4,11 +4,13 @@
 \alias{plotGraph}
 \title{Plot the graph network as a Shiny Leaflet app in a browser.}
 \usage{
-plotGraph(osmFile = "../tests/compact-ways-munich.Rda")
+plotGraph(osmFile = "../tests/compact-ways-munich.Rda", n = 200)
 }
 \arguments{
 \item{osmFile}{A \code{data.frame} containing the street graph to be
 displayed}
+
+\item{n}{maximum number of features to be displayed on the map}
 }
 \description{
 Plot the graph network as a Shiny Leaflet app in a browser.
