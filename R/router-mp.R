@@ -39,3 +39,35 @@ osm_router <- function (netdf, start_node, end_node, eta=1)
     rcpp_router (netdf, as.integer (start_node), as.integer (end_node), 
                  as.numeric (eta))
 }
+
+#' Calculate routing probabilities for a data.frame
+#'
+#' @param netdf \code{data.frame} of network
+#' @param start_node Starting node for shortest path route
+#' @param end_node Ending node for shortest path route
+#' @param eta The parameter controlling the entropy (scale is arbitrary)
+#'
+#' @export
+getProbability <- function (netdf, start_node, end_node, eta=1)
+{
+    if (!(is (netdf, 'data.frame') | is (netdf, 'matrix')))
+        stop ('netdf must be a data.frame')
+    netdf_out <- netdf
+    netdf <- data.frame (netdf$from_id, netdf$to_id, netdf$d_weighted)
+
+    # force names for rcpp call
+    cnames <- c ('xfr', 'xto', 'd')
+    names (netdf) <- cnames
+    netdf$xfr <- as.numeric (as.character (netdf$xfr))
+    netdf$xto <- as.numeric (as.character (netdf$xto))
+    allids <- c (netdf$xfr, netdf$xto)
+    allids <- unique (sort (allids))
+    netdf$xfr <- vapply (netdf$xfr, function (x) {which (allids == x) }, 0.)
+    netdf$xto <- vapply (netdf$xto, function (x) {which (allids == x) }, 0.)
+
+    eta <- as.numeric (eta * nrow (netdf))
+    prob <- rcpp_router_prob (netdf, start_node, end_node, eta)
+    probability <- prob [prob != 0]
+    probability <- probability [-1]
+    prb <- cbind (netdf_out, probability)   
+}

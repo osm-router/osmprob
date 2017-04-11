@@ -48,9 +48,6 @@ getGraph <- function (fName)
     dat$to_lon <- NULL
     graph <- sf::st_sf (graph, dat)
 
-    # add mock probability values for testing
-    graph$probability <- (sample.int (101,size=dim (graph) [1],
-                                      replace=TRUE) -1) / 100
     graph
 }
 
@@ -93,18 +90,18 @@ server <- function (input, output, session)
       # int <- sf::st_intersects (graph, bbx) == 1
       # g <- graph [which (int), ]
       qntl <- input$drawQuant / 100
-      g <- subset (g, g$d_weighted >= stats::quantile (g$d_weighted, qntl))
+      g <- subset (g, g$probability >= stats::quantile (g$probability, qntl))
       len <- dim (g) [1]
-      if (n >= len || len < 1)
+      if (n <= len || len < 1)
           return (graph)
       prt <- len - n
-      idxHighest <- which (g$d_weighted > sort (g$d_weighted,
-                                                partial = prt) [prt])
+      idxHighest <- which (g$probability > sort (g$probability))
+                                                
       return (g [idxHighest, ])
   })
 
   output$map <- leaflet::renderLeaflet ({
-    dat <- filtered ()
+    dat <- graph
     bb <- as.vector (sf::st_bbox (dat))
     leaflet::leaflet (data = dat,
                       options = leaflet::leafletOptions (maxZoom = 30)) %>%
@@ -116,11 +113,14 @@ lnColor <- function (x, colorBy) { leaflet::colorFactor (x, colorBy) }
 
   shiny::observe ({
     dat <- filtered ()
-    hw <- dat$highway
-    pal <- lnColor (input$colors, hw)
-    leaflet::leafletProxy ("map", data = dat) %>%
-    leaflet::clearControls () %>%
-    leaflet::addLegend (position = "bottomright", pal = pal, values = hw)
+    if (!is.null (dat))
+    {
+      hw <- dat$highway
+      pal <- lnColor (input$colors, hw)
+      leaflet::leafletProxy ("map", data = dat) %>%
+      leaflet::clearControls () %>%
+      leaflet::addLegend (position = "bottomright", pal = pal, values = hw)
+    }
   })
 
 getWidth <- function (base, fac, weight) { return (base + fac * weight) }
@@ -135,12 +135,12 @@ shiny::observe ({
     if (input$drawProb)
     {
     proxy %>% leaflet::addPolylines (color = ~pal (dat$highway),opacity = 1.0,
-                           weight = getWidth (1, 10, dat$probability))
+                           weight = getWidth (2, 10, dat$probability))
     }
     if (input$drawWeight)
     {
     proxy %>% leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0,
-                           weight = getWidth (1, 20, dat$d))
+                           weight = getWidth (2, 1, dat$d_weighted))
     }
   } else
   {

@@ -196,7 +196,7 @@ int Graphmp::calculate_q_mat (double tol, unsigned max_iter)
 //'
 //' Return OSM data in Simple Features format
 //'
-//' @param netmat A \code{matrix} containing network connections
+//' @param netdf A \code{matrix} containing network connections
 //' @param start_node Starting node for shortest path route
 //' @param end_node Ending node for shortest path route
 //' @param eta The entropy parameter
@@ -246,4 +246,41 @@ Rcpp::NumericMatrix rcpp_router (Rcpp::DataFrame netdf,
     std::copy (dout.begin (), dout.end (), res.begin () + path.size ());
 
     return res;
+}
+
+//' rcpp_router_prob
+//'
+//' Return a vector of traversing probabilities
+//'
+//' @param netdf A \code{matrix} containing network connections
+//' @param start_node Starting node for shortest path route
+//' @param end_node Ending node for shortest path route
+//' @param eta The entropy parameter
+//'
+//' @return Rcpp::NumericVector of traversing probabilities
+//'
+//' @noRd
+// [[Rcpp::export]]
+arma::mat rcpp_router_prob (Rcpp::DataFrame netdf,
+        int start_nodei, int end_nodei, double eta)
+{
+    // Extract vectors from netmat and convert to std:: types
+    Rcpp::NumericVector idfrom_rcpp = netdf ["xfr"];
+    std::vector <vertex_t> idfrom = 
+        Rcpp::as <std::vector <vertex_t> > (idfrom_rcpp);
+
+    Rcpp::NumericVector idto_rcpp = netdf ["xto"];
+    std::vector <vertex_t> idto = 
+        Rcpp::as <std::vector <vertex_t> > (idto_rcpp);
+
+    Rcpp::NumericVector d_rcpp = netdf ["d"];
+    std::vector <weight_t> d = Rcpp::as <std::vector <weight_t> > (d_rcpp);
+
+    const unsigned start_node = (unsigned) start_nodei;
+    const unsigned end_node = (unsigned) end_nodei;
+
+    Graphmp g (idfrom, idto, d, start_node, end_node, eta);
+
+    int nloops = g.calculate_q_mat (1.0e-6, 1000000);
+    return g.q_mat;
 }
