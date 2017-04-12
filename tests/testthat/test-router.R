@@ -8,6 +8,12 @@ test_that ("osm_router", {
                                  15., 11., 6., 6., 9., 14., 2., 9.))
     way <- osm_router (netdf, 0, 5, eta = 1.0)
     testthat::expect_is (way, "matrix")
+    testthat::expect_error (
+    osm_router ("not a data.frame", 0, 5, eta = 1.0),
+    "netdf must be a data.frame")
+    testthat::expect_error (
+    osm_router (matrix (1, 1), 0, 5, eta = 1.0),
+    "netdf must have 3 columns")
 })
 
 test_that ("getProbability", {
@@ -21,4 +27,7 @@ test_that ("getProbability", {
                                           2., 9.))
     way <- getProbability (netdf, 0, 5, eta = 1.0)
     testthat::expect_is (way, "data.frame")
+    testthat::expect_error (
+    getProbability ("not a data.frame", 0, 5, eta = 1.0),
+    "netdf must be a data.frame")
 })
