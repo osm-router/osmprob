@@ -30,4 +30,7 @@ test_that ("getProbability", {
     testthat::expect_error (
     getProbability ("not a data.frame", 0, 5, eta = 1.0),
     "netdf must be a data.frame")
+    testthat::expect_error (
+    getProbability (data.frame (), 0, 5, eta = 1.0),
+    "netdf must contain columns from_id, to_id and d_weighted")
 })

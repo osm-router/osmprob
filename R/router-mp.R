@@ -60,8 +60,11 @@ osm_router <- function (netdf, start_node, end_node, eta=1)
 #' prb <- getProbability (netdf, 1, 5)
 getProbability <- function (netdf, start_node, end_node, eta=1)
 {
-    if (!(is (netdf, 'data.frame') | is (netdf, 'matrix')))
+    if (!(is (netdf, 'data.frame')))
         stop ('netdf must be a data.frame')
+    if (!all (c ('from_id', 'to_id', 'd_weighted') %in% names (netdf)))
+        stop ('netdf must contain columns from_id, to_id and d_weighted')
+
     netdf_out <- netdf
     netdf <- data.frame (netdf$from_id, netdf$to_id, netdf$d_weighted)
 
