@@ -7,6 +7,8 @@
 #'
 #' @param graph graph to be processed
 #' @return Rcpp::DataFrame containing the output graph
+#'
+#' @noRd
 rcpp_makeCompactGraph <- function(graph) {
     .Call('osmprob_rcpp_makeCompactGraph', PACKAGE = 'osmprob', graph)
 }

@@ -299,6 +299,8 @@ void removeIntermediateVertices (vertexMap &v, edgeVector &e)
 //'
 //' @param graph graph to be processed
 //' @return Rcpp::DataFrame containing the output graph
+//'
+//' @noRd
 // [[Rcpp::export]]
 Rcpp::DataFrame rcpp_makeCompactGraph (Rcpp::DataFrame graph)
 {
