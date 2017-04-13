@@ -6,14 +6,14 @@
 
 using namespace Rcpp;
 
-// makeCompactGraph
-Rcpp::DataFrame makeCompactGraph(Rcpp::DataFrame graph);
-RcppExport SEXP osmprob_makeCompactGraph(SEXP graphSEXP) {
+// rcpp_makeCompactGraph
+Rcpp::DataFrame rcpp_makeCompactGraph(Rcpp::DataFrame graph);
+RcppExport SEXP osmprob_rcpp_makeCompactGraph(SEXP graphSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::DataFrame >::type graph(graphSEXP);
-    rcpp_result_gen = Rcpp::wrap(makeCompactGraph(graph));
+    rcpp_result_gen = Rcpp::wrap(rcpp_makeCompactGraph(graph));
     return rcpp_result_gen;
 END_RCPP
 }

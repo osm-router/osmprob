@@ -5,4 +5,7 @@ test_that ("makeCompactGraph", {
                comp <- makeCompactGraph (nw)
                isDf <- is (comp, "data.frame")
                testthat::expect_true (isDf)
+               testthat::expect_error (
+               makeCompactGraph ("not a data.frame"),
+               "graph must be of type data.frame")
 })
