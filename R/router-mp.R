@@ -111,7 +111,6 @@ getProbability <- function (netdf, start_node, end_node, eta=1)
 #'                               1, 2, 4, 3, 5, 0, 2, 4),
 #'                      d_weighted = c (7., 9., 14., 7., 10., 15., 9., 10.,11.,
 #'                               2., 15., 11., 6., 6., 9., 14., 2., 9.))
-#' netdf <- netdf + 40
 #' start_node <- 1
 #' end_node <- 5
 #' shortest <- getShortestPath (netdf, 1, 5)
