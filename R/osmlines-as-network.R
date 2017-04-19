@@ -27,11 +27,11 @@ osmlines_as_network <- function (lns, profileName = "bicycle")
     res <- rcpp_lines_as_network (lns, profiles)
     data.frame (
                 from_id = as.character (res [[2]] [, 1]),
-                from_x = res [[1]] [, 1],
-                from_y = res [[1]] [, 2],
+                from_lon = res [[1]] [, 1],
+                from_lat = res [[1]] [, 2],
                 to_id = as.character (res [[2]] [, 2]),
-                to_x = res [[1]] [, 3],
-                to_y = res [[1]] [, 4],
+                to_lon = res [[1]] [, 3],
+                to_lat = res [[1]] [, 4],
                 d = res [[1]] [, 5],
                 d_weighted = res [[1]] [, 6],
                 highway = as.character (res [[2]] [, 3]),

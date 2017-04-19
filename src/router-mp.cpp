@@ -284,3 +284,43 @@ arma::mat rcpp_router_prob (Rcpp::DataFrame netdf,
     int nloops = g.calculate_q_mat (1.0e-6, 1000000);
     return g.q_mat;
 }
+
+//' rcpp_router_dijkstra
+//'
+//' Return a vector containing the shortest path between two nodes on a graph
+//'
+//' @param netdf A \code{data.frame} containing network connections
+//' @param start_node Starting node for shortest path route
+//' @param end_node Ending node for shortest path route
+//'
+//' @return \code{Rcpp::NumericVector} with node IDs
+//'
+//' @noRd
+// [[Rcpp::export]]
+Rcpp::NumericVector rcpp_router_dijkstra (Rcpp::DataFrame netdf, 
+        int start_node, int end_node)
+{
+    // Extract vectors from netmat and convert to std:: types
+    Rcpp::NumericVector idfrom_rcpp = netdf ["from_id"];
+    std::vector <vertex_t> idfrom = 
+        Rcpp::as <std::vector <vertex_t> > (idfrom_rcpp);
+
+    Rcpp::NumericVector idto_rcpp = netdf ["to_id"];
+    std::vector <vertex_t> idto = 
+        Rcpp::as <std::vector <vertex_t> > (idto_rcpp);
+
+    Rcpp::NumericVector d_rcpp = netdf ["d_weighted"];
+    std::vector <weight_t> d = Rcpp::as <std::vector <weight_t> > (d_rcpp);
+
+    const unsigned start_nodei = (unsigned) start_node;
+    const unsigned end_nodei = (unsigned) end_node;
+
+    Graphmp g (idfrom, idto, d, start_nodei, end_nodei);
+
+    std::vector <weight_t> min_distance;
+    std::vector <vertex_t> previous;
+    g.Dijkstra (start_nodei, min_distance, previous);
+
+    std::vector <vertex_t> path = g.GetShortestPathTo (end_nodei, previous);
+    return Rcpp::wrap (path);
+}

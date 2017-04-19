@@ -72,8 +72,8 @@ class Graphmp
         arma::vec h_vec, x_vec, v_vec; // also <double>
 
         Graphmp (std::vector <vertex_t> idfrom, std::vector <vertex_t> idto,
-                std::vector <weight_t> d, unsigned start_node, unsigned end_node,
-                double eta)
+                std::vector <weight_t> d, unsigned start_node,
+                unsigned end_node, double eta)
             : _idfrom (idfrom), _idto (idto), _d (d),
                 _start_node (start_node), _end_node (end_node), _eta (eta)
         {
@@ -81,6 +81,16 @@ class Graphmp
             make_dq_mats ();
             make_n_mat ();
         }
+
+        Graphmp (std::vector <vertex_t> idfrom, std::vector <vertex_t> idto,
+                std::vector <weight_t> d, unsigned start_node,
+                unsigned end_node)
+            : _idfrom (idfrom), _idto (idto), _d (d),
+                _start_node (start_node), _end_node (end_node), _eta (1)
+        {
+            fillGraph ();
+        }
+
         ~Graphmp ()
         {
             for (int i=0; i<adjlist.size (); i++)

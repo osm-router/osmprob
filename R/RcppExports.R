@@ -27,19 +27,6 @@ rcpp_lines_as_network <- function(sf_lines, pr) {
     .Call('osmprob_rcpp_lines_as_network', PACKAGE = 'osmprob', sf_lines, pr)
 }
 
-#' dijkstra
-#'
-#' Calculates the shortest path between two points on a graph using Dijkstra's
-#' algorithm
-#'
-#' @param graph matrix containing the graph
-#' @param start id of the start point
-#' @param end id of the end point
-#' @return a list of edges that are part of the shortest path
-dijkstra <- function(graph, start, end) {
-    invisible(.Call('osmprob_dijkstra', PACKAGE = 'osmprob', graph, start, end))
-}
-
 #' rcpp_router
 #'
 #' Return OSM data in Simple Features format
@@ -70,5 +57,20 @@ rcpp_router <- function(netdf, start_nodei, end_nodei, eta) {
 #' @noRd
 rcpp_router_prob <- function(netdf, start_nodei, end_nodei, eta) {
     .Call('osmprob_rcpp_router_prob', PACKAGE = 'osmprob', netdf, start_nodei, end_nodei, eta)
+}
+
+#' rcpp_router_dijkstra
+#'
+#' Return a vector containing the shortest path between two nodes on a graph
+#'
+#' @param netdf A \code{data.frame} containing network connections
+#' @param start_node Starting node for shortest path route
+#' @param end_node Ending node for shortest path route
+#'
+#' @return \code{Rcpp::NumericVector} with node IDs
+#'
+#' @noRd
+rcpp_router_dijkstra <- function(netdf, start_node, end_node) {
+    .Call('osmprob_rcpp_router_dijkstra', PACKAGE = 'osmprob', netdf, start_node, end_node)
 }
 
