@@ -81,15 +81,15 @@ typedef std::vector <osm_edge_t> edgeVector;
 
 void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
 {
-    Rcpp::StringVector from = gr [0];
-    Rcpp::StringVector to = gr [3];
-    Rcpp::NumericVector from_lon = gr [1];
-    Rcpp::NumericVector from_lat = gr [2];
-    Rcpp::NumericVector to_lon = gr [4];
-    Rcpp::NumericVector to_lat = gr [5];
-    Rcpp::NumericVector dist = gr [6];
-    Rcpp::NumericVector weight = gr [7];
-    Rcpp::StringVector hw = gr [8];
+    Rcpp::StringVector from = gr ["from_id"];
+    Rcpp::StringVector to = gr ["to_id"];
+    Rcpp::NumericVector from_lon = gr ["from_lon"];
+    Rcpp::NumericVector from_lat = gr ["from_lat"];
+    Rcpp::NumericVector to_lon = gr ["to_lon"];
+    Rcpp::NumericVector to_lat = gr ["to_lat"];
+    Rcpp::NumericVector dist = gr ["d"];
+    Rcpp::NumericVector weight = gr ["d_weighted"];
+    Rcpp::StringVector hw = gr ["highway"];
 
     for (int i = 0; i < to.length (); i ++)
     {
