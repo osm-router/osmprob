@@ -33,6 +33,12 @@ test_that ("getProbability", {
     testthat::expect_error (
     getProbability (data.frame (), 0, 5, eta = 1.0),
     "netdf must contain columns from_id, to_id and d_weighted")
+    testthat::expect_error (
+    getProbability (netdf, 9, 5),
+    "start_node is not part of netdf")
+    testthat::expect_error (
+    getProbability (netdf, 1, 9),
+    "end_node is not part of netdf")
 })
 
 test_that ("getShortestPath", {

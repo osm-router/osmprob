@@ -75,6 +75,12 @@ getProbability <- function (netdf, start_node, end_node, eta=1)
     netdf$xto <- as.numeric (as.character (netdf$xto))
     allids <- c (netdf$xfr, netdf$xto)
     allids <- unique (sort (allids))
+    if (!start_node %in% allids)
+        stop ('start_node is not part of netdf')
+    if (!end_node %in% allids)
+        stop ('end_node is not part of netdf')
+    start_node <- which (allids == start_node) - 1
+    end_node <- which (allids == end_node) - 1
     netdf$xfr <- vapply (netdf$xfr, function (x) { which (allids == x) -1 }, 0.)
     netdf$xto <- vapply (netdf$xto, function (x) { which (allids == x) -1 }, 0.)
 
@@ -86,7 +92,7 @@ getProbability <- function (netdf, start_node, end_node, eta=1)
     for (i in seq_len (len))
     {
         ln <- netdf [i, ]
-        probability [i] <- prob [ln$xto + 1, ln$xfr + 1]
+        probability [i] <- prob [ln$xto + 2, ln$xfr + 2]
     }
 
     prb <- cbind (netdf_out, probability)
@@ -125,14 +131,16 @@ getShortestPath <- function (netdf, start_node, end_node)
     netdf$to_id <- as.numeric (as.character (netdf$to_id))
     allids <- c (netdf$from_id, netdf$to_id)
     allids <- unique (sort (allids))
-    if (is.na (allids [start_node]))
+    if (!start_node %in% allids)
         stop ('start_node is not part of netdf')
-    if (is.na (allids [end_node]))
+    if (!end_node %in% allids)
         stop ('end_node is not part of netdf')
     netdf$from_id <- vapply (netdf$from_id, function (x)
                              { which (allids == x) -1 }, 0.)
     netdf$to_id <- vapply (netdf$to_id, function (x)
                            { which (allids == x) -1 }, 0.)
+    start_node <- which (allids == start_node) -1
+    end_node <- which (allids == end_node) -1
     path <- rcpp_router_dijkstra (netdf, start_node, end_node)
-    allids [path]
+    allids [path + 1]
 }
