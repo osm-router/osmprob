@@ -12,5 +12,4 @@ open: $(RFILE).html
 	xdg-open $(RFILE).html &
 
 clean:
-	rm -rf *.html *.png README_cache man/rcpp_get_points.Rd \
-		man/rcpp_get_lines.Rd man/rcpp_get_polygons.Rd
+	rm -rf *.html *.png
