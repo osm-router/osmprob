@@ -42,3 +42,8 @@ graph <- makeCompactGraph (graph)
 prob <- getProbability (graph, 1, 5, 3)
 plotGraph (prob)
 ```
+
+Code of Conduct
+---------------
+
+Please note that this project is released with a [Contributor Code of Conduct](https://github.com/osm-router/osmprob/blob/master/CONDUCT.md). By participating in this project you agree to abide by its terms.

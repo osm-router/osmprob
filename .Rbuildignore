@@ -7,3 +7,4 @@ makefile$
 ^runTest.R$
 ^tmux-start.bash$
 ^appveyor\.yml$
+^CONDUCT\.md$
