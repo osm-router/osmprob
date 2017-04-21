@@ -10,7 +10,8 @@ osmlines_as_network(lns, profileName = "bicycle")
 \item{lns}{An \code{sf} collection of \code{LINESTRING} objects, obtained for
 example from the \code{osm_lines} component of an \code{osmdata} object}
 
-\item{profileName}{Name of the used weighting profile}
+\item{profileName}{Name of the used weighting profile.
+\code{osmprob::weightingProfiles} contains all available profiles.}
 }
 \value{
 \code{data.frame} of all pairs of connected nodes
