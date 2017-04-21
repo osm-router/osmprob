@@ -17,12 +17,15 @@ Imports:
     RColorBrewer,
     sf,
     shiny
-LinkingTo: 
+LinkingTo:
     Rcpp,
     RcppArmadillo
 URL: https://github.com/osm-router/osmprob
 BugReports: https://github.com/osm-router/osmprob
 RoxygenNote: 6.0.1
 SystemRequirements: C++11
-Suggests: testthat
+Suggests: testthat,
+    knitr,
+    rmarkdown
 LazyData: true
+VignetteBuilder: knitr

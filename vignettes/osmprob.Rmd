@@ -1,0 +1,24 @@
+---
+title: "osmprob"
+author: "Andreas Petutschnig"
+date: "`r Sys.Date()`"
+output:
+    html_document:
+        toc: true
+        theme: flatly
+        highlight: tango
+vignette: >
+  %\VignetteIndexEntry{osmprob}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Introduction
+
+When using routing algorithms to model movement on a graph, one is not necessarily interested in obtaining the least-cost, but the most
+realistic results. The average path between any two points is likely never the shortest, yet there is currently no way to estimate the course or
+lengths of realistic paths. Instead, movement is often assumed to be singular and repeatable.  **osmprob** is an *R* library that provides
+routing probabilities along all possible paths between any two points.  The path of highest probability is the shortest, yet all edges will
+generally have non-zero probabilities of being traversed.  Importantly, the resultant network enables calculation of the probabalistically most
+likely distance travelled between any two points. The package comes with a built-in **Shiny** **Leaflet** application to display the results in
+a matter that is both understandable and visually pleasing.
