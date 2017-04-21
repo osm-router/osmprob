@@ -1,8 +1,8 @@
 ^\.travis\.yml$
 makefile$
 \.md$
-\.Rmd$
-\.html$
+^README[.]Rmd$
+^README[.]html$
 ^figure/
 ^runTest.R$
 ^tmux-start.bash$
