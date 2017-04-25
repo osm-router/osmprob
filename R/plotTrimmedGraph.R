@@ -90,7 +90,7 @@ server <- function (input, output, session)
       # int <- sf::st_intersects (graph, bbx) == 1
       # g <- graph [which (int), ]
       qntl <- input$drawQuant / 100
-      g <- subset (g, g$probability >= stats::quantile (g$probability, qntl))
+      g <- subset (g, g$probability <= stats::quantile (g$probability, qntl))
       len <- dim (g) [1]
       if (n <= len || len < 1)
           return (graph)
@@ -132,15 +132,15 @@ shiny::observe ({
     pal <- lnColor (input$colors, dat$highway)
     proxy <- leaflet::leafletProxy ("map", data = dat) %>%
     leaflet::clearShapes ()
-    if (input$drawProb)
-    {
-    proxy %>% leaflet::addPolylines (color = ~pal (dat$highway),opacity = 1.0,
-                           weight = getWidth (2, 10, dat$probability))
-    }
     if (input$drawWeight)
     {
-    proxy %>% leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0,
-                           weight = getWidth (2, 1, dat$d_weighted))
+        proxy %>% leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0,
+            weight = getWidth (2, 1, dat$d_weighted))
+    }
+    if (input$drawProb)
+    {
+        proxy %>% leaflet::addPolylines (color = ~pal (dat$highway),
+            opacity = 1.0, weight = getWidth (2, 10, dat$probability))
     }
   } else
   {
