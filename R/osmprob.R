@@ -10,7 +10,7 @@
 #' @importFrom shiny reactive selectInput shinyApp sliderInput
 #' @importFrom RColorBrewer brewer.pal.info
 #' @importFrom stats quantile
-#' @importFrom magrittr %>%
+#' @importFrom magrittr %>% %<>%
 #' @importFrom methods is
 #' @importFrom sf st_sf st_sfc st_linestring
 #' @useDynLib osmprob

@@ -25,6 +25,7 @@ that might be called 'router'. \code{netdt} must have just three columns of
 indices.
 }
 \examples{
+\dontrun{
 netdf <- data.frame (
                      xfr = c (rep (0, 3), rep (1, 3), rep (2, 4),
                               rep (3, 3), rep (4, 2), rep (5, 3)),
@@ -33,4 +34,5 @@ netdf <- data.frame (
                      d = c (7., 9., 14., 7., 10., 15., 9., 10., 11., 2.,
                             15., 11., 6., 6., 9., 14., 2., 9.))
 osm_router (netdf, 1, 5)
+}
 }

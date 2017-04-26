@@ -20,6 +20,7 @@ a \code{vector} containing edge IDs of the shortest path
 Calculate the shortest path between two nodes on a graph
 }
 \examples{
+\dontrun{
 netdf <- data.frame (
                      from_id = c (rep (0, 3), rep (1, 3), rep (2, 4),
                               rep (3, 3), rep (4, 2), rep (5, 3)),
@@ -27,5 +28,6 @@ netdf <- data.frame (
                               1, 2, 4, 3, 5, 0, 2, 4),
                      d_weighted = c (7., 9., 14., 7., 10., 15., 9., 10.,11.,
                               2., 15., 11., 6., 6., 9., 14., 2., 9.))
-shortest <- getShortestPath (netdf, 1, 5)
+getShortestPath (netdf, 1, 5)
+}
 }

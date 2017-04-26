@@ -19,6 +19,7 @@ getProbability(netdf, start_node, end_node, eta = 1)
 Calculate routing probabilities for a data.frame
 }
 \examples{
+\dontrun{
 netdf <- data.frame (
                      from_id = c (rep (0, 3), rep (1, 3), rep (2, 4),
                               rep (3, 3), rep (4, 2), rep (5, 3)),
@@ -26,14 +27,6 @@ netdf <- data.frame (
                               1, 2, 4, 3, 5, 0, 2, 4),
                      d_weighted = c (7., 9., 14., 7., 10., 15., 9., 10.,11.,
                               2., 15., 11., 6., 6., 9., 14., 2., 9.))
-prb <- getProbability (netdf, 1, 5)
-\dontrun{
-library (magrittr)
-devtools::load_all (export_all = TRUE)
-netdf <- readRDS ("../tests/compact-ways-munich.Rda") \%>\% head (115) \%>\% makeCompactGraph
-netdf$d_weighted <- netdf$d
-start_node <- netdf$from_id [20]
-end_node <- netdf$to_id [50]
-eta <- 1
+getProbability (netdf, 1, 5)
 }
 }
