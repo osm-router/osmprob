@@ -59,7 +59,10 @@ void Graphmp::make_dq_mats ()
     d_mat.diag (0.0);
     q_mat.zeros (num_vertices + 1, num_vertices + 1);
 
-    unsigned q_sums [num_vertices] = {0}; // Note: 1 shorter than q_mat
+    //unsigned q_sums [num_vertices] = {0}; // fails on travis
+    unsigned q_sums [num_vertices]; // Note: 1 shorter than q_mat
+    for (int i=0; i<num_vertices; i++)
+        q_sums [i] = 0;
 
     for (auto const &it1 : adjlist)
     {
