@@ -60,7 +60,7 @@ typedef std::map <vertex_t, std::vector <neighbor> > adjacency_list_t;
 class Graphmp
 {
     protected:
-        const unsigned _start_node, _end_node;
+        const vertex_t _start_node, _end_node;
         unsigned _num_vertices;
         const double _eta; // The entropy parameter
         const std::vector <vertex_t> _idfrom, _idto;
@@ -73,8 +73,8 @@ class Graphmp
         arma::vec h_vec, x_vec, v_vec; // also <double>
 
         Graphmp (std::vector <vertex_t> idfrom, std::vector <vertex_t> idto,
-                std::vector <weight_t> d, unsigned start_node,
-                unsigned end_node, double eta)
+                std::vector <weight_t> d, vertex_t start_node,
+                vertex_t end_node, double eta)
             : _idfrom (idfrom), _idto (idto), _d (d),
                 _start_node (start_node), _end_node (end_node), _eta (eta)
         {
@@ -94,17 +94,12 @@ class Graphmp
 
         ~Graphmp ()
         {
-            for (int i=0; i<adjlist.size (); i++)
-                adjlist [i].clear ();
-            adjlist.clear ();
-            d_mat.reset ();
-            q_mat.reset ();
-            n_mat.reset ();
+            // no destructors necessary
         }
 
         unsigned return_num_vertices() { return _num_vertices;   }
-        unsigned return_start_node() { return _start_node;   }
-        unsigned return_end_node() { return _end_node;   }
+        vertex_t return_start_node() { return _start_node;   }
+        vertex_t return_end_node() { return _end_node;   }
         std::vector <vertex_t> return_idfrom() { return _idfrom; }
         std::vector <vertex_t> return_idto() { return _idto; }
         std::vector <weight_t> return_d() { return _d; }
@@ -152,44 +147,20 @@ unsigned Graphmp::fillGraph ()
             adjlist.erase (idfrom [i]);
         }
         nblist.push_back (neighbor (idto [i], d [i]));
-        adjlist.insert (std::pair <vertex_t, std::vector <neighbor> >
-                (idfrom [i], nblist));
+        adjlist.insert (std::make_pair (idfrom [i], nblist));
         all_nodes.insert (idto [i]);
         nblist.clear ();
     }
-
-    /*
-    int ss = idfrom.size ();
-    int from_here = idfrom.front ();
-    for (int i=0; i<idfrom.size (); i++)
-    {
-        int idfromi = idfrom [i];
-        if (idfromi != from_here)
-        {
-            from_here = idfromi;
-            adjlist.push_back (nblist);
-            nblist.clear ();
-        }
-        nblist.push_back (neighbor (idto [i], d [i]));
-    }
-    adjlist.push_back (nblist);
-    nblist.clear ();
-    */
 
     return all_nodes.size ();
 }
 
 void Graphmp::dumpGraph ()
 {
-    /*
-    for (int i=0; i<adjlist.size (); i++)
-    {
-        for (int j=0; j<adjlist [i].size (); j++)
-            Rcpp::Rcout << "[" << i << "] (" <<
-                adjlist [i] [j].target << ", " << adjlist [i] [j].weight <<
-                ")" << std::endl;
-    }
-    */
+    for (auto const &it1 : adjlist)
+        for (auto const &it2 : it1.second)
+            Rcpp::Rcout << "[" << it1.first << "] (" <<
+                it2.target << ", " << it2.weight << ")" << std::endl;
 }
 
 void Graphmp::dumpMat (arma::mat mat, std::string mat_name,

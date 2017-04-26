@@ -55,8 +55,8 @@ rcpp_router <- function(netdf, start_nodei, end_nodei, eta) {
 #' @return Rcpp::NumericVector of traversing probabilities
 #'
 #' @noRd
-rcpp_router_prob <- function(netdf, start_nodei, end_nodei, eta) {
-    .Call('osmprob_rcpp_router_prob', PACKAGE = 'osmprob', netdf, start_nodei, end_nodei, eta)
+rcpp_router_prob <- function(netdf, start_node, end_node, eta) {
+    .Call('osmprob_rcpp_router_prob', PACKAGE = 'osmprob', netdf, start_node, end_node, eta)
 }
 
 #' rcpp_router_dijkstra

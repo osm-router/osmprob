@@ -59,26 +59,22 @@ void Graphmp::make_dq_mats ()
     d_mat.diag (0.0);
     q_mat.zeros (num_vertices + 1, num_vertices + 1);
 
-    unsigned q_sums [num_vertices]; // Note: 1 shorter than q_mat
-    for (auto i: q_sums)
-        i = 0;
+    unsigned q_sums [num_vertices] = {0}; // Note: 1 shorter than q_mat
 
-    for (auto i: adjlist)
+    for (auto const &it1 : adjlist)
     {
         const unsigned di = std::distance (all_nodes.begin (), 
-                all_nodes.find (i.first));
-        q_sums [di] = 0;
-        const std::vector <neighbor> &nbs = adjlist [di];
-        for (std::vector <neighbor>::const_iterator nb_iter = nbs.begin ();
-                nb_iter != nbs.end (); nb_iter++)
+                all_nodes.find (it1.first));
+        for (auto const &it2 : it1.second)
         {
             const unsigned dj = std::distance (all_nodes.begin (),
-                    all_nodes.find (nb_iter->target));
-            d_mat (di + 1, dj + 1) = nb_iter->weight;
+                    all_nodes.find (it2.target));
+            d_mat (di + 1, dj + 1) = it2.weight;
             q_mat (di + 1, dj + 1) = 1.0;
             q_sums [di]++;
         }
     }
+
     d_mat (0, dstart_node + 1) = 1.0;
 
     // Standardise q_mat, which is the top-left of the probability matrix
@@ -276,8 +272,8 @@ Rcpp::NumericMatrix rcpp_router (Rcpp::DataFrame netdf,
 //'
 //' @noRd
 // [[Rcpp::export]]
-arma::mat rcpp_router_prob (Rcpp::DataFrame netdf,
-        int start_nodei, int end_nodei, double eta)
+Rcpp::NumericVector rcpp_router_prob (Rcpp::DataFrame netdf,
+        long long start_node, long long end_node, double eta)
 {
     // Extract vectors from netmat and convert to std:: types
     Rcpp::NumericVector idfrom_rcpp = netdf ["xfr"];
@@ -291,13 +287,34 @@ arma::mat rcpp_router_prob (Rcpp::DataFrame netdf,
     Rcpp::NumericVector d_rcpp = netdf ["d"];
     std::vector <weight_t> d = Rcpp::as <std::vector <weight_t> > (d_rcpp);
 
-    const unsigned start_node = (unsigned) start_nodei;
-    const unsigned end_node = (unsigned) end_nodei;
-
     Graphmp g (idfrom, idto, d, start_node, end_node, eta);
 
     int nloops = g.calculate_q_mat (1.0e-6, 1000000);
-    return g.q_mat;
+    // q_mat then has to have first row and first col removed
+    const int s = g.q_mat.n_rows;
+    g.q_mat = g.q_mat.submat (1, 1, s - 1, s - 1);
+
+    // The OSM IDs are then inserted as row and col names, requiring conversion
+    // of arma::mat to Rcpp::NumericMatrix
+    Rcpp::NumericMatrix q_mat_out = 
+        Rcpp::as <Rcpp::NumericMatrix> (Rcpp::wrap (g.q_mat));
+    Rcpp::CharacterVector names;
+    for (auto i=g.all_nodes.begin (); i != g.all_nodes.end (); ++i)
+        names.push_back (std::to_string (*i));
+    Rcpp::rownames (q_mat_out) = names;
+    Rcpp::colnames (q_mat_out) = names;
+
+    // Finally, convert matrix to single vector matching the pairs of xfr,xto
+    Rcpp::NumericVector q_vec;
+    for (unsigned i=0; i<idfrom.size (); i++)
+    {
+        unsigned di = std::distance (g.all_nodes.begin (), 
+                g.all_nodes.find (idfrom [i]));
+        unsigned dj = std::distance (g.all_nodes.begin (), 
+                g.all_nodes.find (idto [i]));
+        q_vec.push_back (q_mat_out (di, dj));
+    }
+    return q_vec;
 }
 
 //' rcpp_router_dijkstra
