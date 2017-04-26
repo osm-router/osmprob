@@ -47,8 +47,12 @@ void Graphmp::make_dq_mats ()
      * finite entry for escape from start_node. The last column similarly
      * contains only one finite entry for absorption by end_node. */
     const unsigned num_vertices = return_num_vertices ();
-    const unsigned start_node = return_start_node ();
-    const unsigned end_node = return_end_node ();
+    //const unsigned start_node = return_start_node ();
+    //const unsigned end_node = return_end_node ();
+    const unsigned dstart_node = std::distance (all_nodes.begin (),
+            all_nodes.find (return_start_node ()));
+    const unsigned dend_node = std::distance (all_nodes.begin (),
+            all_nodes.find (return_end_node ()));
 
     d_mat = arma::mat (num_vertices + 1, num_vertices + 1);
     d_mat.fill (max_weight);
@@ -56,28 +60,35 @@ void Graphmp::make_dq_mats ()
     q_mat.zeros (num_vertices + 1, num_vertices + 1);
 
     unsigned q_sums [num_vertices]; // Note: 1 shorter than q_mat
+    for (auto i: q_sums)
+        i = 0;
 
-    for (int i=0; i<num_vertices; i++)
+    for (auto i: adjlist)
     {
-        q_sums [i] = 0;
-        const std::vector <neighbor> &nbs = adjlist [i];
+        const unsigned di = std::distance (all_nodes.begin (), 
+                all_nodes.find (i.first));
+        q_sums [di] = 0;
+        const std::vector <neighbor> &nbs = adjlist [di];
         for (std::vector <neighbor>::const_iterator nb_iter = nbs.begin ();
                 nb_iter != nbs.end (); nb_iter++)
         {
-            d_mat (i + 1, nb_iter->target + 1) = nb_iter->weight;
-            q_mat (i + 1, nb_iter->target + 1) = 1.0;
-            q_sums [i]++;
+            const unsigned dj = std::distance (all_nodes.begin (),
+                    all_nodes.find (nb_iter->target));
+            d_mat (di + 1, dj + 1) = nb_iter->weight;
+            q_mat (di + 1, dj + 1) = 1.0;
+            q_sums [di]++;
         }
     }
-    d_mat (0, start_node + 1) = 1.0;
+    d_mat (0, dstart_node + 1) = 1.0;
 
     // Standardise q_mat, which is the top-left of the probability matrix
     for (arma::uword r=1; r<q_mat.n_rows; ++r)
-        q_mat.row (r) = q_mat.row (r) / (double) q_sums [r - 1];
-    // Then add links to start_node and to absorbing end_node
-    q_mat (0, start_node + 1) = 1.0;
-    q_mat.row (end_node + 1) = q_mat.row (end_node + 1) * 
-        q_sums [end_node] / (q_sums [end_node] + 1.0);
+        if (q_sums [r - 1] > 0) // == 0 if links to TO and not FROM
+            q_mat.row (r) = q_mat.row (r) / (double) q_sums [r - 1];
+    // Then add links to dstart_node and to absorbing end_node
+    q_mat (0, dstart_node + 1) = 1.0;
+    q_mat.row (dend_node + 1) = q_mat.row (dend_node + 1) * 
+        q_sums [dend_node] / (q_sums [dend_node] + 1.0);
 }
 
 
@@ -152,7 +163,11 @@ void Graphmp::iterate_q_mat ()
         //temp_row = arma::exp (-eta_inv * (temp_row + v_row) + x_row);
         arma::rowvec temp_row = arma::exp (-eta_inv * (q_mat.row (r) + 
                     v_row) + x_row);
-        q_mat.row (r) = temp_row / arma::sum (temp_row);
+        const double rsum = arma::sum (temp_row);
+        if (rsum > 0.0)
+            q_mat.row (r) = temp_row / rsum;
+        else
+            q_mat.row (r) = temp_row.zeros ();
     }
 }
 

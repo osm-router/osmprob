@@ -43,7 +43,7 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 
-typedef int vertex_t;
+typedef long long vertex_t;
 typedef double weight_t;
 
 const weight_t max_weight = std::numeric_limits <weight_t>::infinity();
@@ -55,7 +55,7 @@ struct neighbor {
         : target (arg_target), weight (arg_weight) { }
 };
 
-typedef std::vector <std::vector <neighbor> > adjacency_list_t;
+typedef std::map <vertex_t, std::vector <neighbor> > adjacency_list_t;
 
 class Graphmp
 {
@@ -67,6 +67,7 @@ class Graphmp
         const std::vector <weight_t> _d;
 
     public:
+        std::set <vertex_t> all_nodes;
         adjacency_list_t adjlist; // the graph data
         arma::mat d_mat, q_mat, n_mat; // <double>
         arma::vec h_vec, x_vec, v_vec; // also <double>
@@ -140,9 +141,26 @@ unsigned Graphmp::fillGraph ()
     std::vector <vertex_t> idfrom = return_idfrom ();
     std::vector <vertex_t> idto = return_idto ();
     std::vector <weight_t> d = return_d ();
+    std::vector <neighbor> nblist;
+
+    for (int i=0; i<idfrom.size (); i++)
+    {
+        all_nodes.insert (idfrom [i]);
+        if (adjlist.find (idfrom [i]) != adjlist.end ())
+        {
+            nblist = adjlist [idfrom [i]];
+            adjlist.erase (idfrom [i]);
+        }
+        nblist.push_back (neighbor (idto [i], d [i]));
+        adjlist.insert (std::pair <vertex_t, std::vector <neighbor> >
+                (idfrom [i], nblist));
+        all_nodes.insert (idto [i]);
+        nblist.clear ();
+    }
+
+    /*
     int ss = idfrom.size ();
     int from_here = idfrom.front ();
-    std::vector <neighbor> nblist;
     for (int i=0; i<idfrom.size (); i++)
     {
         int idfromi = idfrom [i];
@@ -156,13 +174,14 @@ unsigned Graphmp::fillGraph ()
     }
     adjlist.push_back (nblist);
     nblist.clear ();
-    unsigned num_vertices = adjlist.size ();
+    */
 
-    return num_vertices;
+    return all_nodes.size ();
 }
 
 void Graphmp::dumpGraph ()
 {
+    /*
     for (int i=0; i<adjlist.size (); i++)
     {
         for (int j=0; j<adjlist [i].size (); j++)
@@ -170,6 +189,7 @@ void Graphmp::dumpGraph ()
                 adjlist [i] [j].target << ", " << adjlist [i] [j].weight <<
                 ")" << std::endl;
     }
+    */
 }
 
 void Graphmp::dumpMat (arma::mat mat, std::string mat_name,
