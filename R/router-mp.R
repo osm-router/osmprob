@@ -88,23 +88,24 @@ getProbability <- function (netdf, start_node, end_node, eta=1)
         stop ('start_node is not part of netdf')
     if (!end_node %in% allids)
         stop ('end_node is not part of netdf')
-    start_node <- which (allids == start_node) - 1
-    end_node <- which (allids == end_node) - 1
-    netdf$xfr <- vapply (netdf$xfr, function (x) { which (allids == x) -1 }, 0.)
-    netdf$xto <- vapply (netdf$xto, function (x) { which (allids == x) -1 }, 0.)
+    #start_node <- which (allids == start_node) - 1
+    #end_node <- which (allids == end_node) - 1
+    #netdf$xfr <- vapply (netdf$xfr, function (x) { which (allids == x) -1 }, 0.)
+    #netdf$xto <- vapply (netdf$xto, function (x) { which (allids == x) -1 }, 0.)
 
     eta <- as.numeric (eta * nrow (netdf))
     prob <- rcpp_router_prob (netdf, start_node, end_node, eta)
 
-    len <- dim (netdf) [1]
-    probability <- vector (length = len)
-    for (i in seq_len (len))
-    {
-        ln <- netdf [i, ]
-        probability [i] <- prob [ln$xto + 2, ln$xfr + 2]
-    }
+    #len <- dim (netdf) [1]
+    #probability <- vector (length = len)
+    #for (i in seq_len (len))
+    #{
+    #    ln <- netdf [i, ]
+    #    probability [i] <- prob [ln$xto + 2, ln$xfr + 2]
+    #}
 
-    prb <- cbind (netdf_out, probability)
+    #prb <- cbind (netdf_out, probability)
+    prb <- cbind (netdf_out, prob)
     prb
 }
 
