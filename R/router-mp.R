@@ -58,6 +58,15 @@ osm_router <- function (netdf, start_node, end_node, eta=1)
 #'                      d_weighted = c (7., 9., 14., 7., 10., 15., 9., 10.,11.,
 #'                               2., 15., 11., 6., 6., 9., 14., 2., 9.))
 #' prb <- getProbability (netdf, 1, 5)
+#' \dontrun{
+#' library (magrittr)
+#' devtools::load_all (export_all = TRUE)
+#' netdf <- readRDS ("../tests/compact-ways-munich.Rda") %>% head (115) %>% makeCompactGraph
+#' netdf$d_weighted <- netdf$d
+#' start_node <- netdf$from_id [20]
+#' end_node <- netdf$to_id [50]
+#' eta <- 1
+#' }
 getProbability <- function (netdf, start_node, end_node, eta=1)
 {
     if (!(is (netdf, 'data.frame')))
