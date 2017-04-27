@@ -75,6 +75,8 @@ getProbability <- function (netdf, start_node, end_node, eta=1)
     # force names for rcpp call
     cnames <- c ('xfr', 'xto', 'd')
     names (netdf) <- cnames
+    start_node %<>% as.character %>% as.numeric
+    end_node %<>% as.character %>% as.numeric
     netdf$xfr %<>% as.character %>% as.numeric
     netdf$xto %<>% as.character %>% as.numeric
     allids <- c (netdf$xfr, netdf$xto) %>% sort %>% unique 
