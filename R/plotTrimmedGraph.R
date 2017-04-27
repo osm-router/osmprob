@@ -27,8 +27,6 @@ plotMap <- function (graph, shortest)
 inputGraph <- ""
 shortestPath <- ""
 
-charToNum <- function (x) { as.numeric (as.character (x)) }
-
 getGraph <- function (dat)
 {
     dat$from_lat %<>% as.character %>% as.numeric
@@ -48,10 +46,8 @@ getGraph <- function (dat)
     }
 
     graph <- sf::st_sfc (graphLines, crs = 4326)
-    dat$from_lat <- NULL
-    dat$from_lon <- NULL
-    dat$to_lat <- NULL
-    dat$to_lon <- NULL
+    ltLn <- c ("from_lat", "from_lon", "to_lat", "to_lon")
+    dat [ltLn] <- NULL
     graph <- sf::st_sf (graph, dat)
 
     graph
@@ -77,18 +73,24 @@ server <- function (input, output, session)
 
   output$map <- leaflet::renderLeaflet ({
     dat <- graph
+    grpPrb <- "Probabilities"
+    grpSrt <- "Shortest Path"
+    grpSE <- "Start and end points"
     bb <- as.vector (sf::st_bbox (dat))
     leaflet::leaflet (data = dat,
                       options = leaflet::leafletOptions (maxZoom = 30)) %>%
     leaflet::addProviderTiles ('CartoDB.DarkMatter', group = "base") %>%
     leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0,
-                           weight = dat$probability * 7, group = "prob") %>%
+                           weight = dat$probability * 7,group = grpPrb) %>%
     leaflet::addPolylines (data = short, color = "#FF0000", opacity = 1.0,
-                           weight = 3, group = "shortest") %>%
-    leaflet::addMarkers (startPt [2], startPt [1], group = "startEnd") %>%
-    leaflet::addMarkers (endPt [2], endPt [1], group = "startEnd") %>%
-    leaflet::addLayersControl (overlayGroups = c ("prob", "shortest",
-                                                  "startEnd"),
+                           weight = 3, group = grpSrt) %>%
+    leaflet::addCircleMarkers (stroke = FALSE, startPt [2], startPt [1],
+                               group = grpSE, color = "#FFFF00",
+                               fillOpacity = 1.0, radius = 10) %>%
+    leaflet::addCircleMarkers (stroke = FALSE, endPt [2], endPt [1],
+                               group = grpSE, color = "#0066FF",
+                               fillOpacity = 1.0, radius = 10) %>%
+    leaflet::addLayersControl (overlayGroups = c (grpPrb, grpSE, grpSrt),
                                options = leaflet::layersControlOptions
                                (collapsed = FALSE)) %>%
     leaflet::fitBounds (bb[1], bb[2], bb[3], bb[4])
