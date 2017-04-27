@@ -86,9 +86,9 @@ getProbability <- function (netdf, start_node, end_node, eta=1)
         stop ('end_node is not part of netdf')
 
     eta <- as.numeric (eta * nrow (netdf))
-    prob <- rcpp_router_prob (netdf, start_node, end_node, eta)
+    probability <- rcpp_router_prob (netdf, start_node, end_node, eta)
 
-    prb <- cbind (netdf_out, prob)
+    prb <- cbind (netdf_out, probability)
     prb
 }
 

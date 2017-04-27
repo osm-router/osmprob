@@ -1,34 +1,40 @@
 #' Plot the graph network as a Shiny Leaflet app in a browser.
 #'
-#' @param osmFile A \code{data.frame} containing the street graph to be
+#' @param graph \code{data.frame} containing the street graph to be
 #' displayed
-#' @param n maximum number of features to be displayed on the map
+#' @param shortest \code{vector} containing the shortest path
 #'
 #' @export
-plotGraph <- function (osmFile="../tests/compact-ways-munich.Rda", n=200)
+plotMap <- function (graph, shortest)
 {
-    # osmFile can't be passed as a parameter, so it is passed to the server
-    # function via an environment variable
-    inputGraph <<- osmFile
-    maxFeaturesToDisplay <<- n
+    ways <- cbind (utils::head (shortest, -1), shortest [-1])
+    nms <- names (graph)
+    shortest <- data.frame (matrix (ncol = length (nms), nrow = dim (ways)[1]))
+    names (shortest) <- nms
+    for (i in seq_along (ways [,1]))
+    {
+        way <- ways [i,]
+        shortest [i,] <- graph [graph$from_id == way [1] &
+                                graph$to_id == way [2],]
+    }
+    # graph and shortestPath can't be passed as a parameter, so it is passed to
+    # the server function via an environment variable
+    inputGraph <<- graph
+    shortestPath <<- shortest
     shiny::shinyApp(ui, server)
 }
 
 inputGraph <- ""
-maxFeaturesToDisplay <- -1
+shortestPath <- ""
 
 charToNum <- function (x) { as.numeric (as.character (x)) }
 
-getGraph <- function (fName)
+getGraph <- function (dat)
 {
-    if (is (fName, "data.frame"))
-        dat <- fName
-    else
-        dat <- readRDS (file = fName)
-    dat$from_lat <- vapply (dat$from_lat, charToNum, 0.)
-    dat$from_lon <- vapply (dat$from_lon, charToNum, 0.)
-    dat$to_lat <- vapply (dat$to_lat, charToNum, 0.)
-    dat$to_lon <- vapply (dat$to_lon, charToNum, 0.)
+    dat$from_lat %<>% as.character %>% as.numeric
+    dat$from_lon %<>% as.character %>% as.numeric
+    dat$to_lat %<>% as.character %>% as.numeric
+    dat$to_lon %<>% as.character %>% as.numeric
 
     from <- cbind (dat$from_lon, dat$from_lat)
     to <- cbind (dat$to_lon, dat$to_lat)
@@ -55,97 +61,38 @@ cRamp <- subset (RColorBrewer::brewer.pal.info, category == "qual")
 ui <- shiny::bootstrapPage (
   shiny::tags$style (type = "text/css", "html, body {width:100%;height:100%}
               .checkbox, .control-label{color: #FFFFFF}"),
-  leaflet::leafletOutput ("map", width = "100%", height = "100%"),
-  shiny::absolutePanel (top = 10, right = 10,
-  shiny::selectInput ("colors", "Color Scheme", selected = rownames (cRamp) [1],
-  rownames (cRamp)),
-  shiny::sliderInput ("drawQuant", "Plot probability in quantile", 0, 100, 10),
-  shiny::checkboxInput ("drawProb", "plot probability densities", TRUE),
-  shiny::checkboxInput ("drawWeight", "plot weight", TRUE)
-))
+  leaflet::leafletOutput ("map", width = "100%", height = "100%")
+)
 
 server <- function (input, output, session)
 {
   graph <- getGraph (inputGraph)
-
-  filtered <- shiny::reactive ({
-      n <- maxFeaturesToDisplay
-      g <- graph
-      # bounds <- input$map_bounds
-      # if (is.null (bounds))
-      #     bbx <- sf::st_bbox (graph)
-      # else
-      # {
-      #     xmin <- min (bounds$east, bounds$west)
-      #     xmax <- max (bounds$east, bounds$west)
-      #     bbx <- matrix (c (xmin, bounds$south, xmax, bounds$north))
-      # }
-      # pol <- matrix (c (bbx [1], bbx [2],
-      #                   bbx [3], bbx [2],
-      #                   bbx [3], bbx [4],
-      #                   bbx [1], bbx [4],
-      #                   bbx [1], bbx [2]),
-      #                ncol = 2, byrow = TRUE)
-      # bbx <- sf::st_polygon (list (pol))
-      # int <- sf::st_intersects (graph, bbx) == 1
-      # g <- graph [which (int), ]
-      qntl <- input$drawQuant / 100
-      g <- subset (g, g$probability <= stats::quantile (g$probability, qntl))
-      len <- dim (g) [1]
-      if (n <= len || len < 1)
-          return (graph)
-      prt <- len - n
-      idxHighest <- which (g$probability > sort (g$probability))
-                                                
-      return (g [idxHighest, ])
-  })
+  short <- getGraph (shortestPath)
+  startPt <- utils::head (shortestPath, 1)  %>%
+      magrittr::extract (c ("from_lat", "from_lon")) %>% as.character %>%
+      as.numeric
+  endPt <- utils::tail (shortestPath, 1)  %>%
+      magrittr::extract (c ("to_lat", "to_lon")) %>% as.character %>%
+      as.numeric
 
   output$map <- leaflet::renderLeaflet ({
     dat <- graph
     bb <- as.vector (sf::st_bbox (dat))
     leaflet::leaflet (data = dat,
                       options = leaflet::leafletOptions (maxZoom = 30)) %>%
-    leaflet::addProviderTiles ('CartoDB.DarkMatter') %>%
+    leaflet::addProviderTiles ('CartoDB.DarkMatter', group = "base") %>%
+    leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0,
+                           weight = dat$probability * 7, group = "prob") %>%
+    leaflet::addPolylines (data = short, color = "#FF0000", opacity = 1.0,
+                           weight = 3, group = "shortest") %>%
+    leaflet::addMarkers (startPt [2], startPt [1], group = "startEnd") %>%
+    leaflet::addMarkers (endPt [2], endPt [1], group = "startEnd") %>%
+    leaflet::addLayersControl (overlayGroups = c ("prob", "shortest",
+                                                  "startEnd"),
+                               options = leaflet::layersControlOptions
+                               (collapsed = FALSE)) %>%
     leaflet::fitBounds (bb[1], bb[2], bb[3], bb[4])
   })
 
-lnColor <- function (x, colorBy) { leaflet::colorFactor (x, colorBy) }
-
-  shiny::observe ({
-    dat <- filtered ()
-    if (!is.null (dat))
-    {
-      hw <- dat$highway
-      pal <- lnColor (input$colors, hw)
-      leaflet::leafletProxy ("map", data = dat) %>%
-      leaflet::clearControls () %>%
-      leaflet::addLegend (position = "bottomright", pal = pal, values = hw)
-    }
-  })
-
-getWidth <- function (base, fac, weight) { return (base + fac * weight) }
-
-shiny::observe ({
-  dat <- filtered ()
-  if (!is.null (dat))
-  {
-    pal <- lnColor (input$colors, dat$highway)
-    proxy <- leaflet::leafletProxy ("map", data = dat) %>%
-    leaflet::clearShapes ()
-    if (input$drawWeight)
-    {
-        proxy %>% leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0,
-            weight = getWidth (2, 1, dat$d_weighted))
-    }
-    if (input$drawProb)
-    {
-        proxy %>% leaflet::addPolylines (color = ~pal (dat$highway),
-            opacity = 1.0, weight = getWidth (2, 10, dat$probability))
-    }
-  } else
-  {
-      leaflet::leafletProxy ("map", data = dat) %>%
-      leaflet::clearShapes ()
-  }
- })
+  getWidth <- function (base, fac, weight) { return (base + fac * weight) }
 }
