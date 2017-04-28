@@ -21,25 +21,38 @@
 #' @export
 plotMap <- function (graph, shortest)
 {
-    ways <- cbind (utils::head (shortest, -1), shortest [-1])
-    nms <- names (graph)
-    shortest <- data.frame (matrix (ncol = length (nms), nrow = dim (ways)[1]))
-    names (shortest) <- nms
-    for (i in seq_along (ways [,1]))
-    {
-        way <- ways [i,]
-        shortest [i,] <- graph [graph$from_id == way [1] &
-                                graph$to_id == way [2],]
-    }
     # graph and shortestPath can't be passed as a parameter, so it is passed to
     # the server function via an environment variable
     inputGraph <<- graph
-    shortestPath <<- shortest
+    shortestPath <<- pathsequenceToDataframe (shortest)
     shiny::shinyApp(ui, server)
 }
 
 inputGraph <- ""
 shortestPath <- ""
+
+#' Converts path stored as a sequential \code{vector} to a \code{data.frame}
+#'
+#' @param graph \code{data.frame} with the graph that \code{path} lies on.
+#' @param path \code{vector} containing sequential node IDs of a path.
+#'
+#' @return a \code{data.frame} containing pairs of sequential node IDs.
+#'
+#' @noRd
+pathsequenceToDataframe <- function (graph, path)
+{
+    ways <- cbind (utils::head (path, -1), path [-1])
+    nms <- names (graph)
+    path <- data.frame (matrix (ncol = length (nms), nrow = dim (ways)[1]))
+    names (path) <- nms
+    for (i in seq_along (ways [,1]))
+    {
+        way <- ways [i,]
+        path [i,] <- graph [graph$from_id == way [1] &
+                                graph$to_id == way [2],]
+    }
+    path
+}
 
 #' Converts graph stored in \code{data.frame} to \code{sf}
 #'
