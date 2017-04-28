@@ -2,16 +2,31 @@
 % Please edit documentation in R/plotTrimmedGraph.R
 \name{plotMap}
 \alias{plotMap}
-\title{Plot the graph network as a Shiny Leaflet app in a browser.}
+\title{Plots the graph network as a Shiny Leaflet app in a browser.}
 \usage{
 plotMap(graph, shortest)
 }
 \arguments{
 \item{graph}{\code{data.frame} containing the street graph to be
-displayed}
+displayed.}
 
-\item{shortest}{\code{vector} containing the shortest path}
+\item{shortest}{\code{vector} containing the shortest path.}
 }
 \description{
-Plot the graph network as a Shiny Leaflet app in a browser.
+Plots the graph network as a Shiny Leaflet app in a browser.
+}
+\examples{
+\dontrun{
+q <- osmdata::opq (bbox = c (11.58, 48.14, 11.585, 48.145))
+q <- osmdata::add_feature (q, key = 'highway')
+x <- osmdata::osmdata_sf(q)
+net <- osmlines_as_network (x)
+graph <- makeCompactGraph (net)
+startPt <- graph$from_id [1]
+endPt <- graph$to_id [100]
+prob <- getProbability (graph, startPt, endPt)
+short <- getShortestPath (graph, startPt, endPt)
+plotMap (prob, short)
+}
+
 }

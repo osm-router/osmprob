@@ -1,8 +1,22 @@
-#' Plot the graph network as a Shiny Leaflet app in a browser.
+#' Plots the graph network as a Shiny Leaflet app in a browser.
 #'
 #' @param graph \code{data.frame} containing the street graph to be
-#' displayed
-#' @param shortest \code{vector} containing the shortest path
+#' displayed.
+#' @param shortest \code{vector} containing the shortest path.
+#'
+#' @examples
+#' \dontrun{
+#' q <- osmdata::opq (bbox = c (11.58, 48.14, 11.585, 48.145))
+#' q <- osmdata::add_feature (q, key = 'highway')
+#' x <- osmdata::osmdata_sf(q)
+#' net <- osmlines_as_network (x)
+#' graph <- makeCompactGraph (net)
+#' startPt <- graph$from_id [1]
+#' endPt <- graph$to_id [100]
+#' prob <- getProbability (graph, startPt, endPt)
+#' short <- getShortestPath (graph, startPt, endPt)
+#' plotMap (prob, short)
+#' }
 #'
 #' @export
 plotMap <- function (graph, shortest)
@@ -27,6 +41,11 @@ plotMap <- function (graph, shortest)
 inputGraph <- ""
 shortestPath <- ""
 
+#' Converts graph stored in \code{data.frame} to \code{sf}
+#'
+#' @param dat \code{data.frame} containing graph data.
+#'
+#' @noRd
 getGraph <- function (dat)
 {
     dat$from_lat %<>% as.character %>% as.numeric
@@ -60,6 +79,14 @@ ui <- shiny::bootstrapPage (
   leaflet::leafletOutput ("map", width = "100%", height = "100%")
 )
 
+#' Generates text for edge popup fields on the graph
+#'
+#' @param fromid OSM ID of the edge beginning.
+#' @param fromid OSM ID of the edge end.
+#' @param weight \code{numeric} value of the edge weight.
+#' @param prob \code{numeric} value of the edge traversal probability.
+#'
+#' @noRd
 popup <- function (fromid, toid, weight, prob)
 {
   paste ("<b>From ID: </b>", fromid,
@@ -68,6 +95,15 @@ popup <- function (fromid, toid, weight, prob)
          "</br><b>Probability: </b>", format (round (prob, 3), nsmall = 3))
 }
 
+#' Generates \code{leaflet} HTML widget containing a web map
+#'
+#' @param dat \code{sf} object containing street graph data.
+#' @param short \code{sf} object containing the shortest path between two
+#' points.
+#' @param startPt \code{vector} of \code{numeric} coordinates of start point.
+#' @param endPt \code{vector} of \code{numeric} coordinates of end point.
+#'
+#' @noRd
 getMap <- function (dat, short, startPt, endPt)
 {
     grpPrb <- "Probabilities"
@@ -80,8 +116,8 @@ getMap <- function (dat, short, startPt, endPt)
     leaflet::addProviderTiles ('CartoDB.DarkMatter', group = "base") %>%
     leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0, popup = popup
                            (dat$from_id, dat$to_id, dat$d_weighted,
-                            dat$probability), weight = dat$probability * 7,
-                           group = grpPrb) %>%
+                            dat$probability), weight = getWidth (3, 4,
+                            dat$probability), group = grpPrb) %>%
     leaflet::addPolylines (data = short, color = "#FF0000", opacity = 1.0,
                            weight = 4, group = grpSrt, dashArray = "20, 20") %>%
     leaflet::addCircleMarkers (stroke = FALSE, startPt [2], startPt [1],
@@ -96,6 +132,13 @@ getMap <- function (dat, short, startPt, endPt)
     leaflet::fitBounds (bb[1], bb[2], bb[3], bb[4])
 }
 
+#' Calculates displayed line width
+#'
+#' @param base \code{numeric} value of minimum width.
+#' @param fac \code{numeric} value of facor to be multiplied width weight.
+#' @param weight \code{numeric} value of edge weight.
+#'
+#' @noRd
 getWidth <- function (base, fac, weight) { return (base + fac * weight) }
 
 server <- function (input, output, session)

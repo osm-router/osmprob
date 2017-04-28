@@ -21,7 +21,7 @@ Convert osm_lines to a data.frame of sequential network connections
 }
 \examples{
 \dontrun{
-q <- osmdata::opq ('City of London')
+q <- osmdata::opq (bbox = c (11.58, 48.14, 11.585, 48.145))
 q <- osmdata::add_feature (q, key = 'highway')
 x <- osmdata::osmdata_sf(q)
 net <- osmlines_as_network (x)

@@ -7,13 +7,23 @@
 makeCompactGraph(graph)
 }
 \arguments{
-\item{graph}{\code{data.frame} of the graph to be processed}
+\item{graph}{\code{data.frame} of the graph to be processed.}
 }
 \value{
-\code{data.frame} containing the output graph
+\code{data.frame} containing the output graph.
 }
 \description{
 \code{makeCompactGraph} takes a \code{data.frame} containing a graph and
 removes all vertices not needed for routing as well as all vertices that are
 not connected to the largest coherent part of the graph.
+}
+\examples{
+\dontrun{
+q <- osmdata::opq (bbox = c (11.58, 48.14, 11.585, 48.145))
+q <- osmdata::add_feature (q, key = 'highway')
+x <- osmdata::osmdata_sf(q)
+net <- osmlines_as_network (x)
+graph <- makeCompactGraph (net)
+}
+
 }
