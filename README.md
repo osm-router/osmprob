@@ -30,11 +30,31 @@ To prepare the graph for routing, all non-accessible edges are removed using `ma
 
 After the preprocessing is done, `plotGraph ()` can be used to display the compact sample graph in a `shiny`/`leaflet` web app.
 
+### From sample data
+
 To load, process and display a sample graph, run
 
 ``` r
 devtools::load_all (export_all = FALSE)
 graph <- readRDS ("tests/compact-ways-munich.Rda")
+startPt <- graph$from_id [1]
+endPt <- graph$to_id [600]
+path <- getShortestPath (graph, startPt, endPt)
+prob <- getProbability (graph, startPt, endPt, eta = 1)
+plotMap (prob, path)
+```
+
+### From OSM data
+
+To create a sample graph for other areas, [osmdata](https://github.com/osmdatar/osmdata) has to be installed.
+
+``` r
+devtools::load_all (export_all = FALSE)
+library (magrittr)
+q <- osmdata::opq (bbox = c (11.58, 48.14, 11.585, 48.145))
+q <- osmdata::add_feature (q, key = 'highway')
+dat <- osmdata::osmdata_sf (q)
+graph <- osmlines_as_network (dat, profileName = "bicycle") %>% makeCompactGraph
 startPt <- graph$from_id [1]
 endPt <- graph$to_id [600]
 path <- getShortestPath (graph, startPt, endPt)
