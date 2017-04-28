@@ -71,19 +71,30 @@ server <- function (input, output, session)
       magrittr::extract (c ("to_lat", "to_lon")) %>% as.character %>%
       as.numeric
 
+  popup <- function (fromid, toid, weight, prob)
+  {
+      paste ("<b>From ID: </b>", fromid,
+             "</br><b>To ID: </b>", toid,
+             "</br><b>Weight: </b>", format (round (weight, 3), nsmall = 3),
+             "</br><b>Probability: </b>", format (round (prob, 3), nsmall = 3))
+  }
+
   output$map <- leaflet::renderLeaflet ({
     dat <- graph
     grpPrb <- "Probabilities"
     grpSrt <- "Shortest Path"
     grpSE <- "Start and end points"
     bb <- as.vector (sf::st_bbox (dat))
+
     leaflet::leaflet (data = dat,
-                      options = leaflet::leafletOptions (maxZoom = 30)) %>%
+                      options = leaflet::leafletOptions ()) %>%
     leaflet::addProviderTiles ('CartoDB.DarkMatter', group = "base") %>%
-    leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0,
-                           weight = dat$probability * 7,group = grpPrb) %>%
+    leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0, popup = popup
+                           (dat$from_id, dat$to_id, dat$d_weighted,
+                            dat$probability), weight = dat$probability * 7,
+                           group = grpPrb) %>%
     leaflet::addPolylines (data = short, color = "#FF0000", opacity = 1.0,
-                           weight = 3, group = grpSrt) %>%
+                           weight = 4, group = grpSrt, dashArray = "20, 20") %>%
     leaflet::addCircleMarkers (stroke = FALSE, startPt [2], startPt [1],
                                group = grpSE, color = "#FFFF00",
                                fillOpacity = 1.0, radius = 10) %>%
