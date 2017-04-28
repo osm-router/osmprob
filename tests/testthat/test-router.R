@@ -8,6 +8,8 @@ test_that ("osm_router", {
                                  15., 11., 6., 6., 9., 14., 2., 9.))
     way <- osm_router (netdf, 0, 5, eta = 1.0)
     testthat::expect_is (way, "matrix")
+    way <- osm_router (as.matrix (netdf), 0, 5, eta = 1.0)
+    testthat::expect_is (way, "matrix")
     testthat::expect_error (
     osm_router ("not a data.frame", 0, 5, eta = 1.0),
     "netdf must be a data.frame")
