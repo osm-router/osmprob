@@ -60,27 +60,16 @@ ui <- shiny::bootstrapPage (
   leaflet::leafletOutput ("map", width = "100%", height = "100%")
 )
 
-server <- function (input, output, session)
+popup <- function (fromid, toid, weight, prob)
 {
-  graph <- getGraph (inputGraph)
-  short <- getGraph (shortestPath)
-  startPt <- utils::head (shortestPath, 1)  %>%
-      magrittr::extract (c ("from_lat", "from_lon")) %>% as.character %>%
-      as.numeric
-  endPt <- utils::tail (shortestPath, 1)  %>%
-      magrittr::extract (c ("to_lat", "to_lon")) %>% as.character %>%
-      as.numeric
+  paste ("<b>From ID: </b>", fromid,
+         "</br><b>To ID: </b>", toid,
+         "</br><b>Weight: </b>", format (round (weight, 3), nsmall = 3),
+         "</br><b>Probability: </b>", format (round (prob, 3), nsmall = 3))
+}
 
-  popup <- function (fromid, toid, weight, prob)
-  {
-      paste ("<b>From ID: </b>", fromid,
-             "</br><b>To ID: </b>", toid,
-             "</br><b>Weight: </b>", format (round (weight, 3), nsmall = 3),
-             "</br><b>Probability: </b>", format (round (prob, 3), nsmall = 3))
-  }
-
-  output$map <- leaflet::renderLeaflet ({
-    dat <- graph
+getMap <- function (dat, short, startPt, endPt)
+{
     grpPrb <- "Probabilities"
     grpSrt <- "Shortest Path"
     grpSE <- "Start and end points"
@@ -105,7 +94,22 @@ server <- function (input, output, session)
                                options = leaflet::layersControlOptions
                                (collapsed = FALSE)) %>%
     leaflet::fitBounds (bb[1], bb[2], bb[3], bb[4])
-  })
+}
 
-  getWidth <- function (base, fac, weight) { return (base + fac * weight) }
+getWidth <- function (base, fac, weight) { return (base + fac * weight) }
+
+server <- function (input, output, session)
+{
+  graph <- getGraph (inputGraph)
+  short <- getGraph (shortestPath)
+  startPt <- utils::head (shortestPath, 1)  %>%
+      magrittr::extract (c ("from_lat", "from_lon")) %>% as.character %>%
+      as.numeric
+  endPt <- utils::tail (shortestPath, 1)  %>%
+      magrittr::extract (c ("to_lat", "to_lon")) %>% as.character %>%
+      as.numeric
+
+  output$map <- leaflet::renderLeaflet ({
+    getMap (graph, short, startPt, endPt)
+  })
 }
