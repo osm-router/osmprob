@@ -100,15 +100,15 @@ popup <- function (fromid, toid, weight, prob)
 #' @param dat \code{sf} object containing street graph data.
 #' @param short \code{sf} object containing the shortest path between two
 #' points.
-#' @param startPt \code{vector} of \code{numeric} coordinates of start point.
-#' @param endPt \code{vector} of \code{numeric} coordinates of end point.
 #'
 #' @noRd
-getMap <- function (dat, short, startPt, endPt)
+getMap <- function (dat, short)
 {
     grpPrb <- "Probabilities"
     grpSrt <- "Shortest Path"
     grpSE <- "Start and end points"
+    startPt <- sf::st_coordinates (short [1, ])[1, 2:1]
+    endPt <- sf::st_coordinates (utils::tail (short, 1))[1, 2:1]
     bb <- as.vector (sf::st_bbox (dat))
 
     leaflet::leaflet (data = dat,
@@ -145,14 +145,8 @@ server <- function (input, output, session)
 {
   graph <- getGraph (inputGraph)
   short <- getGraph (shortestPath)
-  startPt <- utils::head (shortestPath, 1)  %>%
-      magrittr::extract (c ("from_lat", "from_lon")) %>% as.character %>%
-      as.numeric
-  endPt <- utils::tail (shortestPath, 1)  %>%
-      magrittr::extract (c ("to_lat", "to_lon")) %>% as.character %>%
-      as.numeric
 
   output$map <- leaflet::renderLeaflet ({
-    getMap (graph, short, startPt, endPt)
+    getMap (graph, short)
   })
 }
