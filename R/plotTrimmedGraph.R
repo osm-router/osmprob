@@ -24,7 +24,7 @@ plotMap <- function (graph, shortest)
     # graph and shortestPath can't be passed as a parameter, so it is passed to
     # the server function via an environment variable
     inputGraph <<- graph
-    shortestPath <<- pathsequenceToDataframe (shortest)
+    shortestPath <<- pathsequenceToDataframe (graph, shortest)
     shiny::shinyApp(ui, server)
 }
 
