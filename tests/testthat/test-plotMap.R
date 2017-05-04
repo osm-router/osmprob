@@ -24,3 +24,12 @@ test_that ("pathsequenceToDataframe", {
     pathDf <- pathsequenceToDataframe (prb, short)
     testthat::expect_is (pathDf, "data.frame")
 })
+
+test_that ("plotMap", {
+    dat <- readRDS ("../compact-ways-munich.Rda") %>% head (10) %>%
+        makeCompactGraph
+    prb <- getProbability (dat, dat$from_id [1], dat$to_id [4])
+    short <- getShortestPath (dat, dat$from_id [1], dat$to_id [4])
+    pl <- plotMap (prb, short)
+    testthat::expect_is (pl, "shiny.appobj")
+}
