@@ -32,4 +32,4 @@ test_that ("plotMap", {
     short <- getShortestPath (dat, dat$from_id [1], dat$to_id [4])
     pl <- plotMap (prb, short)
     testthat::expect_is (pl, "shiny.appobj")
-}
+})
