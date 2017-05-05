@@ -44,7 +44,8 @@ osm_router <- function (netdf, start_node, end_node, eta=1)
 
 #' Calculate routing probabilities for a data.frame
 #'
-#' @param netdf \code{data.frame} of network
+#' @param graphs \code{list} containing the two graphs and a map linking the two
+#' to each other.
 #' @param start_node Starting node for shortest path route
 #' @param end_node Ending node for shortest path route
 #' @param eta The parameter controlling the entropy (scale is arbitrary)
@@ -62,12 +63,14 @@ osm_router <- function (netdf, start_node, end_node, eta=1)
 #'                               2., 15., 11., 6., 6., 9., 14., 2., 9.))
 #' getProbability (netdf, 1, 5)
 #' }
-getProbability <- function (netdf, start_node, end_node, eta=1)
+getProbability <- function (graphs, start_node, end_node, eta=1)
 {
+    netdf <- graphs$compact
     if (!(is (netdf, 'data.frame')))
-        stop ('netdf must be a data.frame')
+        stop ('graphs must contain a data.frame')
     if (!all (c ('from_id', 'to_id', 'd_weighted') %in% names (netdf)))
-        stop ('netdf must contain columns from_id, to_id and d_weighted')
+        stop ('compact graph must contain columns from_id, to_id and
+              d_weighted')
 
     netdf_out <- netdf
     netdf <- data.frame (netdf$from_id, netdf$to_id, netdf$d_weighted)
@@ -89,7 +92,8 @@ getProbability <- function (netdf, start_node, end_node, eta=1)
     probability <- rcpp_router_prob (netdf, start_node, end_node, eta)
 
     prb <- cbind (netdf_out, probability)
-    prb
+    graphs$compact <- prb
+    mapProbabilities (graphs)
 }
 
 #' Calculate the shortest path between two nodes on a graph
@@ -138,4 +142,32 @@ getShortestPath <- function (netdf, start_node, end_node)
     end_node <- which (allids == end_node) -1
     path <- rcpp_router_dijkstra (netdf, start_node, end_node)
     allids [path + 1]
+}
+
+#' Maps probabilities from the compact graph back on to the original graph
+#'
+#' @param graphs \code{list} containing the two graphs and a map linking the two
+#' to each other.
+#'
+#' @return The original graph with the probabilities from the compact graph
+#' mapped on it.
+#'
+#' @noRd
+mapProbabilities <- function (graphs)
+{
+    orig <- graphs$original
+    orig$probability <- 0
+    orig$from_id <- as.character (orig$from_id)
+    orig$to_id <- as.character (orig$to_id)
+    comp <- graphs$compact
+    comp$from_id <- as.character (comp$from_id)
+    comp$to_id <- as.character (comp$to_id)
+    map <- graphs$map
+    
+    for (i in seq_len (dim (map)[1]))
+    {
+        prob <- comp$probability [comp$edge_id == map$id_compact [i]]
+        orig$probability [orig$edge_id == map$id_original [i]] <- prob
+    }
+    orig
 }

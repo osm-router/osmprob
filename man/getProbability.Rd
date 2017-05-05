@@ -4,10 +4,11 @@
 \alias{getProbability}
 \title{Calculate routing probabilities for a data.frame}
 \usage{
-getProbability(netdf, start_node, end_node, eta = 1)
+getProbability(graphs, start_node, end_node, eta = 1)
 }
 \arguments{
-\item{netdf}{\code{data.frame} of network}
+\item{graphs}{\code{list} containing the two graphs and a map linking the two
+to each other.}
 
 \item{start_node}{Starting node for shortest path route}
 
