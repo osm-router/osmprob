@@ -54,7 +54,7 @@ library (magrittr)
 q <- osmdata::opq (bbox = c (11.58, 48.14, 11.585, 48.145))
 q <- osmdata::add_feature (q, key = 'highway')
 dat <- osmdata::osmdata_sf (q)
-graph <- osmlines_as_network (dat, profileName = "bicycle") %>% makeCompactGraph
+graph <- osmlines_as_network (dat, profileName = "bicycle") %>% makeCompactGraph %>% extract2 (1)
 startPt <- graph$from_id [1]
 endPt <- graph$to_id [600]
 path <- getShortestPath (graph, startPt, endPt)
