@@ -6,7 +6,10 @@
 #' Removes nodes and edges from a graph that are not needed for routing
 #'
 #' @param graph graph to be processed
-#' @return Rcpp::DataFrame containing the output graph
+#' @return \code{Rcpp::List} containing one \code{data.frame} with the compact
+#' graph, one \code{data.frame} with the original graph and one
+#' \code{data.frame} containing information about the relating edge ids of the
+#' original and compact graph.
 #'
 #' @noRd
 rcpp_makeCompactGraph <- function(graph) {

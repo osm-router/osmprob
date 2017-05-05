@@ -10,7 +10,7 @@ test_that ("getWidth", {
 
 test_that ("getMap", {
     dat <- readRDS ("../compact-ways-munich.Rda") %>% head (10) %>%
-        makeCompactGraph %>% getGraph
+        makeCompactGraph %>% magrittr::extract2 (1) %>% getGraph
     prb <- getProbability (dat, dat$from_id [1], dat$to_id [1])
     map <- getMap (prb, prb)
     testthat::expect_s3_class (map, c ("leaflet", "htmlwidget"))
@@ -18,7 +18,7 @@ test_that ("getMap", {
 
 test_that ("pathsequenceToDataframe", {
     dat <- readRDS ("../compact-ways-munich.Rda") %>% head (10) %>%
-        makeCompactGraph
+        makeCompactGraph %>% magrittr::extract2 (1)
     prb <- getProbability (dat, dat$from_id [1], dat$to_id [4])
     short <- getShortestPath (dat, dat$from_id [1], dat$to_id [4])
     pathDf <- pathsequenceToDataframe (prb, short)

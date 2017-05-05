@@ -7,7 +7,7 @@
 using namespace Rcpp;
 
 // rcpp_makeCompactGraph
-Rcpp::DataFrame rcpp_makeCompactGraph(Rcpp::DataFrame graph);
+Rcpp::List rcpp_makeCompactGraph(Rcpp::DataFrame graph);
 RcppExport SEXP osmprob_rcpp_makeCompactGraph(SEXP graphSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

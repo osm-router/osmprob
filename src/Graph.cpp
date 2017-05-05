@@ -4,6 +4,7 @@
 #include <map>
 
 typedef std::string osm_id_t;
+typedef int osm_edge_id_t;
 
 struct osm_vertex_t
 {
@@ -12,6 +13,7 @@ struct osm_vertex_t
         double lat, lon;
 
     public:
+        bool inCompactGraph = true;
         void addNeighborIn (osm_id_t osm_id) { in.insert (osm_id); }
         void addNeighborOut (osm_id_t osm_id) { out.insert (osm_id); }
         int getDegreeIn () { return in.size (); }
@@ -57,30 +59,44 @@ struct osm_edge_t
 {
     private:
         osm_id_t from, to;
+        osm_edge_id_t id;
+        std::set <int> replacingEdges;
+        bool inOriginalGraph;
 
     public:
         float dist;
         float weight;
+        bool inCompactGraph = true;
         std::string highway;
         osm_id_t getFromVertex () { return from; }
         osm_id_t getToVertex () { return to; }
+        osm_edge_id_t getID () { return id; }
+        std::set <int> isReplacementFor () { return replacingEdges; }
+        bool inOriginal () { return inOriginalGraph; }
 
         osm_edge_t (osm_id_t fromId, osm_id_t toId, float dist, float weight,
-                   std::string highway)
+                   std::string highway, int id, std::set <int> isRepFor,
+                   bool inOriginal)
         {
             this -> to = toId;
             this -> from = fromId;
             this -> dist = dist;
             this -> weight = weight;
             this -> highway = highway;
+            this -> id = id;
+            this -> replacingEdges.insert (isRepFor.begin (), isRepFor.end ());
+            this -> inOriginalGraph = inOriginal;
         }
 };
 
 typedef std::map <osm_id_t, osm_vertex_t> vertexMap;
 typedef std::vector <osm_edge_t> edgeVector;
+typedef std::map <int, std::set <int>> replacementMap;
+int edgeIDs = 1;
 
 void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
 {
+    edgeIDs = 1;
     Rcpp::StringVector from = gr ["from_id"];
     Rcpp::StringVector to = gr ["to_id"];
     Rcpp::NumericVector from_lon = gr ["from_lon"];
@@ -118,8 +134,9 @@ void graphFromDf (Rcpp::DataFrame gr, vertexMap &vm, edgeVector &e)
         toVtx.addNeighborIn (fromId);
         vm [toId] = toVtx;
 
+        std::set <int> replacementEdges;
         osm_edge_t edge = osm_edge_t (fromId, toId, dist [i], weight [i],
-                std::string (hw [i]));
+                std::string (hw [i]), edgeIDs ++, replacementEdges, true);
         e.push_back (edge);
     }
 }
@@ -241,7 +258,9 @@ void removeIntermediateVertices (vertexMap &v, edgeVector &e)
                 }
                 v.at (nId) = nVtx;
             }
-            vert = v.erase (vert);
+            // vert = v.erase (vert);
+            // vert -> inCompactGraph = false;
+            vert ++;
 
             // update edges
             float distNew = 0;
@@ -254,37 +273,52 @@ void removeIntermediateVertices (vertexMap &v, edgeVector &e)
             auto edge = e.begin ();
             while (edge != e.end ())
             {
-                osm_id_t eFrom = edge -> getFromVertex ();
-                osm_id_t eTo = edge -> getToVertex ();
-                if (eFrom == id || eTo == id)
+                if (edge -> inCompactGraph)
                 {
-                    if (isIntermediateSingle)
+                    osm_id_t eFrom = edge -> getFromVertex ();
+                    osm_id_t eTo = edge -> getToVertex ();
+                    if (eFrom == id || eTo == id)
                     {
-                        if (eFrom == id)
-                            idToNew = eTo;
-                        if (eTo == id)
-                            idFromNew = eFrom;
-                    }
-                    hwNew = edge -> highway;
-                    distNew += edge -> dist;
-                    weightNew += edge -> weight;
-                    edge = e.erase (edge);
-                    if (numFound >= edgesToDelete)
-                    {
-                        if (isIntermediateDouble)
+                        if (isIntermediateSingle)
                         {
-                            distNew = distNew / 2;
-                            weightNew = weightNew / 2;
-                            osm_edge_t edgeNew = osm_edge_t (idToNew, idFromNew,
-                                    distNew, weightNew, hwNew);
-                            e.push_back (edgeNew);
+                            if (eFrom == id)
+                                idToNew = eTo;
+                            if (eTo == id)
+                                idFromNew = eFrom;
                         }
-                        osm_edge_t edgeNew = osm_edge_t (idFromNew, idToNew,
-                                distNew, weightNew, hwNew);
-                        e.push_back (edgeNew);
-                        break;
-                    }
-                    numFound ++;
+                        hwNew = edge -> highway;
+                        distNew += edge -> dist;
+                        weightNew += edge -> weight;
+                        std::set <int> replacingEdges =
+                            edge -> isReplacementFor ();
+                        if (numFound >= edgesToDelete)
+                        {
+                            replacingEdges.insert (edge -> getID ());
+                            if (isIntermediateDouble)
+                            {
+                                distNew = distNew / 2;
+                                weightNew = weightNew / 2;
+                                osm_edge_t edgeNew = osm_edge_t (idToNew,
+                                        idFromNew, distNew, weightNew, hwNew,
+                                        edgeIDs ++, replacingEdges, false);
+                                e.push_back (edgeNew);
+                            }
+                            osm_edge_t edgeNew = osm_edge_t (idFromNew,
+                                    idToNew, distNew, weightNew, hwNew,
+                                    edgeIDs ++, replacingEdges, false);
+                            e.push_back (edgeNew);
+
+                            edge -> inCompactGraph = false;
+                            edge ++;
+                            break;
+                        } else
+                        {
+                            edge -> inCompactGraph = false;
+                            edge ++;
+                            numFound ++;
+                        }
+                    } else
+                        edge ++;
                 } else
                     edge ++;
             }
@@ -298,11 +332,14 @@ void removeIntermediateVertices (vertexMap &v, edgeVector &e)
 //' Removes nodes and edges from a graph that are not needed for routing
 //'
 //' @param graph graph to be processed
-//' @return Rcpp::DataFrame containing the output graph
+//' @return \code{Rcpp::List} containing one \code{data.frame} with the compact
+//' graph, one \code{data.frame} with the original graph and one
+//' \code{data.frame} containing information about the relating edge ids of the
+//' original and compact graph.
 //'
 //' @noRd
 // [[Rcpp::export]]
-Rcpp::DataFrame rcpp_makeCompactGraph (Rcpp::DataFrame graph)
+Rcpp::List rcpp_makeCompactGraph (Rcpp::DataFrame graph)
 {
     vertexMap vertices;
     edgeVector edges;
@@ -314,40 +351,97 @@ Rcpp::DataFrame rcpp_makeCompactGraph (Rcpp::DataFrame graph)
     removeSmallGraphComponents (vertices, edges, components, largestComponent);
     removeIntermediateVertices (vertices, edges);
 
-    Rcpp::StringVector fromOut;
-    Rcpp::StringVector toOut;
-    Rcpp::StringVector highwayOut;
-    Rcpp::NumericVector from_latOut;
-    Rcpp::NumericVector from_lonOut;
-    Rcpp::NumericVector to_latOut;
-    Rcpp::NumericVector to_lonOut;
-    Rcpp::NumericVector distOut;
-    Rcpp::NumericVector weightOut;
+    Rcpp::StringVector fromCompact, toCompact, highwayCompact, fromOG, toOG,
+        highwayOG;
+    Rcpp::NumericVector from_latCompact, from_lonCompact, to_latCompact,
+    to_lonCompact, distCompact, weightCompact, edgeidCompact, from_latOG,
+    from_lonOG, to_latOG, to_lonOG, distOG, weightOG, edgeidOG;
+
+    replacementMap repMap;
+
     for (auto e:edges)
     {
         osm_id_t from = e.getFromVertex ();
         osm_id_t to = e.getToVertex ();
         osm_vertex_t fromVtx = vertices.at (from);
         osm_vertex_t toVtx = vertices.at (to);
-        fromOut.push_back (from);
-        toOut.push_back (to);
-        highwayOut.push_back (e.highway);
-        distOut.push_back (e.dist);
-        weightOut.push_back (e.weight);
-        from_latOut.push_back (fromVtx.getLat ());
-        from_lonOut.push_back (fromVtx.getLon ());
-        to_latOut.push_back (toVtx.getLat ());
-        to_lonOut.push_back (toVtx.getLon ());
+        if (e.inCompactGraph)
+        {
+            fromCompact.push_back (from);
+            toCompact.push_back (to);
+            highwayCompact.push_back (e.highway);
+            distCompact.push_back (e.dist);
+            weightCompact.push_back (e.weight);
+            from_latCompact.push_back (fromVtx.getLat ());
+            from_lonCompact.push_back (fromVtx.getLon ());
+            to_latCompact.push_back (toVtx.getLat ());
+            to_lonCompact.push_back (toVtx.getLon ());
+            edgeidCompact.push_back (e.getID ());
+
+            std::set <int> repEdge = e.isReplacementFor ();
+            if (repEdge.size () == 0)
+                repEdge.insert (e.getID ());
+            std::set <int> repTotal = repMap [e.getID ()];
+            repTotal.insert (repEdge.begin (), repEdge.end ());
+            repMap [e.getID ()] = repTotal;
+        }
+        if (e.inOriginal ())
+        {
+            fromOG.push_back (from);
+            toOG.push_back (to);
+            highwayOG.push_back (e.highway);
+            distOG.push_back (e.dist);
+            weightOG.push_back (e.weight);
+            from_latOG.push_back (fromVtx.getLat ());
+            from_lonOG.push_back (fromVtx.getLon ());
+            to_latOG.push_back (toVtx.getLat ());
+            to_lonOG.push_back (toVtx.getLon ());
+            edgeidOG.push_back (e.getID ());
+        }
     }
 
-    return Rcpp::DataFrame::create (
-            Rcpp::Named ("from_id") = fromOut,
-            Rcpp::Named ("to_id") = toOut,
-            Rcpp::Named ("d") = distOut,
-            Rcpp::Named ("d_weighted") = weightOut,
-            Rcpp::Named ("from_lat") = from_latOut,
-            Rcpp::Named ("from_lon") = from_lonOut,
-            Rcpp::Named ("to_lat") = to_latOut,
-            Rcpp::Named ("to_lon") = to_lonOut,
-            Rcpp::Named ("highway") = highwayOut);
+    Rcpp::NumericVector rpKey, rpVal;
+    for (auto rp = repMap.begin (); rp != repMap.end (); ++ rp)
+    {
+        int k = rp -> first;
+        std::set <int> v = rp -> second;
+        for (auto val:v)
+        {
+            rpKey.push_back (k);
+            rpVal.push_back (val);
+        }
+    }
+
+    Rcpp::DataFrame compact = Rcpp::DataFrame::create (
+            Rcpp::Named ("from_id") = fromCompact,
+            Rcpp::Named ("to_id") = toCompact,
+            Rcpp::Named ("edge_id") = edgeidCompact,
+            Rcpp::Named ("d") = distCompact,
+            Rcpp::Named ("d_weighted") = weightCompact,
+            Rcpp::Named ("from_lat") = from_latCompact,
+            Rcpp::Named ("from_lon") = from_lonCompact,
+            Rcpp::Named ("to_lat") = to_latCompact,
+            Rcpp::Named ("to_lon") = to_lonCompact,
+            Rcpp::Named ("highway") = highwayCompact);
+
+    Rcpp::DataFrame og = Rcpp::DataFrame::create (
+            Rcpp::Named ("from_id") = fromOG,
+            Rcpp::Named ("to_id") = toOG,
+            Rcpp::Named ("edge_id") = edgeidOG,
+            Rcpp::Named ("d") = distOG,
+            Rcpp::Named ("d_weighted") = weightOG,
+            Rcpp::Named ("from_lat") = from_latOG,
+            Rcpp::Named ("from_lon") = from_lonOG,
+            Rcpp::Named ("to_lat") = to_latOG,
+            Rcpp::Named ("to_lon") = to_lonOG,
+            Rcpp::Named ("highway") = highwayOG);
+
+    Rcpp::DataFrame rel = Rcpp::DataFrame::create (
+            Rcpp::Named ("id_compact") = rpKey,
+            Rcpp::Named ("id_original") = rpVal);
+
+    return Rcpp::List::create (
+            Rcpp::Named ("compact") = compact,
+            Rcpp::Named ("original") = og,
+            Rcpp::Named ("map") = rel);
 }

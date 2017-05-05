@@ -3,7 +3,7 @@ test_that ("makeCompactGraph", {
                                    quiet=TRUE)
                nw <- osmprob::osmlines_as_network (dat)
                comp <- makeCompactGraph (nw)
-               isDf <- is (comp, "data.frame")
+               isDf <- is (comp, "list")
                testthat::expect_true (isDf)
                testthat::expect_error (
                makeCompactGraph ("not a data.frame"),
