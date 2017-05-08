@@ -40,7 +40,7 @@ library (magrittr)
 graph <- readRDS ("tests/compact-ways-munich.Rda") %>% makeCompactGraph
 startPt <- graph$compact$from_id [1]
 endPt <- graph$compact$to_id [600]
-path <- getShortestPath (graph$compact, startPt, endPt)
+path <- getShortestPath (graph, startPt, endPt)
 prob <- getProbability (graph, startPt, endPt, eta = 1)
 plotMap (prob, path)
 ```
@@ -58,7 +58,7 @@ dat <- osmdata::osmdata_sf (q)
 graph <- osmlines_as_network (dat, profileName = "bicycle") %>% makeCompactGraph
 startPt <- graph$compact$from_id [1]
 endPt <- graph$compact$to_id [600]
-path <- getShortestPath (graph$compact, startPt, endPt)
+path <- getShortestPath (graph, startPt, endPt)
 prob <- getProbability (graph, startPt, endPt, eta = 1)
 plotMap (prob, path)
 ```

@@ -17,14 +17,3 @@ test_that ("getMap", {
                map <- getMap (prb, prb)
                testthat::expect_s3_class (map, c ("leaflet", "htmlwidget"))
 })
-
-test_that ("pathsequenceToDataframe", {
-               dat <- readRDS ("../compact-ways-munich.Rda") %>% head (10) %>%
-                   makeCompactGraph
-               st <- dat$compact$from_id [1]
-               en <- dat$compact$to_id [3]
-               prb <- getProbability (dat, st, en) %>% getGraph
-               short <- getShortestPath (dat$compact, st, en)
-               pathDf <- pathsequenceToDataframe (prb, short)
-               testthat::expect_is (pathDf, "data.frame")
-})

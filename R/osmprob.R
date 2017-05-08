@@ -9,7 +9,7 @@
 #' @importFrom shiny absolutePanel bootstrapPage checkboxInput 
 #' @importFrom shiny reactive selectInput shinyApp sliderInput
 #' @importFrom RColorBrewer brewer.pal.info
-#' @importFrom stats quantile
+#' @importFrom stats quantile complete.cases
 #' @importFrom utils head tail
 #' @importFrom magrittr extract %>% %<>%
 #' @importFrom methods is

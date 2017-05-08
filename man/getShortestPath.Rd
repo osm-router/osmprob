@@ -4,30 +4,27 @@
 \alias{getShortestPath}
 \title{Calculate the shortest path between two nodes on a graph}
 \usage{
-getShortestPath(netdf, start_node, end_node)
+getShortestPath(graphs, start_node, end_node)
 }
 \arguments{
-\item{netdf}{\code{data.frame} of network}
+\item{graphs}{\code{list} containing the two graphs and a map linking the two
+to each other.}
 
-\item{start_node}{Starting node for shortest path route}
+\item{start_node}{Starting node for shortest path route.}
 
-\item{end_node}{Ending node for shortest path route}
+\item{end_node}{Ending node for shortest path route.}
 }
 \value{
-a \code{vector} containing edge IDs of the shortest path
+\code{data.frame} of the graph elements the shortest path lies on.
 }
 \description{
 Calculate the shortest path between two nodes on a graph
 }
 \examples{
 \dontrun{
-netdf <- data.frame (
-                     from_id = c (rep (0, 3), rep (1, 3), rep (2, 4),
-                              rep (3, 3), rep (4, 2), rep (5, 3)),
-                     to_id = c (1, 2, 5, 0, 2, 3, 0, 1, 3, 5,
-                              1, 2, 4, 3, 5, 0, 2, 4),
-                     d_weighted = c (7., 9., 14., 7., 10., 15., 9., 10.,11.,
-                              2., 15., 11., 6., 6., 9., 14., 2., 9.))
-getShortestPath (netdf, 1, 5)
+  dat <- readRDS ("../compact-ways-munich.Rda") \%>\% makeCompactGraph
+  st <- dat$compact$from_id [1]
+  en <- dat$compact$to_id [10]
+  getShortestPath (dat, st, en)
 }
 }

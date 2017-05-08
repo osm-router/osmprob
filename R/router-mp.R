@@ -61,15 +61,8 @@ osm_router <- function (netdf, start_node, end_node, eta=1)
 #' }
 getProbability <- function (graphs, start_node, end_node, eta=1)
 {
-    if (!all (c ('compact', 'original', 'map') %in% names (graphs)))
-        stop ('graphs must contain data.frames compact, original and map.')
+    checkGraphFormat (graphs)
     netdf <- graphs$compact
-    if (!(is (netdf, 'data.frame')))
-        stop ('graphs must contain a data.frame')
-    if (!all (c ('from_id', 'to_id', 'd_weighted') %in% names (netdf)))
-        stop ('compact graph must contain columns from_id, to_id and
-              d_weighted')
-
     netdf_out <- netdf
     netdf <- data.frame (netdf$from_id, netdf$to_id, netdf$d_weighted)
 
@@ -96,31 +89,26 @@ getProbability <- function (graphs, start_node, end_node, eta=1)
 
 #' Calculate the shortest path between two nodes on a graph
 #'
-#' @param netdf \code{data.frame} of network
-#' @param start_node Starting node for shortest path route
-#' @param end_node Ending node for shortest path route
+#' @param graphs \code{list} containing the two graphs and a map linking the two
+#' to each other.
+#' @param start_node Starting node for shortest path route.
+#' @param end_node Ending node for shortest path route.
 #'
-#' @return a \code{vector} containing edge IDs of the shortest path
+#' @return \code{data.frame} of the graph elements the shortest path lies on.
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' netdf <- data.frame (
-#'                      from_id = c (rep (0, 3), rep (1, 3), rep (2, 4),
-#'                               rep (3, 3), rep (4, 2), rep (5, 3)),
-#'                      to_id = c (1, 2, 5, 0, 2, 3, 0, 1, 3, 5,
-#'                               1, 2, 4, 3, 5, 0, 2, 4),
-#'                      d_weighted = c (7., 9., 14., 7., 10., 15., 9., 10.,11.,
-#'                               2., 15., 11., 6., 6., 9., 14., 2., 9.))
-#' getShortestPath (netdf, 1, 5)
+#'   dat <- readRDS ("../compact-ways-munich.Rda") %>% makeCompactGraph
+#'   st <- dat$compact$from_id [1]
+#'   en <- dat$compact$to_id [10]
+#'   getShortestPath (dat, st, en)
 #' }
-getShortestPath <- function (netdf, start_node, end_node)
+getShortestPath <- function (graphs, start_node, end_node)
 {
-    if (!(is (netdf, 'data.frame')))
-        stop ('netdf must be a data.frame')
-    if (!all (c ('from_id', 'to_id', 'd_weighted') %in% names (netdf)))
-        stop ('netdf must contain columns from_id, to_id and d_weighted')
+    checkGraphFormat (graphs)
+    netdf <- graphs$compact
     netdf <- data.frame (netdf$from_id, netdf$to_id, netdf$d_weighted)
     cnames <- c ('from_id', 'to_id', 'd_weighted')
     names (netdf) <- cnames
@@ -139,7 +127,8 @@ getShortestPath <- function (netdf, start_node, end_node)
     start_node <- which (allids == start_node) -1
     end_node <- which (allids == end_node) -1
     path <- rcpp_router_dijkstra (netdf, start_node, end_node)
-    allids [path + 1]
+    path_compact <- allids [path + 1]
+    mapShortest (graphs, path_compact)
 }
 
 #' Maps probabilities from the compact graph back on to the original graph
@@ -168,4 +157,59 @@ mapProbabilities <- function (graphs)
         orig$probability [orig$edge_id == map$id_original [i]] <- prob
     }
     orig
+}
+
+#' Maps the shortest path back on to the original graph
+#'
+#' @param graphs \code{list} containing the two graphs and a map linking the two
+#' to each other.
+#' @param shortest \code{vector} containing the shortest path.
+#'
+#' @return \code{data.frame} of the graph elements the shortest path lies on.
+#'
+#' @noRd
+mapShortest <- function (graphs, shortest)
+{
+    map <- graphs$map
+    orig <- graphs$original
+    comp <- graphs$compact
+    ways <- cbind (utils::head (shortest, -1), shortest [-1])
+    nms <- names (orig)
+    path <- data.frame (matrix (ncol = length (nms), nrow = dim (map) [1]))
+    names (path) <- nms
+    n <- 1
+    for (i in seq_along (ways [,1]))
+    {
+        way <- ways [i,]
+        eId <- comp$edge_id [comp$from_id == way [1] & comp$to_id == way [2]]
+        oIds <- map$id_original [map$id_compact == eId]
+        for (oId in oIds)
+        {
+            orig_edge <- orig [orig$edge_id == oId, ]
+            if (dim (orig_edge) [1] == 1)
+            {
+                path [n,] <- orig_edge
+                n <- n + 1
+            }
+        }
+    }
+    path [complete.cases (path), ]
+}
+
+#' Checks if all necessary data are present in the graphs
+#'
+#' @param graphs \code{list} containing the two graphs and a map linking the two
+#' to each other.
+#'
+#' @noRd
+checkGraphFormat <- function (graphs)
+{
+    if (!all (c ('compact', 'original', 'map') %in% names (graphs)))
+        stop ('graphs must contain data.frames compact, original and map.')
+    netdf <- graphs$compact
+    if (!(is (netdf, 'data.frame')))
+        stop ('graphs must contain a data.frame')
+    if (!all (c ('from_id', 'to_id', 'd_weighted') %in% names (netdf)))
+        stop ('compact graph must contain columns from_id, to_id and
+              d_weighted')
 }

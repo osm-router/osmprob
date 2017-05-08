@@ -258,8 +258,6 @@ void removeIntermediateVertices (vertexMap &v, edgeVector &e)
                 }
                 v.at (nId) = nVtx;
             }
-            // vert = v.erase (vert);
-            // vert -> inCompactGraph = false;
             vert ++;
 
             // update edges
