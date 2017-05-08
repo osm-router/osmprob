@@ -14,6 +14,5 @@ test_that ("getMap", {
                st <- dat$compact$from_id [1]
                en <- dat$compact$to_id [3]
                prb <- getProbability (dat, st, en) %>% getGraph
-               map <- getMap (prb, prb)
-               testthat::expect_s3_class (map, c ("leaflet", "htmlwidget"))
+               testthat::expect_error (getMap (prb, prb))
 })

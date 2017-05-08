@@ -62,7 +62,8 @@ getGraph <- function (dat)
     graph
 }
 
-cRamp <- subset (RColorBrewer::brewer.pal.info, category == "qual")
+lnColor <- function (x, colorBy) { leaflet::colorQuantile (x, colorBy, n = 9) }
+
 ui <- shiny::bootstrapPage (
   shiny::tags$style (type = "text/css", "html, body {width:100%;height:100%}
               .checkbox, .control-label{color: #FFFFFF}"),
@@ -94,9 +95,13 @@ popup <- function (fromid, toid, weight, prob)
 #' @noRd
 getMap <- function (dat, short)
 {
+    dat <- subset (dat, !is.na (dat$probability))
     grpPrb <- "Probabilities"
     grpSrt <- "Shortest Path"
     grpSE <- "Start and end points"
+    colorscheme <- "YlGnBu"
+    print_weights <- dat$d_weighted / sf::st_length (dat) 
+    pal <- lnColor (colorscheme, print_weights)
     startPt <- sf::st_coordinates (short [1, ])[1, 2:1]
     endPt <- sf::st_coordinates (utils::tail (short, 1))[1, 2:1]
     bb <- as.vector (sf::st_bbox (dat))
@@ -104,10 +109,11 @@ getMap <- function (dat, short)
     leaflet::leaflet (data = dat,
                       options = leaflet::leafletOptions ()) %>%
     leaflet::addProviderTiles ('CartoDB.DarkMatter', group = "base") %>%
-    leaflet::addPolylines (color = "#FFFFFF", opacity = 1.0, popup = popup
-                           (dat$from_id, dat$to_id, dat$d_weighted,
-                            dat$probability), weight = getWidth (3, 4,
-                            dat$probability), group = grpPrb) %>%
+    leaflet::addPolylines (color = ~pal (print_weights), opacity = 1.0,
+                           weight = getWidth (3, 8, dat$probability),
+                           popup = popup (dat$from_id, dat$to_id,
+                                          dat$d_weighted, dat$probability),
+                           group = grpPrb) %>%
     leaflet::addPolylines (data = short, color = "#FF0000", opacity = 1.0,
                            weight = 4, group = grpSrt, dashArray = "20, 20") %>%
     leaflet::addCircleMarkers (stroke = FALSE, startPt [2], startPt [1],
@@ -119,6 +125,9 @@ getMap <- function (dat, short)
     leaflet::addLayersControl (overlayGroups = c (grpPrb, grpSE, grpSrt),
                                options = leaflet::layersControlOptions
                                (collapsed = FALSE)) %>%
+    leaflet::addLegend (position = "bottomright", pal = pal,
+                        values = print_weights,
+                        title = "Edge Weight (Quantile)") %>%
     leaflet::fitBounds (bb[1], bb[2], bb[3], bb[4])
 }
 
