@@ -48,8 +48,9 @@ pathsequenceToDataframe <- function (graph, path)
     for (i in seq_along (ways [,1]))
     {
         way <- ways [i,]
-        path [i,] <- graph [graph$from_id == way [1] &
-                                graph$to_id == way [2],]
+        w <- graph [graph$from_id == way [1] & graph$to_id == way [2],]
+        if (dim (w) [1] > 0)
+            path [i,] <- w
     }
     path
 }

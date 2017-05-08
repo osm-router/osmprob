@@ -36,10 +36,11 @@ To load, process and display a sample graph, run
 
 ``` r
 devtools::load_all (export_all = FALSE)
-graph <- readRDS ("tests/compact-ways-munich.Rda")
-startPt <- graph$from_id [1]
-endPt <- graph$to_id [600]
-path <- getShortestPath (graph, startPt, endPt)
+library (magrittr)
+graph <- readRDS ("tests/compact-ways-munich.Rda") %>% makeCompactGraph
+startPt <- graph$compact$from_id [1]
+endPt <- graph$compact$to_id [600]
+path <- getShortestPath (graph$compact, startPt, endPt)
 prob <- getProbability (graph, startPt, endPt, eta = 1)
 plotMap (prob, path)
 ```
@@ -54,10 +55,10 @@ library (magrittr)
 q <- osmdata::opq (bbox = c (11.58, 48.14, 11.585, 48.145))
 q <- osmdata::add_feature (q, key = 'highway')
 dat <- osmdata::osmdata_sf (q)
-graph <- osmlines_as_network (dat, profileName = "bicycle") %>% makeCompactGraph %>% extract2 (1)
-startPt <- graph$from_id [1]
-endPt <- graph$to_id [600]
-path <- getShortestPath (graph, startPt, endPt)
+graph <- osmlines_as_network (dat, profileName = "bicycle") %>% makeCompactGraph
+startPt <- graph$compact$from_id [1]
+endPt <- graph$compact$to_id [600]
+path <- getShortestPath (graph$compact, startPt, endPt)
 prob <- getProbability (graph, startPt, endPt, eta = 1)
 plotMap (prob, path)
 ```

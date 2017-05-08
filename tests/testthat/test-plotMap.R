@@ -8,19 +8,23 @@ test_that ("getWidth", {
     testthat::expect_equal (dat, 7)
 })
 
-# test_that ("getMap", {
-#     dat <- readRDS ("../compact-ways-munich.Rda") %>% head (10) %>%
-#         makeCompactGraph %>% magrittr::extract2 (1) %>% getGraph
-#     prb <- getProbability (dat, dat$from_id [1], dat$to_id [1])
-#     map <- getMap (prb, prb)
-#     testthat::expect_s3_class (map, c ("leaflet", "htmlwidget"))
-# })
+test_that ("getMap", {
+               dat <- readRDS ("../compact-ways-munich.Rda") %>% head (10) %>%
+                   makeCompactGraph
+               st <- dat$compact$from_id [1]
+               en <- dat$compact$to_id [3]
+               prb <- getProbability (dat, st, en) %>% getGraph
+               map <- getMap (prb, prb)
+               testthat::expect_s3_class (map, c ("leaflet", "htmlwidget"))
+})
 
-# test_that ("pathsequenceToDataframe", {
-#     dat <- readRDS ("../compact-ways-munich.Rda") %>% head (10) %>%
-#         makeCompactGraph %>% magrittr::extract2 (1)
-#     prb <- getProbability (dat, dat$from_id [1], dat$to_id [4])
-#     short <- getShortestPath (dat, dat$from_id [1], dat$to_id [4])
-#     pathDf <- pathsequenceToDataframe (prb, short)
-#     testthat::expect_is (pathDf, "data.frame")
-# })
+test_that ("pathsequenceToDataframe", {
+               dat <- readRDS ("../compact-ways-munich.Rda") %>% head (10) %>%
+                   makeCompactGraph
+               st <- dat$compact$from_id [1]
+               en <- dat$compact$to_id [3]
+               prb <- getProbability (dat, st, en) %>% getGraph
+               short <- getShortestPath (dat$compact, st, en)
+               pathDf <- pathsequenceToDataframe (prb, short)
+               testthat::expect_is (pathDf, "data.frame")
+})

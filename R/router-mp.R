@@ -54,17 +54,15 @@ osm_router <- function (netdf, start_node, end_node, eta=1)
 #'
 #' @examples
 #' \dontrun{
-#' netdf <- data.frame (
-#'                      from_id = c (rep (0, 3), rep (1, 3), rep (2, 4),
-#'                               rep (3, 3), rep (4, 2), rep (5, 3)),
-#'                      to_id = c (1, 2, 5, 0, 2, 3, 0, 1, 3, 5,
-#'                               1, 2, 4, 3, 5, 0, 2, 4),
-#'                      d_weighted = c (7., 9., 14., 7., 10., 15., 9., 10.,11.,
-#'                               2., 15., 11., 6., 6., 9., 14., 2., 9.))
-#' getProbability (netdf, 1, 5)
+#'   dat <- readRDS ("../compact-ways-munich.Rda") %>% makeCompactGraph
+#'   st <- dat$compact$from_id [1]
+#'   en <- dat$compact$to_id [10]
+#'   getProbability (dat, st, en)
 #' }
 getProbability <- function (graphs, start_node, end_node, eta=1)
 {
+    if (!all (c ('compact', 'original', 'map') %in% names (graphs)))
+        stop ('graphs must contain data.frames compact, original and map.')
     netdf <- graphs$compact
     if (!(is (netdf, 'data.frame')))
         stop ('graphs must contain a data.frame')
