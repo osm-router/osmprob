@@ -242,7 +242,7 @@ Rcpp::NumericMatrix rcpp_router (Rcpp::DataFrame netdf,
     int nloops = g.calculate_q_mat (1.0e-6, 1000000);
     Rcpp::Rcout << "---converged in " << nloops << " loops" << std::endl;
     std::vector <std::string> cnames = {"S", "0", "1", "2", "3", "4", "5", "E"};
-    g.dumpMat (g.q_mat, "Q1", cnames);
+    // g.dumpMat (g.q_mat, "Q1", cnames);
 
     std::vector <weight_t> min_distance;
     std::vector <vertex_t> previous;
