@@ -79,10 +79,10 @@ getProbability <- function (graphs, start_node, end_node, eta=1)
     if (!end_node %in% allids)
         stop ('end_node is not part of netdf')
 
-    eta <- as.numeric (eta * nrow (netdf))
-    probability <- rcpp_router_prob (netdf, start_node, end_node, eta)
+    #probability <- rcpp_router_prob (netdf, start_node, end_node, eta)
+    probability <- r_router_prob (graphs, start_node, end_node, eta)
 
-    prb <- cbind (netdf_out, probability)
+    prb <- cbind (netdf_out, probability$dens)
     graphs$compact <- prb
     mapProbabilities (graphs)
 }
@@ -129,4 +129,99 @@ getShortestPath <- function (graphs, start_node, end_node)
     path <- rcpp_router_dijkstra (netdf, start_node, end_node)
     path_compact <- allids [path + 1]
     mapShortest (graphs, path_compact)
+}
+
+
+#' Probabilistic router adapted from \code{gdistance} code
+#'
+#' @param graphs \code{list} containing the two graphs and a map linking the two
+#' to each other.
+#' @param start_node Starting node for shortest path route given as OSM ID
+#' @param end_node Ending node for shortest path route given as OSM ID
+#' @param eta The parameter controlling the entropy (scale is arbitrary)
+#'
+#' @return A list of three items, the first two of which match the edges in the
+#' compact graph:
+#' \itemize{
+#' \item Vector of edge traversal densities (\code{dens})
+#' \item Vector of edge traversal probabilities (\code{prob})
+#' \item Single value of total probabilistic distance (\code{d})
+#' }
+#'
+#' @noRd
+r_router_prob <- function (graph, start_node, end_node, eta)
+{
+    # scale eta to size of graph - TODO: Investigate this further!
+    eta <- eta / nrow (graph$compact)
+
+    frid <- graph$compact$from_id %>% as.character %>% as.numeric
+    start_i <- which (frid == start_node)
+    toid <- graph$compact$to_id %>% as.character %>% as.numeric
+    end_i <- which (toid == end_node)
+
+    netdf <- data.frame ('xfr' = graph$compact$from_id,
+                         'xto' = graph$compact$to_id,
+                         'd' = graph$compact$d)
+    netdf$xfr %<>% as.character %>% as.numeric
+    netdf$xto %<>% as.character %>% as.numeric
+    allids <- c (netdf$xfr, netdf$xto) %>% sort %>% unique 
+
+    # Set first node:
+    orig_id <- netdf$xfr [start_i]
+    dest_id <- netdf$xto [end_i]
+    dest <- which (allids == netdf$xto [end_i])
+    # Then insert connection to first node
+    netdf <- rbind (c (1, orig_id, 0), netdf)
+    allids <- c (1, allids)
+    origin <- 1
+    dest <- dest + 1
+    # And add columns of sequential indices for each node
+    netdf <- cbind ('ifr' = match (netdf$xfr, allids),
+                    'ito' = match (netdf$xto, allids),
+                    netdf)
+
+    # Then begin the actual routing calculation
+    nv <- length (allids)
+    dmat <- array (NA, dim = rep (nv, 2))
+    indx <- netdf$ifr + nv * (netdf$ito - 1)
+    dmat [indx] <- netdf$d
+    dmatS <- dmat
+    dmatS [is.na (dmatS)] <- 0
+    dmatS <- as (dmatS, "dgCMatrix")
+    p <- 1 / dmatS # Eq.(4)
+    p [dmatS == 0] <- 0
+    p <- as (p, "dgCMatrix")
+    rs <- Matrix::rowSums (dmatS, na.rm = TRUE)
+    rs [rs == 0] <- Inf
+    dmatS <- dmatS / rs
+
+    W <- exp (-eta * p) * dmatS # Eq.(33) (kinda)
+    W [is.na (W)] <- 0
+
+    Id <- Ij <- Matrix::Diagonal (nv)
+    Ij [dest, dest] <- 0
+    W <- Ij %*% W
+    IdMinusW <- as ((Id - W), "dgCMatrix")
+
+    e1 <- en <- rep (0, nv)
+    e1 [netdf$ito [1]] <- 1
+    en [dest] <- 1
+
+    z1 <- solve (Matrix::t (IdMinusW), e1)
+    zn <- solve (IdMinusW, en)
+    z1n <- sum (e1 * zn)
+    N <- (Matrix::Diagonal (nv, as.vector (z1)) %*% W %*% 
+          Matrix::Diagonal(nv, as.vector (zn))) / z1n
+
+    Nvec <- N [indx] [-1] # rm 1st element
+
+    n <- pmax (Matrix::rowSums (N), Matrix::colSums (N)) #not efficient but effective
+    rn <- rep (0, times = length (nv))
+    rn [n > 0] <- 1 / n [n > 0]
+    Pr <- N * rn
+    Pr <- Pr [indx] [1] # rm 1st element
+
+    CW <- dmatS * W
+    dij <- (t (z1) %*% CW %*% zn) / z1n
+    list ('dens' = Nvec, 'prob' = Pr, 'dist' = as.numeric (dij))
 }

@@ -6,6 +6,8 @@
 #' @importFrom leaflet addPolylines addProviderTiles removeShape colorNumeric
 #' @importFrom leaflet fitBounds leaflet leafletOptions leafletProxy 
 #' @importFrom leaflet leafletOutput renderLeaflet
+#' @importFrom Matrix Diagonal rowSums
+#' @importFrom methods as
 #' @importFrom shiny absolutePanel bootstrapPage checkboxInput 
 #' @importFrom shiny reactive selectInput shinyApp sliderInput
 #' @importFrom RColorBrewer brewer.pal.info

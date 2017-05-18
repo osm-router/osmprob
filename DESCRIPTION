@@ -12,6 +12,7 @@ License: GPL-3 + file LICENSE
 Imports:
     Rcpp (>= 0.12.6),
     leaflet,
+    Matrix,
     magrittr,
     methods,
     RColorBrewer,
