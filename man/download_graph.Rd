@@ -4,7 +4,7 @@
 \alias{download_graph}
 \title{Download OSM road graph and preprocess it}
 \usage{
-download_graph(start_pt, end_pt, weightingProfile = "bicycle", buffer = 0)
+download_graph(start_pt, end_pt, weighting_profile = "bicycle", buffer = 0)
 }
 \arguments{
 \item{start_pt}{Two numeric values (latitude, longitude) as start point
