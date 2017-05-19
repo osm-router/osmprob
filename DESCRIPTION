@@ -15,6 +15,7 @@ Imports:
     Matrix,
     magrittr,
     methods,
+    osmdata,
     RColorBrewer,
     sf,
     shiny

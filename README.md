@@ -38,8 +38,10 @@ To load, process and display a sample graph, run
 devtools::load_all (export_all = FALSE)
 library (magrittr)
 graph <- readRDS ("tests/compact-ways-munich.Rda") %>% makeCompactGraph
-startPt <- graph$compact$from_id [1]
-endPt <- graph$compact$to_id [600]
+#startPt <- graph$compact$from_id [1]
+#endPt <- graph$compact$to_id [600]
+startPt <- graph$compact$from_id [350] %>% as.character %>% as.numeric
+endPt <- graph$compact$to_id [615] %>% as.character %>% as.numeric
 path <- getShortestPath (graph, startPt, endPt)
 prob <- getProbability (graph, startPt, endPt, eta = 1)
 plotMap (prob, path)
@@ -51,15 +53,13 @@ To create a sample graph for other areas, [osmdata](https://github.com/osmdatar/
 
 ``` r
 devtools::load_all (export_all = FALSE)
-library (magrittr)
-q <- osmdata::opq (bbox = c (11.58, 48.14, 11.585, 48.145))
-q <- osmdata::add_feature (q, key = 'highway')
-dat <- osmdata::osmdata_sf (q)
-graph <- osmlines_as_network (dat, profileName = "bicycle") %>% makeCompactGraph
-startPt <- graph$compact$from_id [1]
-endPt <- graph$compact$to_id [600]
-path <- getShortestPath (graph, startPt, endPt)
-prob <- getProbability (graph, startPt, endPt, eta = 1)
+start_pt <- c (11.58, 48.14)
+end_pt <- c (11.585, 48.145)
+graph <- download_graph (start_pt, end_pt)
+route_start <- graph$compact$from_id [1]
+route_end <- graph$compact$to_id [600]
+path <- getShortestPath (graph, route_start, route_end)
+prob <- getProbability (graph, route_start, route_end, eta = 1)
 plotMap (prob, path)
 ```
 
