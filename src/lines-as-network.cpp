@@ -56,7 +56,8 @@ float haversine (float x1, float y1, float x2, float y2)
 //'
 //' @noRd
 // [[Rcpp::export]]
-Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines, Rcpp::DataFrame pr)
+Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines,
+        Rcpp::DataFrame pr)
 {
     std::map <std::string, float> profile;
     Rcpp::StringVector hw = pr [1];
@@ -69,27 +70,27 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines, Rcpp::DataFrame pr
         throw std::runtime_error ("sf_lines have no geometry component");
     if (nms [0] != "osm_id")
         throw std::runtime_error ("sf_lines have no osm_id component");
-    int oneWayIndex = -1;
-    int oneWayBicycleIndex = -1;
-    int highwayIndex = -1;
+    int one_way_index = -1;
+    int one_way_bicycle_index = -1;
+    int highway_index = -1;
     for (int i = 0; i < nms.size (); i++)
     {
         if (nms [i] == "oneway")
-            oneWayIndex = i;
+            one_way_index = i;
         if (nms [i] == "oneway.bicycle")
-            oneWayBicycleIndex = i;
+            one_way_bicycle_index = i;
         if (nms [i] == "highway")
-            highwayIndex = i;
+            highway_index = i;
     }
     Rcpp::CharacterVector ow = NULL;
     Rcpp::CharacterVector owb = NULL;
     Rcpp::CharacterVector highway = NULL;
-    if (oneWayIndex >= 0)
-        ow = sf_lines [oneWayIndex];
-    if (oneWayBicycleIndex >= 0)
-        owb = sf_lines [oneWayBicycleIndex];
-    if (highwayIndex >= 0)
-        highway = sf_lines [highwayIndex];
+    if (one_way_index >= 0)
+        ow = sf_lines [one_way_index];
+    if (one_way_bicycle_index >= 0)
+        owb = sf_lines [one_way_bicycle_index];
+    if (highway_index >= 0)
+        highway = sf_lines [highway_index];
     if (ow.size () > 0)
     {
         if (ow.size () == owb.size ())
@@ -125,18 +126,19 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines, Rcpp::DataFrame pr
     }
 
     Rcpp::NumericMatrix nmat = Rcpp::NumericMatrix (Rcpp::Dimension (nrows, 6));
-    Rcpp::CharacterMatrix idmat = Rcpp::CharacterMatrix (Rcpp::Dimension (nrows, 3));
+    Rcpp::CharacterMatrix idmat = Rcpp::CharacterMatrix (Rcpp::Dimension (nrows,
+                3));
 
     nrows = 0;
     ngeoms = 0;
-    int fakeId = 0;
+    int fake_id = 0;
     for (auto g = geoms.begin (); g != geoms.end (); ++ g)
     {
         Rcpp::NumericMatrix gi = (*g);
         std::string hway = std::string (highway [ngeoms]);
-        float hwFactor = profile [hway];
-        if (hwFactor == 0) hwFactor = 1e-5;
-        hwFactor /= 1;
+        float hw_factor = profile [hway];
+        if (hw_factor == 0) hw_factor = 1e-5;
+        hw_factor /= 1;
 
         Rcpp::List ginames = gi.attr ("dimnames");
         Rcpp::CharacterVector rnms;
@@ -146,20 +148,21 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines, Rcpp::DataFrame pr
         {
             rnms = Rcpp::CharacterVector (gi.nrow ());
             for (int i = 0; i < gi.nrow (); i ++)
-                rnms [i] = fakeId ++;
+                rnms [i] = fake_id ++;
         }
         if (rnms.size () != gi.nrow ())
             throw std::runtime_error ("geom size differs from rownames");
 
         for (int i = 1; i < gi.nrow (); i ++)
         {
-            float d = haversine (gi (i-1, 0), gi (i-1, 1), gi (i, 0), gi (i, 1));
+            float d = haversine (gi (i-1, 0), gi (i-1, 1), gi (i, 0),
+                    gi (i, 1));
             nmat (nrows, 0) = gi (i-1, 0);
             nmat (nrows, 1) = gi (i-1, 1);
             nmat (nrows, 2) = gi (i, 0);
             nmat (nrows, 3) = gi (i, 1);
             nmat (nrows, 4) = d;
-            nmat (nrows, 5) = d * hwFactor;
+            nmat (nrows, 5) = d * hw_factor;
             idmat (nrows, 0) = rnms (i-1);
             idmat (nrows, 1) = rnms (i);
             idmat (nrows, 2) = hway;
@@ -171,7 +174,7 @@ Rcpp::List rcpp_lines_as_network (const Rcpp::List &sf_lines, Rcpp::DataFrame pr
                 nmat (nrows, 2) = gi (i-1, 0);
                 nmat (nrows, 3) = gi (i-1, 1);
                 nmat (nrows, 4) = d;
-                nmat (nrows, 5) = d * hwFactor;
+                nmat (nrows, 5) = d * hw_factor;
                 idmat (nrows, 0) = rnms (i);
                 idmat (nrows, 1) = rnms (i-1);
                 idmat (nrows, 2) = hway;

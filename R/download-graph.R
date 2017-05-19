@@ -12,7 +12,7 @@
 #' @param end_pt Two numeric values (latitude, longitude) as end point
 #' coordinates.
 #' @param weighting_profile Name of the used weighting profile.
-#' \code{osmprob::weightingProfiles} contains all available profiles.
+#' \code{osmprob::weighting_profiles} contains all available profiles.
 #' @param buffer Positive value that defines by how much (in percent) should the
 #' downloaded data extend the bounding box defined by \code{start_pt} and
 #' \code{end_pt}.
@@ -35,8 +35,8 @@ download_graph <- function (start_pt, end_pt, weighting_profile = "bicycle",
     query <- osmdata::opq (bbox = bbx)
     query <- osmdata::add_feature (query, key = 'highway')
     dat <- osmdata::osmdata_sf (query)
-    osmlines_as_network (dat, profileName = weighting_profile) %>%
-        makeCompactGraph
+    osmlines_as_network (dat, profile_name = weighting_profile) %>%
+        make_compact_graph
 }
 
 make_bbox <- function (start_pt, end_pt, buffer)

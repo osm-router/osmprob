@@ -1,6 +1,6 @@
 #' Removes nodes and edges from a graph that are not needed for routing
 #'
-#' \code{makeCompactGraph} takes a \code{data.frame} containing a graph and
+#' \code{make_compact_graph} takes a \code{data.frame} containing a graph and
 #' removes all vertices not needed for routing as well as all vertices that are
 #' not connected to the largest coherent part of the graph.
 #'
@@ -13,15 +13,15 @@
 #' q <- osmdata::add_feature (q, key = 'highway')
 #' x <- osmdata::osmdata_sf(q)
 #' net <- osmlines_as_network (x)
-#' graph <- makeCompactGraph (net)
+#' graph <- make_compact_graph (net)
 #' }
 #'
 #' @export
-makeCompactGraph <- function (graph)
+make_compact_graph <- function (graph)
 {
     if (!is (graph, 'data.frame'))
         stop ('graph must be of type data.frame')
-    rcpp_makeCompactGraph (graph)
+    rcpp_make_compact_graph (graph)
 }
 
 #' Maps probabilities from the compact graph back on to the original graph
@@ -33,7 +33,7 @@ makeCompactGraph <- function (graph)
 #' mapped on it.
 #'
 #' @noRd
-mapProbabilities <- function (graphs)
+map_probabilities <- function (graphs)
 {
     orig <- graphs$original
     orig$probability <- 0
@@ -61,7 +61,7 @@ mapProbabilities <- function (graphs)
 #' @return \code{data.frame} of the graph elements the shortest path lies on.
 #'
 #' @noRd
-mapShortest <- function (graphs, shortest)
+map_shortest <- function (graphs, shortest)
 {
     map <- graphs$map
     orig <- graphs$original
@@ -95,7 +95,7 @@ mapShortest <- function (graphs, shortest)
 #' to each other.
 #'
 #' @noRd
-checkGraphFormat <- function (graphs)
+check_graph_format <- function (graphs)
 {
     if (!all (c ('compact', 'original', 'map') %in% names (graphs)))
         stop ('graphs must contain data.frames compact, original and map.')

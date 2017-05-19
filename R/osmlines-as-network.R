@@ -2,8 +2,8 @@
 #'
 #' @param lns An \code{sf} collection of \code{LINESTRING} objects, obtained for
 #' example from the \code{osm_lines} component of an \code{osmdata} object
-#' @param profileName Name of the used weighting profile.
-#' \code{osmprob::weightingProfiles} contains all available profiles.
+#' @param profile_name Name of the used weighting profile.
+#' \code{osmprob::weighting_profiles} contains all available profiles.
 #'
 #' @return \code{data.frame} of all pairs of connected nodes
 #'
@@ -16,7 +16,7 @@
 #' x <- osmdata::osmdata_sf(q)
 #' net <- osmlines_as_network (x)
 #' }
-osmlines_as_network <- function (lns, profileName = "bicycle")
+osmlines_as_network <- function (lns, profile_name = "bicycle")
 {
     if (is (lns, 'osmdata'))
         lns <- lns$osm_lines
@@ -24,7 +24,7 @@ osmlines_as_network <- function (lns, profileName = "bicycle")
         stop ("lns must be an 'sf' collection of 'LINESTRING' objects")
 
     profiles <- osmprob::weightingProfiles
-    profiles <- profiles [profiles$name == profileName, ]
+    profiles <- profiles [profiles$name == profile_name, ]
     res <- rcpp_lines_as_network (lns, profiles)
     data.frame (
                 from_id = as.character (res [[2]] [, 1]),

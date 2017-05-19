@@ -54,14 +54,14 @@ osm_router <- function (netdf, start_node, end_node, eta=1)
 #'
 #' @examples
 #' \dontrun{
-#'   dat <- readRDS ("../compact-ways-munich.Rda") %>% makeCompactGraph
+#'   dat <- readRDS ("../compact-ways-munich.Rda") %>% make_compact_graph
 #'   st <- dat$compact$from_id [1]
 #'   en <- dat$compact$to_id [10]
-#'   getProbability (dat, st, en)
+#'   get_probability (dat, st, en)
 #' }
-getProbability <- function (graphs, start_node, end_node, eta=1)
+get_probability <- function (graphs, start_node, end_node, eta=1)
 {
-    checkGraphFormat (graphs)
+    check_graph_format (graphs)
     netdf <- graphs$compact
     netdf_out <- netdf
     netdf <- data.frame (netdf$from_id, netdf$to_id, netdf$d_weighted)
@@ -79,12 +79,11 @@ getProbability <- function (graphs, start_node, end_node, eta=1)
     if (!end_node %in% allids)
         stop ('end_node is not part of netdf')
 
-    #probability <- rcpp_router_prob (netdf, start_node, end_node, eta)
     probability <- r_router_prob (graphs, start_node, end_node, eta)
 
     prb <- cbind (netdf_out, probability$dens)
     graphs$compact <- prb
-    mapProbabilities (graphs)
+    map_probabilities (graphs)
 }
 
 #' Calculate the shortest path between two nodes on a graph
@@ -100,14 +99,14 @@ getProbability <- function (graphs, start_node, end_node, eta=1)
 #'
 #' @examples
 #' \dontrun{
-#'   dat <- readRDS ("../compact-ways-munich.Rda") %>% makeCompactGraph
+#'   dat <- readRDS ("../compact-ways-munich.Rda") %>% make_compact_graph
 #'   st <- dat$compact$from_id [1]
 #'   en <- dat$compact$to_id [10]
-#'   getShortestPath (dat, st, en)
+#'   get_shortest_path (dat, st, en)
 #' }
-getShortestPath <- function (graphs, start_node, end_node)
+get_shortest_path <- function (graphs, start_node, end_node)
 {
-    checkGraphFormat (graphs)
+    check_graph_format (graphs)
     netdf <- graphs$compact
     netdf <- data.frame (netdf$from_id, netdf$to_id, netdf$d_weighted)
     cnames <- c ('from_id', 'to_id', 'd_weighted')
@@ -128,7 +127,7 @@ getShortestPath <- function (graphs, start_node, end_node)
     end_node <- which (allids == end_node) -1
     path <- rcpp_router_dijkstra (netdf, start_node, end_node)
     path_compact <- allids [path + 1]
-    mapShortest (graphs, path_compact)
+    map_shortest (graphs, path_compact)
 }
 
 
@@ -185,43 +184,45 @@ r_router_prob <- function (graph, start_node, end_node, eta)
     dmat <- array (NA, dim = rep (nv, 2))
     indx <- netdf$ifr + nv * (netdf$ito - 1)
     dmat [indx] <- netdf$d
-    dmatS <- dmat
-    dmatS [is.na (dmatS)] <- 0
-    dmatS <- as (dmatS, "dgCMatrix")
-    p <- 1 / dmatS # Eq.(4)
-    p [dmatS == 0] <- 0
+    dmat_s <- dmat
+    dmat_s [is.na (dmat_s)] <- 0
+    dmat_s <- as (dmat_s, "dgCMatrix")
+    p <- 1 / dmat_s # Eq.(4)
+    p [dmat_s == 0] <- 0
     p <- as (p, "dgCMatrix")
-    rs <- Matrix::rowSums (dmatS, na.rm = TRUE)
+    rs <- Matrix::rowSums (dmat_s, na.rm = TRUE)
     rs [rs == 0] <- Inf
-    dmatS <- dmatS / rs
+    dmat_s <- dmat_s / rs
 
-    W <- exp (-eta * p) * dmatS # Eq.(33) (kinda)
+    W <- exp (-eta * p) * dmat_s # Eq.(33) (kinda)
     W [is.na (W)] <- 0
 
     Id <- Ij <- Matrix::Diagonal (nv)
     Ij [dest, dest] <- 0
     W <- Ij %*% W
-    IdMinusW <- as ((Id - W), "dgCMatrix")
+    id_minus_w <- as ((Id - W), "dgCMatrix")
 
     e1 <- en <- rep (0, nv)
     e1 [netdf$ito [1]] <- 1
     en [dest] <- 1
 
-    z1 <- solve (Matrix::t (IdMinusW), e1)
-    zn <- solve (IdMinusW, en)
+    z1 <- solve (Matrix::t (id_minus_w), e1)
+    zn <- solve (id_minus_w, en)
     z1n <- sum (e1 * zn)
     N <- (Matrix::Diagonal (nv, as.vector (z1)) %*% W %*% 
           Matrix::Diagonal(nv, as.vector (zn))) / z1n
 
     Nvec <- N [indx] [-1] # rm 1st element
 
-    n <- pmax (Matrix::rowSums (N), Matrix::colSums (N)) #not efficient but effective
+    #not efficient but effective
+    n <- pmax (Matrix::rowSums (N), Matrix::colSums (N))
+
     rn <- rep (0, times = length (nv))
     rn [n > 0] <- 1 / n [n > 0]
     Pr <- N * rn
     Pr <- Pr [indx] [1] # rm 1st element
 
-    CW <- dmatS * W
+    CW <- dmat_s * W
     dij <- (t (z1) %*% CW %*% zn) / z1n
     list ('dens' = Nvec, 'prob' = Pr, 'dist' = as.numeric (dij))
 }

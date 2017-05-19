@@ -9,10 +9,10 @@ test_that ("getWidth", {
 })
 
 test_that ("getMap", {
-               dat <- readRDS ("../compact-ways-munich.Rda") %>% head (10) %>%
-                   makeCompactGraph
+               dat <- readRDS ("../compact-ways-munich.rds") %>% head (10)
                st <- dat$compact$from_id [1]
-               en <- dat$compact$to_id [3]
-               prb <- getProbability (dat, st, en) %>% getGraph
-               testthat::expect_error (getMap (prb, prb))
+               en <- dat$compact$to_id [5]
+               prb <- get_probability (dat, st, en) %>% get_graph
+               testthat::expect_error (get_map (prb, NULL))
+               testthat::expect_error (get_map (NULL, prb))
 })

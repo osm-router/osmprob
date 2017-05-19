@@ -18,35 +18,33 @@ test_that ("osm_router", {
     "netdf must have 3 columns")
 })
 
-test_that ("getProbability", {
-    dat <- readRDS ("../compact-ways-munich.Rda") %>% head (10) %>%
-       makeCompactGraph
+test_that ("get_probability", {
+    dat <- readRDS ("../compact-ways-munich.rds") %>% head (10)
     st <- dat$compact$from_id [1]
     en <- dat$compact$to_id [3]
-    way <- getProbability (dat, st, en)
+    way <- get_probability (dat, st, en)
     testthat::expect_is (way, "data.frame")
     testthat::expect_error (
-       getProbability ("wrong data format", 0, 5, eta = 1.0),
+       get_probability ("wrong data format", 0, 5, eta = 1.0),
        "graphs must contain data.frames compact, original and map.")
     testthat::expect_error (
-       getProbability (dat, -1, en),
+       get_probability (dat, -1, en),
        "start_node is not part of netdf")
     testthat::expect_error (
-       getProbability (dat, st, -1),
+       get_probability (dat, st, -1),
        "end_node is not part of netdf")
 })
 
-test_that ("getShortestPath", {
-    dat <- readRDS ("../compact-ways-munich.Rda") %>% head (10) %>%
-        makeCompactGraph
+test_that ("get_shortest_path", {
+    dat <- readRDS ("../compact-ways-munich.rds") %>% head (10)
     st <- dat$compact$from_id [1]
     en <- dat$compact$to_id [3]
-    way <- getShortestPath (dat, st, en)
+    way <- get_shortest_path (dat, st, en)
     testthat::expect_is (way, "data.frame")
     testthat::expect_error (
-        getShortestPath (dat, -1, en),
+        get_shortest_path (dat, -1, en),
         "start_node is not part of netdf")
     testthat::expect_error (
-        getShortestPath (dat, st, -1),
+        get_shortest_path (dat, st, -1),
         "end_node is not part of netdf")
 })

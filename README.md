@@ -26,7 +26,7 @@ q <- osmdata::add_feature (q, key = 'highway')
 dat <- osmdata::osmdata_xml (q, "osm-ways-munich.osm")
 ```
 
-To prepare the graph for routing, all non-accessible edges are removed using `makeCompactGraph ()`, so only the largest connected part of the original graph remains. The resulting graph is stored as a `data.frame`. A sample can be found in `tests/compact-ways-munich.Rda`.
+To prepare the graph for routing, all non-accessible edges are removed using `make_compact_graph ()`, so only the largest connected part of the original graph remains. The resulting graph is stored as a `data.frame`. A sample can be found in `tests/compact-ways-munich.Rda`.
 
 After the preprocessing is done, `plotGraph ()` can be used to display the compact sample graph in a `shiny`/`leaflet` web app.
 
@@ -36,20 +36,15 @@ To load, process and display a sample graph, run
 
 ``` r
 devtools::load_all (export_all = FALSE)
-library (magrittr)
-graph <- readRDS ("tests/compact-ways-munich.Rda") %>% makeCompactGraph
-#startPt <- graph$compact$from_id [1]
-#endPt <- graph$compact$to_id [600]
-startPt <- graph$compact$from_id [350] %>% as.character %>% as.numeric
-endPt <- graph$compact$to_id [615] %>% as.character %>% as.numeric
-path <- getShortestPath (graph, startPt, endPt)
-prob <- getProbability (graph, startPt, endPt, eta = 1)
-plotMap (prob, path)
+graph <- readRDS ("tests/compact-ways-munich.rds")
+startPt <- graph$compact$from_id [1]
+endPt <- graph$compact$to_id [600]
+path <- get_shortest_path (graph, startPt, endPt)
+prob <- get_probability (graph, startPt, endPt, eta = 1)
+plot_map (prob, path)
 ```
 
 ### From OSM data
-
-To create a sample graph for other areas, [osmdata](https://github.com/osmdatar/osmdata) has to be installed.
 
 ``` r
 devtools::load_all (export_all = FALSE)
@@ -58,9 +53,9 @@ end_pt <- c (11.585, 48.145)
 graph <- download_graph (start_pt, end_pt)
 route_start <- graph$compact$from_id [1]
 route_end <- graph$compact$to_id [600]
-path <- getShortestPath (graph, route_start, route_end)
-prob <- getProbability (graph, route_start, route_end, eta = 1)
-plotMap (prob, path)
+path <- get_shortest_path (graph, route_start, route_end)
+prob <- get_probability (graph, route_start, route_end, eta = 1)
+plot_map (prob, path)
 ```
 
 Code of Conduct
