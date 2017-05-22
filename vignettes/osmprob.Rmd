@@ -9,13 +9,18 @@ output:
         theme: journal
 link-citations: true
 
-abstract: "When using routing algorithms to model movement on a graph, one is not necessarily interested in obtaining the least-cost, but the most
-realistic results. The average path between any two points is likely never the shortest, yet there is currently no way to estimate the course or
-lengths of realistic paths. Instead, movement is often assumed to be singular and repeatable.  **osmprob** is an *R* library that provides
-routing probabilities along all possible paths between any two points.  The path of highest probability is the shortest, yet all edges will
-generally have non-zero probabilities of being traversed.  Importantly, the resultant network enables calculation of the probabalistically most
-likely distance travelled between any two points. The package comes with a built-in **Shiny** **Leaflet** application to display the results in
-a matter that is both understandable and visually pleasing."
+abstract: "When using routing algorithms to model movement on a graph, one is
+not necessarily interested in obtaining the least-cost, but the most realistic
+results. The average path between any two points is likely never the shortest,
+yet there is currently no way to estimate the course or lengths of realistic
+paths. Instead, movement is often assumed to be singular and repeatable.
+**osmprob** is an *R* library that provides routing probabilities along all
+possible paths between any two points.  The path of highest probability is the
+shortest, yet all edges will generally have non-zero probabilities of being
+traversed.  Importantly, the resultant network enables calculation of the
+probabalistically most likely distance travelled between any two points. The
+package comes with a built-in **Shiny** **Leaflet** application to display the
+results in a matter that is both understandable and visually pleasing."
 
 keywords: routing, planning, OpenStreetMap
 
@@ -28,26 +33,35 @@ bibliography: osmprob-refs.bib
 
 # Introduction
 
-This package allows users to calculate traversal probabilities and the estimated travel distance between two points on a graph based on the
-methods introduced in @saerens2009randomized. It also contains methods that simplify the process of downloading and preprocessing
-OpeneStreetMap[^1] road data on which the routing can be performed. This step also includes weighting the edges according to a specified means
-of transport. The values used for weighting are derived from the Routino weighting profiles[^2].  Finally, the results can be visualised with
+This package allows users to calculate traversal probabilities and the estimated
+travel distance between two points on a graph based on the methods introduced in
+@saerens2009randomized. It also contains methods that simplify the process of
+downloading and preprocessing OpeneStreetMap[^1] road data on which the routing
+can be performed. This step also includes weighting the edges according to a
+specified means of transport. The values used for weighting are derived from the
+Routino weighting profiles[^2].  Finally, the results can be visualised with
 built-in mapping functions.
 
 ## Nomenclature
 
-"**path** `noun | \ˈpath, ˈpäth\` [...] a sequence of arcs in a network that can be traced continuously without retracing any arc"  
+"**path** `noun | \ˈpath, ˈpäth\` [...] a sequence of arcs in a network that can
+be traced continuously without retracing any arc"  
 @mwPath
 
-"**route** `noun | \ˈrüt, ˈrau̇t\` [...] an established or selected course of travel or action"  
+"**route** `noun | \ˈrüt, ˈrau̇t\` [...] an established or selected course of
+travel or action"  
 @mwRoute
 
-Usually, the results produced by routing software like implementations of Dijkstra's algorithm (@dijkstra1959note) are least-cost edge sequences
-called paths or routes. An overview about routing algorithms can be found in @hall2012handbook. And while some of these rely on probabilities in
-order to simulate realistic route choice behaviour, the eventual routing results are still paths. Implementations of the Cross-Nested Logit,
-Probit and the Logit Kernel model can be found in @ben2004route. It is important to clarify that the routing results produced by this software
-are not paths, but a set of traversal probabilities of all edges on the graph. For lack of more fitting terminology, they will be referred to as
-routes in this paper.
+Usually, the results produced by routing software like implementations of
+Dijkstra's algorithm (@dijkstra1959note) are least-cost edge sequences called
+paths or routes. An overview about routing algorithms can be found in
+@hall2012handbook. And while some of these rely on probabilities in order to
+simulate realistic route choice behaviour, the eventual routing results are
+still paths. Implementations of the Cross-Nested Logit, Probit and the Logit
+Kernel model can be found in @ben2004route. It is important to clarify that the
+routing results produced by this software are not paths, but a set of traversal
+probabilities of all edges on the graph. For lack of more fitting terminology,
+they will be referred to as routes in this paper.
 
 # Methods
 
@@ -55,43 +69,65 @@ routes in this paper.
 
 ### Identify Largest Graph Component
 
-The following sample of pseudocode illustrates how the largest graph component is identified.
+The following sample of pseudocode illustrates how the largest graph component
+is identified.
+
+<!-- todo: clarify: component, compact graph, neighbours, write out
+pseudocode -->
+
 
 ```{r eval=FALSE}
     component_number = 0
+
+    # initially, set all component numbers to -1 (invalid)
     for vertex in all_vertices
-        comp_num.at (vertex) = -1 # initially, all component numbers are -1 (invalid)
+        comp_num.at (vertex) = -1
 
     for vertex in all_vertices
-        set comps # set of component numbers
-        comps.insert (comp_num.at (vertex))
+        set component_numbers # initialize empty set of component numbers
+        comps.insert (comp_num.at (vertex)) # insert current component number
+
+        # insert all neighbouring component numbers of current vertex
         for neighbour in vertex.get_neighbours ()
             comps.insert (neighbour)
-        largest = max (comps) # largest component number of current neighbourhood
+
+        # identify biggest component number of current neighbourhood
+        largest = max (component_numbers)
+
+        # invalid component number, so this neighbourhood is not in the list yet
         if largest == -1
-            largest++ # this neighbourhood is not in the list yet
+            largest++
+
+        # assign largest component number to current vertex and its neighbours
         comp_num.at (vertex) = largest
         for neighbour in vertex.get_neighbours ()
-            comp_num.at (neighbour) = largest # current vertex and neighbors get the largest component number
+            comp_num.at (neighbour) = largest
+
+        # every vertex with a component number listed in component_numbers gets
+        # the largest component number
         for c in comp_num
             if (comps.contains (c) && c.component_number != -1
-                comp_num.at (c) = largest # every vertex with a component number listed in comps gets the largest component number
+                comp_num.at (c) = largest
 
-        # remove rest of the vertices
+        # remove remaining vertices
         for com in comp_num
             if com != largest
                 allVertices.erase (com)
 ```
 
-At this point every node in the graph has been assigned a component number. Nodes sharing the same component number are necessarily part of
-one connected unit and are disjoint from any nodes with different component numbers. Therefore, the component number with the highest frequency
-c_max is indicative of the largest connected component. Now all nodes with component number != c_max can be stripped off the original graph,
-which results in one connected graph.
+At this point every node in the graph has been assigned a component number.
+Nodes sharing the same component number are necessarily part of one connected
+unit and are disjoint from any nodes with different component numbers.
+Therefore, the component number with the highest frequency c_max is indicative
+of the largest connected component. Now all nodes with component number != c_max
+can be stripped off the original graph, which results in one connected graph.
 
 ### Removing Intermediate Nodes
 
-All nodes that are not necessary for routing are removed from the graph. This means that nodes that only have two neighbours and are connected
-to both of them either by one-way streets or two-way streets and are not the only node of a ring, can be removed
+All nodes that are not necessary for routing are removed from the graph. This
+means that nodes that only have two neighbours and are connected to both of them
+either by one-way streets or two-way streets and are not the only node of a
+ring, can be removed
 
 <!--[Graphic: one-way, two-way, mixed] -->
 
@@ -102,8 +138,10 @@ to both of them either by one-way streets or two-way streets and are not the onl
 
 # Usage
 
-The only input needed to download street data are the coordinates of the start and end points on the graph. The `download_graph` function builds
-a bounding box including an optional buffer around the points and downloads all OpenStreetMap data tagged as `key = highway`[^3] in it.
+The only input needed to download street data are the coordinates of the start
+and end points on the graph. The `download_graph` function builds a bounding box
+including an optional buffer around the points and downloads all OpenStreetMap
+data tagged as `key = highway`[^3] in it.
 
 ```{r eval=FALSE}
 devtools::load_all (export_all = FALSE)
@@ -112,8 +150,9 @@ end_pt <- c (11.585, 48.145)
 graph <- download_graph (start_pt, end_pt)
 ```
 
-The function `select_vertices_by_coordinates` then identifies the vertices on the graph that lie closest to the desired start and end points.
-These are the points based on which the routing process will be performed.
+The function `select_vertices_by_coordinates` then identifies the vertices on
+the graph that lie closest to the desired start and end points.  These are the
+points based on which the routing process will be performed.
 
 ```{r eval=FALSE}
 pts <- select_vertices_by_coordinates (graph, start_pt, end_pt)
@@ -121,21 +160,24 @@ route_start <- pts[1]
 route_end <- pts [2]
 ```
 
-At the moment, there are two routing algorithms implemented in this package. `get_shortest_path` returns the shortest path as calculated using
-an implementation of Dijkstra's algorithm.
+At the moment, there are two routing algorithms implemented in this package.
+`get_shortest_path` returns the shortest path as calculated using an
+implementation of Dijkstra's algorithm.
 
 ```{r eval=FALSE}
 path <- get_shortest_path (graph, route_start, route_end)
 ```
 
-The `get_probability` function calculates the traversal probability for the entire input graph. It returns the entire input graph with an
-additional column containing the traversal probability for each edge.
+The `get_probability` function calculates the traversal probability for the
+entire input graph. It returns the entire input graph with an additional column
+containing the traversal probability for each edge.
 
 ```{r eval=FALSE}
 prob <- get_probability (graph, route_start, route_end, eta = 1)
 ```
 
-Finally, the routing results can be visualised in a **shiny** **leaflet** web map.
+Finally, the routing results can be visualised in a **shiny** **leaflet** web
+map.
 
 ```{r eval=FALSE}
 plot_map (prob, path)
