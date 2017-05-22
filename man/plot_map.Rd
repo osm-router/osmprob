@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot-graph.R
 \name{plot_map}
 \alias{plot_map}
-\title{Plots the graph network as a Shiny Leaflet app in a browser.}
+\title{Plot the graph network as a Shiny Leaflet app in a browser.}
 \usage{
 plot_map(graph, shortest)
 }
@@ -13,7 +13,7 @@ displayed.}
 \item{shortest}{\code{vector} containing the shortest path.}
 }
 \description{
-Plots the graph network as a Shiny Leaflet app in a browser.
+Plot the graph network as a Shiny Leaflet app in a browser.
 }
 \examples{
 \dontrun{

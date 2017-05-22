@@ -37,10 +37,13 @@ To load, process and display a sample graph, run
 ``` r
 devtools::load_all (export_all = FALSE)
 graph <- readRDS ("tests/compact-ways-munich.rds")
-startPt <- graph$compact$from_id [1]
-endPt <- graph$compact$to_id [600]
-path <- get_shortest_path (graph, startPt, endPt)
-prob <- get_probability (graph, startPt, endPt, eta = 1)
+start_pt <- c (11.58, 48.14)
+end_pt <- c (11.585, 48.145)
+pts <- select_vertices_by_coordinates (graph, start_pt, end_pt)
+route_start <- pts[1]
+route_end <- pts [2]
+path <- get_shortest_path (graph, route_start, route_end)
+prob <- get_probability (graph, route_start, route_end, eta = 1)
 plot_map (prob, path)
 ```
 
@@ -51,8 +54,9 @@ devtools::load_all (export_all = FALSE)
 start_pt <- c (11.58, 48.14)
 end_pt <- c (11.585, 48.145)
 graph <- download_graph (start_pt, end_pt)
-route_start <- graph$compact$from_id [1]
-route_end <- graph$compact$to_id [600]
+pts <- select_vertices_by_coordinates (graph, start_pt, end_pt)
+route_start <- pts[1]
+route_end <- pts [2]
 path <- get_shortest_path (graph, route_start, route_end)
 prob <- get_probability (graph, route_start, route_end, eta = 1)
 plot_map (prob, path)

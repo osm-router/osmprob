@@ -1,4 +1,4 @@
-#' Plots the graph network as a Shiny Leaflet app in a browser.
+#' Plot the graph network as a Shiny Leaflet app in a browser.
 #'
 #' @param graph \code{data.frame} containing the street graph to be
 #' displayed.
@@ -31,37 +31,6 @@ plot_map <- function (graph, shortest)
 input_graph <- ""
 shortest_path <- ""
 
-#' Converts graph stored in \code{data.frame} to \code{sf}
-#'
-#' @param dat \code{data.frame} containing graph data.
-#'
-#' @noRd
-get_graph <- function (dat)
-{
-    dat$from_lat %<>% as.character %>% as.numeric
-    dat$from_lon %<>% as.character %>% as.numeric
-    dat$to_lat %<>% as.character %>% as.numeric
-    dat$to_lon %<>% as.character %>% as.numeric
-
-    from <- cbind (dat$from_lon, dat$from_lat)
-    to <- cbind (dat$to_lon, dat$to_lat)
-    fromTo <- cbind (from, to)
-    graphLines <- list ("LINESTRING", dim (fromTo)[1])
-    for (i in 1:dim (fromTo)[1])
-    {
-        pair <- fromTo [i,]
-        graphLines [[i]] <- sf::st_linestring (rbind (c (pair[1], pair[2]),
-                                                      c (pair[3], pair[4])))
-    }
-
-    graph <- sf::st_sfc (graphLines, crs = 4326)
-    lt_ln <- c ("from_lat", "from_lon", "to_lat", "to_lon")
-    dat [lt_ln] <- NULL
-    graph <- sf::st_sf (graph, dat)
-
-    graph
-}
-
 ln_color <- function (x, color_by) {leaflet::colorQuantile (x, color_by, n = 9)}
 
 ui <- shiny::bootstrapPage (
@@ -70,7 +39,7 @@ ui <- shiny::bootstrapPage (
   leaflet::leafletOutput ("map", width = "100%", height = "100%")
 )
 
-#' Generates text for edge popup fields on the graph
+#' Generate text for edge popup fields on the graph
 #'
 #' @param fromid OSM ID of the edge beginning.
 #' @param fromid OSM ID of the edge end.
@@ -86,7 +55,7 @@ popup <- function (fromid, toid, weight, prob)
          "</br><b>Probability: </b>", format (round (prob, 3), nsmall = 3))
 }
 
-#' Generates \code{leaflet} HTML widget containing a web map
+#' Generate \code{leaflet} HTML widget containing a web map
 #'
 #' @param dat \code{sf} object containing street graph data.
 #' @param short \code{sf} object containing the shortest path between two
@@ -132,7 +101,7 @@ get_map <- function (dat, short)
     leaflet::fitBounds (bb[1], bb[2], bb[3], bb[4])
 }
 
-#' Calculates displayed line width
+#' Calculate displayed line width
 #'
 #' @param base \code{numeric} value of minimum width.
 #' @param fac \code{numeric} value of facor to be multiplied width weight.

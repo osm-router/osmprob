@@ -13,6 +13,6 @@ test_that ("getMap", {
                st <- dat$compact$from_id [1]
                en <- dat$compact$to_id [5]
                prb <- get_probability (dat, st, en) %>% get_graph
-               testthat::expect_error (get_map (prb, NULL))
-               testthat::expect_error (get_map (NULL, prb))
+               testthat::expect_error (get_map (prb, NA))
+               testthat::expect_error (get_map (NA, prb))
 })
