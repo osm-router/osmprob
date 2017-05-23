@@ -85,18 +85,19 @@ pseudocode -->
 
     for vertex in all_vertices
         set component_numbers # initialize empty set of component numbers
-        comps.insert (comp_num.at (vertex)) # insert current component number
 
-        # insert all neighbouring component numbers of current vertex
+        # insert component numbers of current and all neighbouring vertices
+        component_numbers.insert (comp_num.at (vertex))
         for neighbour in vertex.get_neighbours ()
-            comps.insert (neighbour)
+            component_numbers.insert (neighbour)
 
         # identify biggest component number of current neighbourhood
         largest = max (component_numbers)
 
-        # invalid component number, so this neighbourhood is not in the list yet
+        # component number is -1, so this neighbourhood is not in the list yet
         if largest == -1
-            largest++
+            largest = component_number
+            component_number++
 
         # assign largest component number to current vertex and its neighbours
         comp_num.at (vertex) = largest
@@ -104,15 +105,16 @@ pseudocode -->
             comp_num.at (neighbour) = largest
 
         # every vertex with a component number listed in component_numbers gets
-        # the largest component number
-        for c in comp_num
-            if (comps.contains (c) && c.component_number != -1
-                comp_num.at (c) = largest
+        # the largest component number, thus combining previously disconnected
+        # components
+        for cn in comp_num
+            if (component_numbers.contains (cn) && cn.component_number != -1
+                comp_num.at (cn) = largest
 
-        # remove remaining vertices
-        for com in comp_num
-            if com != largest
-                allVertices.erase (com)
+    # remove remaining vertices
+    for com in comp_num
+        if com != largest
+            allVertices.erase (com)
 ```
 
 At this point every node in the graph has been assigned a component number.
