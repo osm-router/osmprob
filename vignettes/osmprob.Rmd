@@ -175,7 +175,10 @@ for the calculations and later on its geographical features for visualisation.
 
 ```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp4.tex"), fig.cap="Inserting edges between remaining nodes"}
 ```
-<!-- [Graphic: compact / complete graph comparison] -->
+
+![Comparison between original and compact graph on street
+data](graph_orig_compact.png)
+
 ## Routing
 
 # Usage
