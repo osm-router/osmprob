@@ -229,19 +229,7 @@ void remove_intermediate_vertices (vertex_map &v, edge_vector &e)
         bool is_intermediate_single = vt.is_intermediate_single ();
         bool is_intermediate_double = vt.is_intermediate_double ();
 
-        bool has_single_neighbours = false;
-        for (auto n_id:n_all)
-        {
-            osm_vertex_t n = v.at (n_id);
-            if (n.is_intermediate_single () || n.is_intermediate_double ())
-            {
-                has_single_neighbours = true;
-                break;
-            }
-        }
-
-        if ((is_intermediate_single || is_intermediate_double) &&
-                has_single_neighbours)
+        if (is_intermediate_single || is_intermediate_double)
         {
             osm_id_t id_from_new, id_to_new;
 
