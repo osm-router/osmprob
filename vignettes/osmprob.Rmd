@@ -7,6 +7,8 @@ output:
         toc: true
         number_sections: true
         theme: journal
+header-includes: 
+    - \usepackage{tikz}
 link-citations: true
 
 abstract: "When using routing algorithms to model movement on a graph, one is
@@ -33,10 +35,11 @@ bibliography: osmprob-refs.bib
 
 # Introduction
 
+
 This package allows users to calculate traversal probabilities and the estimated
 travel distance between two points on a graph based on the methods introduced in
 @saerens2009randomized. It also contains methods that simplify the process of
-downloading and preprocessing OpeneStreetMap[^1] road data on which the routing
+downloading and preprocessing OpenStreetMap[^1] road data on which the routing
 can be performed. This step also includes weighting the edges according to a
 specified means of transport. The values used for weighting are derived from the
 Routino weighting profiles[^2].  Finally, the results can be visualised with
@@ -67,14 +70,32 @@ they will be referred to as routes in this paper.
 
 ## Preprocessing
 
-### Identify Largest Graph Component
+The OpenStreetMap road data can not be used in its raw form, but has to be
+preprocessed first in order to produce robust results and to lower calculation
+time. The preprocessing includes three steps:
+
+- Identifying and isolating the largest connected component in the graph
+- Removing vertices that are not needed to preserve the graph's topology
+- Mapping the edges of the processed graph back on to the original graph
+
+The following section illustrates the methods used for preprocessing.
+
+### Identifying largest graph component
+
+Graph based routing algorithms can not work on a disconnected graph. But when
+downloading subsets of OpenStreetMap data based on a bounding box, the resulting
+graph may consist of several disconnected components. As in most cases, the vast
+majority of all vertices are connected inside a bounding box, one way to obtain
+a usable graph is to first identify all separate connected components and then
+remove all but the one featuring the most vertices.
+
+
 
 The following sample of pseudocode illustrates how the largest graph component
 is identified.
 
 <!-- todo: clarify: component, compact graph, neighbours, write out
 pseudocode -->
-
 
 ```{r eval=FALSE}
     component_number = 0
@@ -124,7 +145,7 @@ Therefore, the component number with the highest frequency c_max is indicative
 of the largest connected component. Now all nodes with component number != c_max
 can be stripped off the original graph, which results in one connected graph.
 
-### Removing Intermediate Nodes
+### Removing intermediate nodes
 
 All nodes that are not necessary for routing are removed from the graph. This
 means that nodes that only have two neighbours and are connected to both of them
@@ -133,8 +154,15 @@ ring, can be removed
 
 <!--[Graphic: one-way, two-way, mixed] -->
 
-<!-- [Graphic: rings are preserved] -->
-
+### Inserting
+```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp1.tex"), fig.cap="Original data, consisting of different graphs"}
+```
+```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp2.tex"), fig.cap="Identifying largest component"}
+```
+```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp3.tex"), fig.cap="Removing intermediate nodes"}
+```
+```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp4.tex"), fig.cap="Inserting edges between remaining nodes"}
+```
 <!-- [Graphic: compact / complete graph comparison] -->
 ## Routing
 
