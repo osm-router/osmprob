@@ -12,6 +12,7 @@
     \node[node_style1] (v7) at (3,1) {};
     \node[node_style2] (v8) at (2,0) {};
     \node[node_style2] (v9) at (1,0) {};
+    \node[node_style1] (v10) at (0,2) {};
 
     \draw[edge_style2] (v1) edge (v2);
     \draw[edge_style2] (v1) edge (v9);
@@ -22,9 +23,12 @@
     \draw[edge_style2] (v5) edge (v6);
     \draw[edge_style2] (v6) edge (v7);
     \draw[edge_style2] (v8) edge (v9);
-    \draw[edge_style1] (v1) edge (v3);
+    \draw[edge_style1] (v1) edge [bend left=10] (v3);
+    \draw[edge_style1] (v1) edge [bend right=10] (v3);
     \draw[edge_style1] (v1) edge (v7);
-    \draw[edge_style1] (v3) edge (v7);
+    \draw[edge_style1] (v1) edge (v10);
+    \draw[edge_style1] (v3) edge [bend left=15] (v7);
+    \draw[edge_style1] (v3) edge [bend right=15] (v7);
 
     \node[node_style2] (v21) at (-1,0.5) {};
     \node[node_style2] (v22) at (-1,1.5) {};

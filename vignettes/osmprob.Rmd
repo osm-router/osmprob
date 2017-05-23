@@ -5,6 +5,7 @@ date: "`r Sys.Date()`"
 output:
     html_document:
         toc: true
+        toc_depth: 2
         number_sections: true
         theme: journal
 header-includes: 
@@ -34,7 +35,6 @@ bibliography: osmprob-refs.bib
 ---
 
 # Introduction
-
 
 This package allows users to calculate traversal probabilities and the estimated
 travel distance between two points on a graph based on the methods introduced in
@@ -89,7 +89,8 @@ majority of all vertices are connected inside a bounding box, one way to obtain
 a usable graph is to first identify all separate connected components and then
 remove all but the one featuring the most vertices.
 
-
+```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp1.tex"), fig.cap="Original data, consisting of different graphs"}
+```
 
 The following sample of pseudocode illustrates how the largest graph component
 is identified.
@@ -141,9 +142,13 @@ pseudocode -->
 At this point every node in the graph has been assigned a component number.
 Nodes sharing the same component number are necessarily part of one connected
 unit and are disjoint from any nodes with different component numbers.
-Therefore, the component number with the highest frequency c_max is indicative
-of the largest connected component. Now all nodes with component number != c_max
-can be stripped off the original graph, which results in one connected graph.
+Therefore, the component number with the highest frequency c~max~ is indicative
+of the largest connected component. Now all nodes with component number !=
+c~max~ can be stripped off the original graph, which results in one connected
+graph.
+
+```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp2.tex"), fig.cap="Identifying largest component"}
+```
 
 ### Removing intermediate nodes
 
@@ -152,15 +157,22 @@ means that nodes that only have two neighbours and are connected to both of them
 either by one-way streets or two-way streets and are not the only node of a
 ring, can be removed
 
-<!--[Graphic: one-way, two-way, mixed] -->
-
-### Inserting
-```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp1.tex"), fig.cap="Original data, consisting of different graphs"}
-```
-```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp2.tex"), fig.cap="Identifying largest component"}
-```
 ```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp3.tex"), fig.cap="Removing intermediate nodes"}
 ```
+
+<!--[Graphic: one-way, two-way, mixed] -->
+
+### Inserting replaced edges
+
+Removing vertices from a graph implies removing edges. In order to preserve the
+original graph's topology, all edges are replaced with topologically equivalent
+direct edges between the remaining vertices. While this can lead to more edges
+leading to and from vertices, all edges keep their distinct ids and can at any
+point be mapped back on the original graph. This way, the routing can be
+performed on the compact graph, while using the original graph's edge weights
+for the calculations and later on its geographical features for visualisation.
+
+
 ```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp4.tex"), fig.cap="Inserting edges between remaining nodes"}
 ```
 <!-- [Graphic: compact / complete graph comparison] -->
@@ -220,6 +232,8 @@ plot_map (prob, path)
 ## Speed
 
 ## Comparison with shortest path solutions
+
+## Scalability
 
 # Discussion and outlook
 
