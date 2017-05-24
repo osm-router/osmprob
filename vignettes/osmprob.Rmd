@@ -82,14 +82,15 @@ The following section illustrates the methods used for preprocessing.
 
 ### Identifying largest graph component
 
-Graph based routing algorithms can not work on a disconnected graph. But when
+Graph based routing algorithms do not work on a disconnected graph. But when
 downloading subsets of OpenStreetMap data based on a bounding box, the resulting
-graph may consist of several disconnected components. As in most cases, the vast
-majority of all vertices are connected inside a bounding box, one way to obtain
-a usable graph is to first identify all separate connected components and then
-remove all but the one featuring the most vertices.
+graph may consist of several disconnected components, as figure 1 illustrates.
+One way to obtain a single connected component, is to identify all separate
+connected components inside a bounding box, then select one and delete all
+others. In this package, the selection is based on the number of vertices in the
+component, which is practical for most routing applications.
 
-```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp1.tex"), fig.cap="Original data, consisting of different graphs"}
+```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("res/graph_pp1.tex"), fig.cap="Figure 1: Original data, consisting of different graph components"}
 ```
 
 The following sample of pseudocode illustrates how the largest graph component
@@ -147,20 +148,24 @@ of the largest connected component. Now all nodes with component number !=
 c~max~ can be stripped off the original graph, which results in one connected
 graph.
 
-```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp2.tex"), fig.cap="Identifying largest component"}
+```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("res/graph_pp2.tex"), fig.cap="Figure 2: Identifying largest component"}
 ```
 
 ### Removing intermediate nodes
 
 All nodes that are not necessary for routing are removed from the graph. This
 means that nodes that only have two neighbours and are connected to both of them
-either by one-way streets or two-way streets and are not the only node of a
-ring, can be removed
+either by one-way streets or two-way streets can be removed and the original
+edges replaced with new ones connecting the remaining vertices. This is
+illustrated in figure 3. Node `B` can be removed in graph 1) and 2), but not in
+3).
 
-```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp3.tex"), fig.cap="Removing intermediate nodes"}
+```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("res/graph_rm_vertex.tex"), fig.cap="Figure 3: Intermediate nodes in one-way, two-way and mixed streets"}
 ```
 
-<!--[Graphic: one-way, two-way, mixed] -->
+```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("res/graph_pp3.tex"), fig.cap="Figure 4: Removing intermediate nodes"}
+```
+
 
 ### Inserting replaced edges
 
@@ -173,11 +178,15 @@ performed on the compact graph, while using the original graph's edge weights
 for the calculations and later on its geographical features for visualisation.
 
 
-```{r, echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("tex/graph_pp4.tex"), fig.cap="Inserting edges between remaining nodes"}
+```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("res/graph_pp4.tex"), fig.cap="Figure 5: Inserting edges between remaining nodes"}
 ```
 
-![Comparison between original and compact graph on street
-data](graph_orig_compact.png)
+Figure 6 shows a real world example of the principles outlined above. The
+original graph displayed in blue is replaced by the red compact graph that only
+contains the nodes necessary to maintain the original topology. The small
+disjoint part of the original graph is removed.
+
+![Figure 6: Comparison between compact and original graph on street data](res/graph_orig_compact.png)
 
 ## Routing
 
