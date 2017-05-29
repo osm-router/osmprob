@@ -13,7 +13,6 @@ struct osm_vertex_t
         double lat, lon;
 
     public:
-        bool in_compact_graph = true;
         void add_neighbour_in (osm_id_t osm_id) { in.insert (osm_id); }
         void add_neighbour_out (osm_id_t osm_id) { out.insert (osm_id); }
         int get_degree_in () { return in.size (); }
@@ -22,8 +21,6 @@ struct osm_vertex_t
         void set_lon (double lon) { this -> lon = lon; }
         double getLat () { return lat; }
         double getLon () { return lon; }
-        std::set <osm_id_t> get_neighbours_in () {return in; }
-        std::set <osm_id_t> get_neighbours_out () {return out; }
         std::set <osm_id_t> get_all_neighbours ()
         {
             std::set <osm_id_t> all_neighbours = in;
@@ -66,7 +63,7 @@ struct osm_edge_t
     public:
         float dist;
         float weight;
-        bool in_compact_graph = true;
+        bool in_compact_graph = false;
         std::string highway;
         osm_id_t get_from_vertex () { return from; }
         osm_id_t getToVertex () { return to; }
@@ -222,10 +219,7 @@ void remove_intermediate_vertices (vertex_map &v, edge_vector &e)
         osm_id_t id = vert -> first;
         osm_vertex_t vt = vert -> second;
 
-        std::set <osm_id_t> nIn = vt.get_neighbours_in ();
-        std::set <osm_id_t> nOut = vt.get_neighbours_out ();
         std::set <osm_id_t> n_all = vt.get_all_neighbours ();
-
         bool is_intermediate_single = vt.is_intermediate_single ();
         bool is_intermediate_double = vt.is_intermediate_double ();
 
@@ -248,7 +242,6 @@ void remove_intermediate_vertices (vertex_map &v, edge_vector &e)
                 }
                 v.at (n_id) = nVtx;
             }
-            vert ++;
 
             // update edges
             float dist_new = 0;
@@ -261,12 +254,13 @@ void remove_intermediate_vertices (vertex_map &v, edge_vector &e)
             auto edge = e.begin ();
             while (edge != e.end ())
             {
-                if (edge -> in_compact_graph)
+                if (!edge -> in_compact_graph)
                 {
                     osm_id_t e_from = edge -> get_from_vertex ();
                     osm_id_t e_to = edge -> getToVertex ();
                     if (e_from == id || e_to == id)
                     {
+                        edge -> in_compact_graph = true;
                         if (is_intermediate_single)
                         {
                             if (e_from == id)
@@ -296,23 +290,15 @@ void remove_intermediate_vertices (vertex_map &v, edge_vector &e)
                                     id_to_new, dist_new, weight_new, hw_new,
                                     edge_ids ++, replacing_edges, false);
                             e.push_back (edge_new);
-
-                            edge -> in_compact_graph = false;
-                            edge ++;
                             break;
-                        } else
-                        {
-                            edge -> in_compact_graph = false;
-                            edge ++;
-                            num_found ++;
                         }
-                    } else
-                        edge ++;
-                } else
-                    edge ++;
+                        num_found ++;
+                    }
+                }
+                edge ++;
             }
-        } else
-            vert ++;
+        }
+        vert ++;
     }
 }
 
@@ -355,7 +341,7 @@ Rcpp::List rcpp_make_compact_graph (Rcpp::DataFrame graph)
         osm_id_t to = e.getToVertex ();
         osm_vertex_t from_vtx = vertices.at (from);
         osm_vertex_t to_vtx = vertices.at (to);
-        if (e.in_compact_graph)
+        if (!e.in_compact_graph)
         {
             from_compact.push_back (from);
             to_compact.push_back (to);
