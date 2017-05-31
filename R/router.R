@@ -153,11 +153,6 @@ r_router_prob <- function (graph, start_node, end_node, eta)
     # scale eta to size of graph - TODO: Investigate this further!
     eta <- eta / nrow (graph$compact)
 
-    frid <- graph$compact$from_id %>% as.character %>% as.numeric
-    start_i <- which (frid == start_node)
-    toid <- graph$compact$to_id %>% as.character %>% as.numeric
-    end_i <- which (toid == end_node)
-
     netdf <- data.frame ('xfr' = graph$compact$from_id,
                          'xto' = graph$compact$to_id,
                          'd' = graph$compact$d)
@@ -165,15 +160,13 @@ r_router_prob <- function (graph, start_node, end_node, eta)
     netdf$xto %<>% as.character %>% as.numeric
     allids <- c (netdf$xfr, netdf$xto) %>% sort %>% unique 
 
-    # Set first node:
-    orig_id <- netdf$xfr [start_i]
-    dest_id <- netdf$xto [end_i]
-    dest <- which (allids == netdf$xto [end_i])
-    # Then insert connection to first node
-    netdf <- rbind (c (1, orig_id, 0), netdf)
-    allids <- c (1, allids)
+    # Insert connection to first node
+    node1_id <- min (allids) - 1
+    netdf <- rbind (c (node1_id, start_node, 0), netdf)
+    allids <- c (node1_id, allids)
     origin <- 1
-    dest <- dest + 1
+    dest <- which (allids == end_node)
+
     # And add columns of sequential indices for each node
     netdf <- cbind ('ifr' = match (netdf$xfr, allids),
                     'ito' = match (netdf$xto, allids),
