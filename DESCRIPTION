@@ -18,7 +18,8 @@ Imports:
     osmdata,
     RColorBrewer,
     sf,
-    shiny
+    shiny,
+    covr
 LinkingTo:
     Rcpp,
     RcppArmadillo
@@ -33,3 +34,4 @@ Suggests:
     rmarkdown
 LazyData: true
 VignetteBuilder: knitr
+Remotes: jimhester/covr
