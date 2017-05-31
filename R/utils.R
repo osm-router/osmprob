@@ -29,31 +29,6 @@ get_graph <- function (dat)
     graph
 }
 
-#' Convert points stored in \code{data.frame} to \code{sf} points
-#'
-#' @param dat \code{data.frame} containing graph data.
-#'
-#' @noRd
-points_as_sf <- function (dat)
-{
-    dat$from_lat %<>% as.character %>% as.numeric
-    dat$from_lon %<>% as.character %>% as.numeric
-    dat$to_lat %<>% as.character %>% as.numeric
-    dat$to_lon %<>% as.character %>% as.numeric
-
-    pts_from <- list ("POINT", dim (dat [1]))
-    pts_to <- list ("POINT", dim (dat [1]))
-    for (i in 1:dim (dat) [1])
-    {
-        ln <- dat [i, ]
-        pts_from [[i]] <- sf::st_point (c (ln$from_lon, ln$from_lat))
-        pts_to [[i]] <- sf::st_point (c (ln$to_lon, ln$to_lat))
-    }
-    pts_from <- sf::st_sfc (pts_from, crs = 4326)
-    pts_to <- sf::st_sfc (pts_to, crs = 4326)
-    list (from = pts_from, to = pts_to)
-}
-
 #' Select vertices on graph that are closest to the specified coordinates.
 #'
 #' @param graph \code{data.frame} containing the street network.
@@ -66,32 +41,15 @@ points_as_sf <- function (dat)
 #' @export
 select_vertices_by_coordinates <- function (graph, start_coords, end_coords)
 {
-    st <- sf::st_point (start_coords) %>% sf::st_sfc (crs = 4326)
-    en <- sf::st_point (end_coords) %>% sf::st_sfc (crs = 4326)
-    if (is.list (graph) & "compact" %in% names (graph))
-        graph <- graph$compact
-    pts <- points_as_sf (graph)
+    com <- graph$compact
+    d_start <- sqrt ((start_coords [1] - com$from_lon)^2 +
+                     (start_coords [2] - com$from_lat)^2)
+    d_end <- sqrt ((end_coords [1] - com$to_lon)^2 +
+                     (end_coords [2] - com$to_lat)^2)
 
-    min_st_distance <- .Machine$integer.max
-    min_st_index <- -1
-    min_en_distance <- .Machine$integer.max
-    min_en_index <- -1
-    for (i in seq_len (length (pts$from)))
-    {
-        dist_st <- sf::st_distance (st, pts$from [i]) %>% as.numeric
-        if (dist_st < min_st_distance)
-        {
-            min_st_distance <- dist_st
-            min_st_index <- i
-        }
-        dist_en <- sf::st_distance (en, pts$to [i]) %>% as.numeric
-        if (dist_en < min_en_distance)
-        {
-            min_en_distance <- dist_en
-            min_en_index <- i
-        }
-    }
-    start_id <- graph [min_st_index, "from_id"] %>% as.character
-    end_id <- graph [min_en_index, "to_id"] %>% as.character
+    st_index <- which.min (d_start)
+    en_index <- which.min (d_end)
+    start_id <- com [st_index, "from_id"] %>% as.character
+    end_id <- com [en_index, "to_id"] %>% as.character
     c (start_id, end_id)
 }
