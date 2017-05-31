@@ -209,20 +209,26 @@ r_router_prob <- function (graph, start_node, end_node, eta)
     z1 <- solve (Matrix::t (id_minus_w), e1)
     zn <- solve (id_minus_w, en)
     z1n <- sum (e1 * zn)
-    N <- (Matrix::Diagonal (nv, as.vector (z1)) %*% W %*% 
-          Matrix::Diagonal(nv, as.vector (zn))) / z1n
+    Nvec <- Pr <- rep (NA, nv)
+    dij <- 0
+    if (z1n > 1e-300)
+    {
+        N <- (Matrix::Diagonal (nv, as.vector (z1)) %*% W %*% 
+              Matrix::Diagonal(nv, as.vector (zn))) / z1n
 
-    Nvec <- N [indx] [-1] # rm 1st element
+        Nvec <- N [indx] [-1] # rm 1st element
 
-    #not efficient but effective
-    n <- pmax (Matrix::rowSums (N), Matrix::colSums (N))
+        #not efficient but effective
+        n <- pmax (Matrix::rowSums (N), Matrix::colSums (N))
 
-    rn <- rep (0, times = length (nv))
-    rn [n > 0] <- 1 / n [n > 0]
-    Pr <- N * rn
-    Pr <- Pr [indx] [1] # rm 1st element
+        rn <- rep (0, times = length (nv))
+        rn [n > 0] <- 1 / n [n > 0]
+        Pr <- N * rn
+        Pr <- Pr [indx] [1] # rm 1st element
 
-    CW <- dmat_s * W
-    dij <- (t (z1) %*% CW %*% zn) / z1n
+        CW <- dmat_s * W
+        dij <- (t (z1) %*% CW %*% zn) / z1n
+    }
+
     list ('dens' = Nvec, 'prob' = Pr, 'dist' = as.numeric (dij))
 }
