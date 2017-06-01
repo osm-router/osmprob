@@ -153,11 +153,6 @@ r_router_prob <- function (graph, start_node, end_node, eta)
     # scale eta to size of graph - TODO: Investigate this further!
     eta <- eta / nrow (graph$compact)
 
-    frid <- graph$compact$from_id %>% as.character %>% as.numeric
-    start_i <- which (frid == start_node)
-    toid <- graph$compact$to_id %>% as.character %>% as.numeric
-    end_i <- which (toid == end_node)
-
     netdf <- data.frame ('xfr' = graph$compact$from_id,
                          'xto' = graph$compact$to_id,
                          'd' = graph$compact$d)
@@ -165,15 +160,13 @@ r_router_prob <- function (graph, start_node, end_node, eta)
     netdf$xto %<>% as.character %>% as.numeric
     allids <- c (netdf$xfr, netdf$xto) %>% sort %>% unique 
 
-    # Set first node:
-    orig_id <- netdf$xfr [start_i]
-    dest_id <- netdf$xto [end_i]
-    dest <- which (allids == netdf$xto [end_i])
-    # Then insert connection to first node
-    netdf <- rbind (c (1, orig_id, 0), netdf)
-    allids <- c (1, allids)
+    # Insert connection to first node
+    node1_id <- min (allids) - 1
+    netdf <- rbind (c (node1_id, start_node, 0), netdf)
+    allids <- c (node1_id, allids)
     origin <- 1
-    dest <- dest + 1
+    dest <- which (allids == end_node)
+
     # And add columns of sequential indices for each node
     netdf <- cbind ('ifr' = match (netdf$xfr, allids),
                     'ito' = match (netdf$xto, allids),
@@ -209,20 +202,26 @@ r_router_prob <- function (graph, start_node, end_node, eta)
     z1 <- solve (Matrix::t (id_minus_w), e1)
     zn <- solve (id_minus_w, en)
     z1n <- sum (e1 * zn)
-    N <- (Matrix::Diagonal (nv, as.vector (z1)) %*% W %*% 
-          Matrix::Diagonal(nv, as.vector (zn))) / z1n
+    Nvec <- Pr <- rep (NA, nv)
+    dij <- 0
+    if (z1n > 1e-300)
+    {
+        N <- (Matrix::Diagonal (nv, as.vector (z1)) %*% W %*% 
+              Matrix::Diagonal(nv, as.vector (zn))) / z1n
 
-    Nvec <- N [indx] [-1] # rm 1st element
+        Nvec <- N [indx] [-1] # rm 1st element
 
-    #not efficient but effective
-    n <- pmax (Matrix::rowSums (N), Matrix::colSums (N))
+        #not efficient but effective
+        n <- pmax (Matrix::rowSums (N), Matrix::colSums (N))
 
-    rn <- rep (0, times = length (nv))
-    rn [n > 0] <- 1 / n [n > 0]
-    Pr <- N * rn
-    Pr <- Pr [indx] [1] # rm 1st element
+        rn <- rep (0, times = length (nv))
+        rn [n > 0] <- 1 / n [n > 0]
+        Pr <- N * rn
+        Pr <- Pr [indx] [1] # rm 1st element
 
-    CW <- dmat_s * W
-    dij <- (t (z1) %*% CW %*% zn) / z1n
+        CW <- dmat_s * W
+        dij <- (t (z1) %*% CW %*% zn) / z1n
+    }
+
     list ('dens' = Nvec, 'prob' = Pr, 'dist' = as.numeric (dij))
 }
