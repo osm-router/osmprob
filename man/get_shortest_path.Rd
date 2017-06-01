@@ -25,6 +25,6 @@ Calculate the shortest path between two nodes on a graph
   dat <- readRDS ("../compact-ways-munich.Rda") \%>\% make_compact_graph
   st <- dat$compact$from_id [1]
   en <- dat$compact$to_id [10]
-  get_shortest_path (dat, st, en)
+  get_shortest_path (graphs = dat, start_node = st, end_node = en)
 }
 }

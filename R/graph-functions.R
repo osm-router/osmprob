@@ -28,17 +28,20 @@ make_compact_graph <- function (graph)
 #'
 #' @param graphs \code{list} containing the two graphs and a map linking the two
 #' to each other.
+#' @param d value of distance returned from r_router_prob
 #'
 #' @return The original graph with the probabilities from the compact graph
 #' mapped on it.
 #'
 #' @noRd
-map_probabilities <- function (graphs)
+map_probabilities <- function (graphs, d)
 {
     # map is a matrix so must be directly indexed to (id_compact, id_original)
     #indx <- match (graph$map$id_compact, graph$compact$edge_id)
     indx <- match (graph$map [, 1], graph$compact$edge_id)
     graphs$original$dens <- graphs$compact$dens [indx]
+    graphs$original$prob <- graphs$compact$prob [indx]
+    graphs$distance <- d
     return (graphs)
 }
 

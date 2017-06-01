@@ -81,9 +81,9 @@ get_probability <- function (graphs, start_node, end_node, eta=1)
 
     probability <- r_router_prob (graphs, start_node, end_node, eta)
 
-    prb <- cbind (netdf_out, 'dens' = probability$dens)
-    graphs$compact <- prb
-    map_probabilities (graphs)
+    graphs$compact <- cbind (netdf_out, 'dens' = probability$dens,
+                             'prob' = probability$prob)
+    map_probabilities (graphs, probability$dist)
 }
 
 #' Calculate the shortest path between two nodes on a graph
@@ -102,7 +102,7 @@ get_probability <- function (graphs, start_node, end_node, eta=1)
 #'   dat <- readRDS ("../compact-ways-munich.Rda") %>% make_compact_graph
 #'   st <- dat$compact$from_id [1]
 #'   en <- dat$compact$to_id [10]
-#'   get_shortest_path (dat, st, en)
+#'   get_shortest_path (graphs = dat, start_node = st, end_node = en)
 #' }
 get_shortest_path <- function (graphs, start_node, end_node)
 {
@@ -127,7 +127,7 @@ get_shortest_path <- function (graphs, start_node, end_node)
     end_node <- which (allids == end_node) -1
     path <- rcpp_router_dijkstra (netdf, start_node, end_node)
     path_compact <- allids [path + 1]
-    map_shortest (graphs, path_compact)
+    map_shortest (graphs = graphs, shortest = path_compact)
 }
 
 
