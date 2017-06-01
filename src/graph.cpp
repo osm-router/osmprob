@@ -354,48 +354,42 @@ Rcpp::List rcpp_make_compact_graph (Rcpp::DataFrame graph)
     {
         osm_id_t from = e.get_from_vertex ();
         osm_id_t to = e.getToVertex ();
-        std::pair <osm_id_t, osm_id_t> st_en = std::make_pair (from, to);
-        if (std::find (e_pairs.begin (), e_pairs.end (),
-                    st_en) == e_pairs.end ())
-        {
-            e_pairs.push_back (st_en);
-            osm_vertex_t from_vtx = vertices.at (from);
-            osm_vertex_t to_vtx = vertices.at (to);
+        osm_vertex_t from_vtx = vertices.at (from);
+        osm_vertex_t to_vtx = vertices.at (to);
 
-            if (!e.replaced_by_compact)
+        if (!e.replaced_by_compact)
+        {
+            from_compact.push_back (from);
+            to_compact.push_back (to);
+            highway_compact.push_back (e.highway);
+            dist_compact.push_back (e.dist);
+            weight_compact.push_back (e.weight);
+            from_lat_compact.push_back (from_vtx.getLat ());
+            from_lon_compact.push_back (from_vtx.getLon ());
+            to_lat_compact.push_back (to_vtx.getLat ());
+            to_lon_compact.push_back (to_vtx.getLon ());
+            edgeid_compact.push_back (e.getID ());
+        }
+        if (e.in_original ())
+        {
+            int edge_id = e.getID ();
+            from_og.push_back (from);
+            to_og.push_back (to);
+            highway_og.push_back (e.highway);
+            dist_og.push_back (e.dist);
+            weight_og.push_back (e.weight);
+            from_lat_og.push_back (from_vtx.getLat ());
+            from_lon_og.push_back (from_vtx.getLon ());
+            to_lat_og.push_back (to_vtx.getLat ());
+            to_lon_og.push_back (to_vtx.getLon ());
+            edgeid_og.push_back (edge_id);
+            rp_orig.push_back (edge_id);
+            if (rep_map.find (edge_id) == rep_map.end ())
+                rp_comp.push_back (edge_id);
+            else
             {
-                from_compact.push_back (from);
-                to_compact.push_back (to);
-                highway_compact.push_back (e.highway);
-                dist_compact.push_back (e.dist);
-                weight_compact.push_back (e.weight);
-                from_lat_compact.push_back (from_vtx.getLat ());
-                from_lon_compact.push_back (from_vtx.getLon ());
-                to_lat_compact.push_back (to_vtx.getLat ());
-                to_lon_compact.push_back (to_vtx.getLon ());
-                edgeid_compact.push_back (e.getID ());
-            }
-            if (e.in_original ())
-            {
-                int edge_id = e.getID ();
-                from_og.push_back (from);
-                to_og.push_back (to);
-                highway_og.push_back (e.highway);
-                dist_og.push_back (e.dist);
-                weight_og.push_back (e.weight);
-                from_lat_og.push_back (from_vtx.getLat ());
-                from_lon_og.push_back (from_vtx.getLon ());
-                to_lat_og.push_back (to_vtx.getLat ());
-                to_lon_og.push_back (to_vtx.getLon ());
-                edgeid_og.push_back (edge_id);
-                rp_orig.push_back (edge_id);
-                if (rep_map.find (edge_id) == rep_map.end ())
-                    rp_comp.push_back (edge_id);
-                else
-                {
-                    std::set <int> replacements = rep_map [edge_id];
-                    rp_comp.push_back (*replacements.rbegin ());
-                }
+                std::set <int> replacements = rep_map [edge_id];
+                rp_comp.push_back (*replacements.rbegin ());
             }
         }
     }

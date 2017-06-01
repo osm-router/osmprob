@@ -38,7 +38,7 @@ map_probabilities <- function (graphs, d)
 {
     # map is a matrix so must be directly indexed to (id_compact, id_original)
     #indx <- match (graph$map$id_compact, graph$compact$edge_id)
-    indx <- match (graph$map [, 1], graph$compact$edge_id)
+    indx <- match (graphs$map [, 1], graphs$compact$edge_id)
     graphs$original$dens <- graphs$compact$dens [indx]
     graphs$original$prob <- graphs$compact$prob [indx]
     graphs$distance <- d
