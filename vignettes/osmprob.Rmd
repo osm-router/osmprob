@@ -256,7 +256,7 @@ library (magrittr)
 dat_bm$t_shortest %<>% as.character %>% as.numeric
 dat_bm$t_prob %<>% as.character %>% as.numeric
 dat_bm$eta %<>% as.character
-dat_bm$dl_time %<>% as.character %>% as.numeric
+dat_bm$dl_time %<>% as.character %>% as.numeric %>% multiply_by (1000)
 
 rbn_vals_mn <- vector (length = length (unique (dat_bm$region_num)) * 5,
                        mode = "numeric")
@@ -282,7 +282,7 @@ plt <- ggplot2::ggplot (data = dat_bm) +
                          shape = 4) +
     ggplot2::labs (title =
                    "Calculation times for different graph sizes and parameters",
-                   x = "Number of vertices", y = "time [s]") +
+                   x = "Number of vertices", y = "time [ms]") +
     ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
     ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
                     legend.box.background = ggplot2::element_rect (),

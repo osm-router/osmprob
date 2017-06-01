@@ -12,7 +12,8 @@ test_that ("getMap", {
                dat <- readRDS ("../compact-ways-munich.rds") %>% head (10)
                st <- dat$compact$from_id [1]
                en <- dat$compact$to_id [5]
-               prb <- get_probability (dat, st, en) %>% get_graph
+               prb <- get_probability (dat, st, en)
+               prb <- get_graph (prb$probability)
                testthat::expect_error (get_map (prb, NA))
                testthat::expect_error (get_map (NA, prb))
 })

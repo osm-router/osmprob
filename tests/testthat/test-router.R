@@ -10,12 +10,6 @@ test_that ("osm_router", {
     testthat::expect_is (way, "matrix")
     way <- osm_router (as.matrix (netdf), 0, 5, eta = 1.0)
     testthat::expect_is (way, "matrix")
-    testthat::expect_error (
-    osm_router ("not a data.frame", 0, 5, eta = 1.0),
-    "netdf must be a data.frame")
-    testthat::expect_error (
-    osm_router (matrix (1, 1), 0, 5, eta = 1.0),
-    "netdf must have 3 columns")
 })
 
 test_that ("get_probability", {
@@ -27,16 +21,10 @@ test_that ("get_probability", {
     route_end <- pts [2]
     way <- get_probability (graph, route_start, route_end, eta = 1)
 
-    testthat::expect_is (way, "data.frame")
+    testthat::expect_is (way$probability, "data.frame")
     testthat::expect_error (
        get_probability ("wrong data format", 0, 5, eta = 1.0),
        "graphs must contain data.frames compact, original and map.")
-    testthat::expect_error (
-       get_probability (graph, -1, route_end),
-       "start_node is not part of netdf")
-    testthat::expect_error (
-       get_probability (graph, route_start, -1),
-       "end_node is not part of netdf")
 })
 
 test_that ("get_shortest_path", {
