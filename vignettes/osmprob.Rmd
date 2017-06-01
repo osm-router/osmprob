@@ -190,6 +190,11 @@ disjoint part of the original graph is removed.
 
 ## Routing
 
+The routing function is greatly influenced by a undefined value that
+@saerens2009randomized refer to as $\eta$. Part of this paper is to understand
+the influence that different $\eta$ have on the calculation times and routing
+results.
+
 # Usage
 
 The only input needed to download street data are the coordinates of the start
@@ -246,8 +251,8 @@ plot_map (prob, path)
 Figure 7 shows how the calculation time is affected by the graph size. It also
 gives an indication of the large performance difference between probabilistic
 routing and classic shortest path solutions at the example of Dijkstra's
-algorithm. The graph also indicates that different values for `eta` also have an
-influence on calculation time. Specifically, lower values for `eta` appear to be
+algorithm. The graph also indicates that different values for $\eta$ also have an
+influence on calculation time. Specifically, lower values for $\eta$ appear to be
 leading to longer calculation times.
 
 ```{r echo=FALSE, fig.cap="Figure 7: Performance analysis of omsprob"}
@@ -292,6 +297,8 @@ plt
 
 
 ## Comparison with shortest path solutions
+
+
 
 ## Scalability
 
