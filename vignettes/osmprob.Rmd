@@ -66,6 +66,8 @@ routing results produced by this software are not paths, but a set of traversal
 probabilities of all edges on the graph. For lack of more fitting terminology,
 they will be referred to as routes in this paper.
 
+## Street data
+
 # Methods
 
 ## Preprocessing
@@ -246,16 +248,18 @@ plot_map (prob, path)
 
 ## Routing probabilities
 
+![Figure 7: Varying probabilities for different global entropy parameters](eta.gif)
+
 ## Speed
 
-Figure 7 shows how the calculation time is affected by the graph size. It also
+Figure 8 shows how the calculation time is affected by the graph size. It also
 gives an indication of the large performance difference between probabilistic
 routing and classic shortest path solutions at the example of Dijkstra's
 algorithm. The graph also indicates that different values for $\eta$ also have an
 influence on calculation time. Specifically, lower values for $\eta$ appear to be
 leading to longer calculation times.
 
-```{r echo=FALSE, fig.cap="Figure 7: Performance analysis of omsprob"}
+```{r echo=FALSE, fig.cap="Figure 8: Performance analysis of omsprob"}
 dat_bm <- read.csv2 ("benchmark_20170601.csv")
 library (magrittr)
 dat_bm$t_shortest %<>% as.character %>% as.numeric
