@@ -35,7 +35,7 @@ test_that ("get_shortest_path", {
     route_start <- pts[1]
     route_end <- pts [2]
     way <- get_shortest_path (graph, route_start, route_end)
-    testthat::expect_is (way, "data.frame")
+    testthat::expect_is (way$shortest, "data.frame")
     testthat::expect_error (
         get_shortest_path (graph, -1, route_end),
         "start_node is not part of netdf")

@@ -16,6 +16,10 @@ to each other.}
 
 \item{eta}{The parameter controlling the entropy (scale is arbitrary)}
 }
+\value{
+\code{list} containing the \code{data.frame} of the graph elements
+with the routing probabilities and the estimated probabilistic distance.
+}
 \description{
 Calculate routing probabilities for a data.frame
 }

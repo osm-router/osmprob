@@ -50,6 +50,9 @@ osm_router <- function (netdf, start_node, end_node, eta=1)
 #' @param end_node Ending node for shortest path route
 #' @param eta The parameter controlling the entropy (scale is arbitrary)
 #'
+#' @return \code{list} containing the \code{data.frame} of the graph elements
+#' with the routing probabilities and the estimated probabilistic distance.
+#'
 #' @export
 #'
 #' @examples
@@ -82,7 +85,8 @@ get_probability <- function (graphs, start_node, end_node, eta=1)
 #' @param start_node Starting node for shortest path route.
 #' @param end_node Ending node for shortest path route.
 #'
-#' @return \code{data.frame} of the graph elements the shortest path lies on.
+#' @return \code{list} containing the \code{data.frame} of the graph elements
+#' the shortest path lies on and the path distance.
 #'
 #' @export
 #'
@@ -116,7 +120,9 @@ get_shortest_path <- function (graphs, start_node, end_node)
     end_node <- which (allids == end_node) -1
     path <- rcpp_router_dijkstra (netdf, start_node, end_node)
     path_compact <- allids [path + 1]
-    map_shortest (graphs = graphs, shortest = path_compact)
+    mapped <- map_shortest (graphs = graphs, shortest = path_compact)
+    distance <- sum (mapped$d)
+    list ('shortest' = mapped, 'distance' = distance)
 }
 
 

@@ -15,7 +15,8 @@ to each other.}
 \item{end_node}{Ending node for shortest path route.}
 }
 \value{
-\code{data.frame} of the graph elements the shortest path lies on.
+\code{list} containing the \code{data.frame} of the graph elements
+the shortest path lies on and the path distance.
 }
 \description{
 Calculate the shortest path between two nodes on a graph
