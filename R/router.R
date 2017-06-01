@@ -81,7 +81,7 @@ get_probability <- function (graphs, start_node, end_node, eta=1)
 
     probability <- r_router_prob (graphs, start_node, end_node, eta)
 
-    prb <- cbind (netdf_out, probability$dens)
+    prb <- cbind (netdf_out, 'dens' = probability$dens)
     graphs$compact <- prb
     map_probabilities (graphs)
 }
@@ -150,9 +150,6 @@ get_shortest_path <- function (graphs, start_node, end_node)
 #' @noRd
 r_router_prob <- function (graph, start_node, end_node, eta)
 {
-    # scale eta to size of graph - TODO: Investigate this further!
-    eta <- eta / nrow (graph$compact)
-
     netdf <- data.frame ('xfr' = graph$compact$from_id,
                          'xto' = graph$compact$to_id,
                          'd' = graph$compact$d)
@@ -174,26 +171,27 @@ r_router_prob <- function (graph, start_node, end_node, eta)
 
     # Then begin the actual routing calculation
     nv <- length (allids)
-    dmat <- array (NA, dim = rep (nv, 2))
+    # The cost matrix for all but the terminal node
+    cmat <- Matrix::Matrix (0, nv, nv)
     indx <- netdf$ifr + nv * (netdf$ito - 1)
-    dmat [indx] <- netdf$d
-    dmat_s <- dmat
-    dmat_s [is.na (dmat_s)] <- 0
-    dmat_s <- as (dmat_s, "dgCMatrix")
-    p <- 1 / dmat_s # Eq.(4)
-    p [dmat_s == 0] <- 0
-    p <- as (p, "dgCMatrix")
-    rs <- Matrix::rowSums (dmat_s, na.rm = TRUE)
-    rs [rs == 0] <- Inf
-    dmat_s <- dmat_s / rs
+    cmat [indx] <- netdf$d
 
-    W <- exp (-eta * p) * dmat_s # Eq.(33) (kinda)
-    W [is.na (W)] <- 0
+    # Intermediate transition probabilities from each node
+    pmat <- cmat
+    pmat [indx] <- 1 / cmat [indx]
+    pmat [indx [1]] <- 1 # first redundant node
+    rs <- Matrix::rowSums (pmat)
+    rs [rs > 0] <- 1 / rs [rs > 0]
+    pmat <- pmat * rs
+
+    # Weight matrix W
+    W <- exp (-eta * cmat) * pmat # Eq.(33) (kinda)
+    W [is.na (W)] <- 0 # TODO: Delete that?
 
     Id <- Ij <- Matrix::Diagonal (nv)
     Ij [dest, dest] <- 0
     W <- Ij %*% W
-    id_minus_w <- as ((Id - W), "dgCMatrix")
+    id_minus_w <- Id - W
 
     e1 <- en <- rep (0, nv)
     e1 [netdf$ito [1]] <- 1
@@ -217,9 +215,9 @@ r_router_prob <- function (graph, start_node, end_node, eta)
         rn <- rep (0, times = length (nv))
         rn [n > 0] <- 1 / n [n > 0]
         Pr <- N * rn
-        Pr <- Pr [indx] [1] # rm 1st element
+        Pr <- Pr [indx] [-1] # rm 1st element
 
-        CW <- dmat_s * W
+        CW <- cmat * W
         dij <- (t (z1) %*% CW %*% zn) / z1n
     }
 
