@@ -187,7 +187,13 @@ r_router_prob <- function (graph, start_node, end_node, eta)
 
     # Weight matrix W
     W <- exp (-eta * cmat) * pmat # Eq.(33) (kinda)
-    W [is.na (W)] <- 0 # TODO: Delete that?
+    if (any (!is.finite (W)))
+    {
+        Wvals <- W [indx]
+        i <- which (!is.finite (Wvals))
+        W [indx [i]] <- 0
+    }
+
 
     Id <- Ij <- Matrix::Diagonal (nv)
     Ij [dest, dest] <- 0
