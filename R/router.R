@@ -72,7 +72,7 @@ get_probability <- function (graphs, start_node, end_node, eta=1)
     graphs$compact <- cbind (netdf, 'dens' = probability$dens,
                              'prob' = probability$prob)
     mapped <- map_probabilities (graphs, probability$dist)
-    mapped$original
+    list ('network' = mapped$original, 'd' = probability$dist)
 }
 
 #' Calculate the shortest path between two nodes on a graph
@@ -141,7 +141,8 @@ r_router_prob <- function (graph, start_node, end_node, eta)
 {
     netdf <- data.frame ('xfr' = graph$compact$from_id,
                          'xto' = graph$compact$to_id,
-                         'd' = graph$compact$d)
+                         'd' = graph$compact$d,
+                         'd_weighted' = graph$compact$d_weighted)
     netdf$xfr %<>% as.character %>% as.numeric
     netdf$xto %<>% as.character %>% as.numeric
     allids <- c (netdf$xfr, netdf$xto) %>% sort %>% unique 
@@ -161,9 +162,10 @@ r_router_prob <- function (graph, start_node, end_node, eta)
     # Then begin the actual routing calculation
     nv <- length (allids)
     # The cost matrix for all but the terminal node
-    cmat <- Matrix::Matrix (0, nv, nv)
+    dmat <- cmat <- Matrix::Matrix (0, nv, nv)
     indx <- netdf$ifr + nv * (netdf$ito - 1)
-    cmat [indx] <- netdf$d
+    cmat [indx] <- netdf$d_weighted
+    dmat [indx] <- netdf$d
 
     # Intermediate transition probabilities from each node
     pmat <- cmat
@@ -212,7 +214,7 @@ r_router_prob <- function (graph, start_node, end_node, eta)
         Pr <- N * rn
         Pr <- Pr [indx] [-1] # rm 1st element
 
-        CW <- cmat * W
+        CW <- dmat * W
         dij <- (t (z1) %*% CW %*% zn) / z1n
     }
 
