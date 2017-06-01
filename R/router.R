@@ -63,25 +63,13 @@ get_probability <- function (graphs, start_node, end_node, eta=1)
 {
     check_graph_format (graphs)
     netdf <- graphs$compact
-    netdf_out <- netdf
-    netdf <- data.frame (netdf$from_id, netdf$to_id, netdf$d_weighted)
 
-    # force names for rcpp call
-    cnames <- c ('xfr', 'xto', 'd')
-    names (netdf) <- cnames
     start_node %<>% as.character %>% as.numeric
     end_node %<>% as.character %>% as.numeric
-    netdf$xfr %<>% as.character %>% as.numeric
-    netdf$xto %<>% as.character %>% as.numeric
-    allids <- c (netdf$xfr, netdf$xto) %>% sort %>% unique 
-    if (!start_node %in% allids)
-        stop ('start_node is not part of netdf')
-    if (!end_node %in% allids)
-        stop ('end_node is not part of netdf')
 
     probability <- r_router_prob (graphs, start_node, end_node, eta)
 
-    graphs$compact <- cbind (netdf_out, 'dens' = probability$dens,
+    graphs$compact <- cbind (netdf, 'dens' = probability$dens,
                              'prob' = probability$prob)
     mapped <- map_probabilities (graphs, probability$dist)
     mapped$original
