@@ -35,21 +35,11 @@ make_compact_graph <- function (graph)
 #' @noRd
 map_probabilities <- function (graphs)
 {
-    orig <- graphs$original
-    orig$probability <- 0
-    orig$from_id <- as.character (orig$from_id)
-    orig$to_id <- as.character (orig$to_id)
-    comp <- graphs$compact
-    comp$from_id <- as.character (comp$from_id)
-    comp$to_id <- as.character (comp$to_id)
-    map <- graphs$map
-    
-    for (i in seq_len (dim (map)[1]))
-    {
-        prob <- comp$probability [comp$edge_id == map$id_compact [i]]
-        orig$probability [orig$edge_id == map$id_original [i]] <- prob
-    }
-    orig
+    # map is a matrix so must be directly indexed to (id_compact, id_original)
+    #indx <- match (graph$map$id_compact, graph$compact$edge_id)
+    indx <- match (graph$map [, 1], graph$compact$edge_id)
+    graphs$original$dens <- graphs$compact$dens [indx]
+    return (graphs)
 }
 
 #' Maps the shortest path back on to the original graph
