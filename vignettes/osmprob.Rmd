@@ -90,7 +90,7 @@ connected components inside a bounding box, then select one and delete all
 others. In this package, the selection is based on the number of vertices in the
 component, which is practical for most routing applications.
 
-```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("res/graph_pp1.tex"), fig.cap="Figure 1: Original data, consisting of different graph components"}
+```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_pp1.tex"), fig.cap="Figure 1: Original data, consisting of different graph components"}
 ```
 
 The following sample of pseudocode illustrates how the largest graph component
@@ -148,7 +148,7 @@ of the largest connected component. Now all nodes with component number !=
 c~max~ can be stripped off the original graph, which results in one connected
 graph.
 
-```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("res/graph_pp2.tex"), fig.cap="Figure 2: Identifying largest component"}
+```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_pp2.tex"), fig.cap="Figure 2: Identifying largest component"}
 ```
 
 ### Removing intermediate nodes
@@ -160,10 +160,10 @@ edges replaced with new ones connecting the remaining vertices. This is
 illustrated in figure 3. Node `B` can be removed in graph 1) and 2), but not in
 3).
 
-```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("res/graph_rm_vertex.tex"), fig.cap="Figure 3: Intermediate nodes in one-way, two-way and mixed streets"}
+```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_rm_vertex.tex"), fig.cap="Figure 3: Intermediate nodes in one-way, two-way and mixed streets"}
 ```
 
-```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("res/graph_pp3.tex"), fig.cap="Figure 4: Removing intermediate nodes"}
+```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_pp3.tex"), fig.cap="Figure 4: Removing intermediate nodes"}
 ```
 
 
@@ -178,7 +178,7 @@ performed on the compact graph, while using the original graph's edge weights
 for the calculations and later on its geographical features for visualisation.
 
 
-```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("res/graph_pp4.tex"), fig.cap="Figure 5: Inserting edges between remaining nodes"}
+```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_pp4.tex"), fig.cap="Figure 5: Inserting edges between remaining nodes"}
 ```
 
 Figure 6 shows a real world example of the principles outlined above. The
@@ -186,7 +186,7 @@ original graph displayed in blue is replaced by the red compact graph that only
 contains the nodes necessary to maintain the original topology. The small
 disjoint part of the original graph is removed.
 
-![Figure 6: Comparison between compact and original graph on street data](res/graph_orig_compact.png)
+![Figure 6: Comparison between compact and original graph on street data](graph_orig_compact.png)
 
 ## Routing
 
@@ -242,6 +242,54 @@ plot_map (prob, path)
 ## Routing probabilities
 
 ## Speed
+
+Figure 7 shows how the calculation time is affected by the graph size. It also
+gives an indication of the large performance difference between probabilistic
+routing and classic shortest path solutions at the example of Dijkstra's
+algorithm. The graph also indicates that different values for `eta` also have an
+influence on calculation time. Specifically, lower values for `eta` appear to be
+leading to longer calculation times.
+
+```{r echo=FALSE, fig.cap="Figure 7: Performance analysis of omsprob"}
+dat_bm <- read.csv2 ("benchmark_20170601.csv")
+library (magrittr)
+dat_bm$t_shortest %<>% as.character %>% as.numeric
+dat_bm$t_prob %<>% as.character %>% as.numeric
+dat_bm$eta %<>% as.character
+dat_bm$dl_time %<>% as.character %>% as.numeric
+
+rbn_vals_mn <- vector (length = length (unique (dat_bm$region_num)) * 5,
+                       mode = "numeric")
+rbn_vals_mx <- vector (length = length (unique (dat_bm$region_num)) * 5,
+                       mode = "numeric")
+ct <- 1
+for (i in unique (dat_bm$region_num))
+{
+    rbn_vals_mn [ct:(ct + 4)] <- min (dat_bm$t_prob [dat_bm$region_num == i])
+    rbn_vals_mx [ct:(ct + 4)] <- max (dat_bm$t_prob [dat_bm$region_num == i])
+    ct <- ct + 5
+}
+
+plt <- ggplot2::ggplot (data = dat_bm) +
+    ggplot2::geom_ribbon (ggplot2::aes (x = n_vtx_comp, ymin = rbn_vals_mn,
+                                        ymax = rbn_vals_mx),
+                          fill = "#81A88D", alpha = 0.3) +
+    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = t_prob,
+                                      colour = eta)) +
+    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = t_shortest,
+                                      colour = "Dijkstra' algorithm")) +
+    ggplot2::geom_point (ggplot2::aes (x = n_vtx_comp, y = dl_time),
+                         shape = 4) +
+    ggplot2::labs (title =
+                   "Calculation times for different graph sizes and parameters",
+                   x = "Number of vertices", y = "time [s]") +
+    ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
+    ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
+                    legend.box.background = ggplot2::element_rect (),
+                    legend.box.margin = ggplot2::margin (3, 3, 3, 3))
+plt
+```
+
 
 ## Comparison with shortest path solutions
 
