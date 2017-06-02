@@ -34,16 +34,43 @@ vignette: >
 bibliography: osmprob-refs.bib
 ---
 
+```{r echo=FALSE}
+library (magrittr)
+dat <- read.csv2 ("benchmark_osmprob.csv", stringsAsFactors = FALSE)
+dat$t_shortest %<>% as.numeric
+dat$t_prob %<>% as.numeric
+dat$dl_time %<>% as.numeric
+dat$d_shortest %<>% as.numeric
+dat$d_prob %<>% as.numeric
+```
+
 # Introduction
 
-This package allows users to calculate traversal probabilities and the estimated
-travel distance between two points on a graph based on the methods introduced in
-@saerens2009randomized. It also contains methods that simplify the process of
-downloading and preprocessing OpenStreetMap[^1] road data on which the routing
-can be performed. This step also includes weighting the edges according to a
-specified means of transport. The values used for weighting are derived from the
-Routino weighting profiles[^2].  Finally, the results can be visualised with
-built-in mapping functions.
+`osmprob` is an R package that allows users to calculate traversal probabilities
+and the estimated travel distance between two points on a graph based on the
+methods introduced in @saerens2009randomized. It also contains methods that
+simplify the process of downloading and preprocessing road data on which the
+routing can be performed. This step also includes weighting the edges according
+to a specified means of transport. The values used for weighting are derived
+from the Routino weighting profiles[^1]. Finally, the results can be visualised
+with built-in mapping functions.
+
+## R packages
+
+R is a programming language that is maintained by the R Foundation for
+Statistical Computing[^2] and is freely available under the GNU General Public
+License. R uses packages, which allow users to access additional functionality.
+These packages are written and maintained by numerous contributors and can be
+accessed via the Comprehensive R Archive Network (CRAN)[^3]. The packages are
+built according to a specific structure, which is explained in @wickham2015r.
+This software was also built in form of a package. One reason why this format of
+software was chosen was because of its interoperability. R is platform
+independent an can therefore be used on the most common operating systems. Its
+free software license and therefore the availability of all source code to the
+user, makes it an excellent research tool, as it allows all results to be
+completely reproducible. Looking at papers like @baker20161, that focus on
+problems with the reproducibility of other scientists' experiments, the
+necessity of such scientific practices becomes apparent.
 
 ## Nomenclature
 
@@ -66,21 +93,38 @@ routing results produced by this software are not paths, but a set of traversal
 probabilities of all edges on the graph. For lack of more fitting terminology,
 they will be referred to as routes in this paper.
 
-## Street data
+## Road data
+
+The road data used in this package is taken from the OpenStreetMap project,
+a platform that provides open geodata on a global scale. It is maintained by the
+@OpenStreetMap. The data is downloaded using the `osmdata` package, which is
+maintained by @osmdata.
 
 # Methods
 
+The methods used in this paper include several steps of data preprocessing and
+finally the routing functionality. As this paper focuses on more the `osmprob`
+package as a whole and not on the routing methodology itself, an in-depth
+discussion of @saerens2009randomized is omitted at this point.
+
 ## Preprocessing
 
-The OpenStreetMap road data can not be used in its raw form, but has to be
-preprocessed first in order to produce robust results and to lower calculation
-time. The preprocessing includes three steps:
+The OpenStreetMap road data can not be used in its raw form by `osmprob`, but
+has to be preprocessed first in order to produce robust results and to lower
+calculation time. @dasu2003exploratory claim that data preprocessing in data
+analysis takes up 80% of the time. This makes a robust and efficient
+preprocessing routine necessary. For this reason, `osmprob` features a
+completely automated preprocessing routine, that allows users to input
+coordinates of a desired region and have the entire download and data cleaning
+process run in the background.  The computationally expensive parts of this
+process were implemented in C++ using the `Rcpp` package, which brings large
+improvements in performance @rcpp2011. The preprocessing includes three steps:
 
 - Identifying and isolating the largest connected component in the graph
 - Removing vertices that are not needed to preserve the graph's topology
 - Mapping the edges of the processed graph back on to the original graph
 
-The following section illustrates the methods used for preprocessing.
+The following sections illustrate the methods used for preprocessing.
 
 ### Identifying largest graph component
 
@@ -165,6 +209,10 @@ illustrated in figure 3. Node `B` can be removed in graph 1) and 2), but not in
 ```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_rm_vertex.tex"), fig.cap="Figure 3: Intermediate nodes in one-way, two-way and mixed streets"}
 ```
 
+Applying these rules to the input graph removes all unnecessary intermediate
+vertices, leaving only the vertices that will be part of the final compact
+graph.
+
 ```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_pp3.tex"), fig.cap="Figure 4: Removing intermediate nodes"}
 ```
 
@@ -202,7 +250,7 @@ results.
 The only input needed to download street data are the coordinates of the start
 and end points on the graph. The `download_graph` function builds a bounding box
 including an optional buffer around the points and downloads all OpenStreetMap
-data tagged as `key = highway`[^3] in it.
+data tagged as `key = highway`[^4] in it.
 
 ```{r eval=FALSE}
 devtools::load_all (export_all = FALSE)
@@ -246,6 +294,10 @@ plot_map (prob, path)
 
 # Results
 
+The following section discusses the results achieved using `osmprob`. It also
+shows performance analysis from real world use cases and further shows the
+influence of $\eta$ on such statistics.
+
 ## Routing probabilities
 
 ![Figure 7: Varying probabilities for different global entropy parameters](eta.gif)
@@ -260,56 +312,94 @@ influence on calculation time. Specifically, lower values for $\eta$ appear to b
 leading to longer calculation times.
 
 ```{r echo=FALSE, fig.cap="Figure 8: Performance analysis of omsprob"}
-dat_bm <- read.csv2 ("benchmark_20170601.csv")
-library (magrittr)
-dat_bm$t_shortest %<>% as.character %>% as.numeric
-dat_bm$t_prob %<>% as.character %>% as.numeric
-dat_bm$eta %<>% as.character
-dat_bm$dl_time %<>% as.character %>% as.numeric %>% multiply_by (1000)
+ttl <- "Estimated mean distances for different values of global entropy"
+xlab <- substitute (paste ("Global entropy [",eta, "]"))
+legendlab <- substitute (paste ("Global entropy [", eta, "]"))
 
-rbn_vals_mn <- vector (length = length (unique (dat_bm$region_num)) * 5,
+plt <- ggplot2::ggplot (data = dat) +
+    ggplot2::geom_line (ggplot2::aes (x = eta, y = d_prob, group = region_num),
+                        colour = "#ababab") +
+    ggplot2::geom_point (ggplot2::aes (x = eta, y = d_prob,
+                                       colour = factor (eta)), size = 2) +
+    ggplot2::labs (title = ttl, x = xlab, y = "Distance [km]") +
+    ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
+    ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
+                    legend.box.background = ggplot2::element_rect ()) +
+    ggplot2::scale_colour_discrete (name = legendlab)
+
+plt
+```
+
+## Comparison with shortest path solutions
+
+```{r echo=FALSE, fig.cap="Figure 9: Comparison of probabilistic and shortest path solutions"}
+ttl <- "Distance differences between shortest and probabilistic routes"
+legendlab <- substitute (paste ("Global entropy [", eta, "]"))
+
+plt <- ggplot2::ggplot (data = dat) +
+    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = d_prob,
+                                      colour = factor (eta)), size = 1) +
+    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = d_shortest,
+                                      colour = "Shortest Path"), size = 1.5) +
+    ggplot2::labs (title = ttl,
+                   x = "Shortest Distance [km]",
+                   y = "Probabilistic distance [km]") +
+    ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
+    ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
+                    legend.box.background = ggplot2::element_rect ()) +
+    ggplot2::scale_colour_discrete (name = legendlab)
+
+plt
+```
+
+## Scalability
+
+```{r echo=FALSE, fig.cap="Figure 10: Scalability of probabilistic routing"}
+num <- dim (dat) [1] / dat$region_num %>% unique %>% length
+
+rbn_vals_mn <- vector (length = length (unique (dat$region_num)) * num,
                        mode = "numeric")
-rbn_vals_mx <- vector (length = length (unique (dat_bm$region_num)) * 5,
+rbn_vals_mx <- vector (length = length (unique (dat$region_num)) * num,
                        mode = "numeric")
+
 ct <- 1
-for (i in unique (dat_bm$region_num))
+for (i in unique (dat$region_num))
 {
-    rbn_vals_mn [ct:(ct + 4)] <- min (dat_bm$t_prob [dat_bm$region_num == i])
-    rbn_vals_mx [ct:(ct + 4)] <- max (dat_bm$t_prob [dat_bm$region_num == i])
-    ct <- ct + 5
+    rbn_vals_mn [ct:(ct + 6)] <- min (dat$t_prob [dat$region_num == i])
+    rbn_vals_mx [ct:(ct + 6)] <- max (dat$t_prob [dat$region_num == i])
+    ct <- ct + num
 }
 
-plt <- ggplot2::ggplot (data = dat_bm) +
+ttl <- "Calculation times for different graph sizes
+and values of global entropy"
+legendlab <- substitute (paste ("Global entropy [", eta, "]"))
+
+plt <- ggplot2::ggplot (data = dat) +
     ggplot2::geom_ribbon (ggplot2::aes (x = n_vtx_comp, ymin = rbn_vals_mn,
                                         ymax = rbn_vals_mx),
                           fill = "#81A88D", alpha = 0.3) +
     ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = t_prob,
                                       colour = eta)) +
-    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = t_shortest,
-                                      colour = "Dijkstra' algorithm")) +
+    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = d_shortest,
+                                      colour = "Shortest Path"), size = 1) +
     ggplot2::geom_point (ggplot2::aes (x = n_vtx_comp, y = dl_time),
                          shape = 4) +
-    ggplot2::labs (title =
-                   "Calculation times for different graph sizes and parameters",
-                   x = "Number of vertices", y = "time [ms]") +
+    ggplot2::labs (title = ttl,
+                   x = "Distance of shortest path [m]",
+                   y = "Time (median of n = 30 runs) [ms]") +
     ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
     ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
-                    legend.box.background = ggplot2::element_rect (),
-                    legend.box.margin = ggplot2::margin (3, 3, 3, 3))
+                    legend.box.background = ggplot2::element_rect ()) +
+    ggplot2::scale_colour_discrete (name = legendlab)
+
 plt
 ```
-
-
-## Comparison with shortest path solutions
-
-
-
-## Scalability
 
 # Discussion and outlook
 
 # References
 
-[^1]: http://www.openstreetmap.org/
-[^2]: https://www.routino.org/xml/routino-profiles.xml
-[^3]: http://wiki.openstreetmap.org/wiki/Key:highway
+[^1]: https://www.routino.org/xml/routino-profiles.xml
+[^2]: https://www.r-project.org/
+[^3]https://cran.r-project.org/
+[^4]: http://wiki.openstreetmap.org/wiki/Key:highway
