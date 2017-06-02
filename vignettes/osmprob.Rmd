@@ -42,6 +42,7 @@ dat$t_prob %<>% as.numeric
 dat$dl_time %<>% as.numeric
 dat$d_shortest %<>% as.numeric
 dat$d_prob %<>% as.numeric
+dat$eta %<>% as.numeric
 ```
 
 # Introduction
@@ -85,7 +86,7 @@ travel or action"
 Usually, the results produced by routing software like implementations of
 Dijkstra's algorithm (@dijkstra1959note) are least-cost edge sequences called
 paths or routes. An overview about routing algorithms can be found in
-@hall2012handbook. And while some of these rely on probabilities in order to
+@hall2012handbook. And whilst some of these rely on probabilities in order to
 simulate realistic route choice behaviour, the eventual routing results are
 still paths. Implementations of the Cross-Nested Logit, Probit and the Logit
 Kernel model can be found in @ben2004route. It is important to clarify that the
@@ -97,8 +98,9 @@ they will be referred to as routes in this paper.
 
 The road data used in this package is taken from the OpenStreetMap project,
 a platform that provides open geodata on a global scale. It is maintained by the
-@OpenStreetMap. The data is downloaded using the `osmdata` package, which is
-maintained by @osmdata.
+@OpenStreetMap. The data is downloaded using the `osmdata` package, which acts
+as an efficient handler for the Overpass API[^4] and conveniently downloads and
+formats OpenStreetMap data. The package is authored and maintained by @osmdata.
 
 # Methods
 
@@ -221,11 +223,12 @@ graph.
 
 Removing vertices from a graph implies removing edges. In order to preserve the
 original graph's topology, all edges are replaced with topologically equivalent
-direct edges between the remaining vertices. While this can lead to more edges
-leading to and from vertices, all edges keep their distinct ids and can at any
-point be mapped back on the original graph. This way, the routing can be
-performed on the compact graph, while using the original graph's edge weights
-for the calculations and later on its geographical features for visualisation.
+direct edges between the remaining vertices. And even though this can lead to
+more edges leading to and from vertices, all edges keep their distinct IDs and
+can at any point be mapped back on the original graph. This way, the routing can
+be performed on the compact graph, whilst using the original graph's edge
+weights for the calculations and later on its geographical features for
+visualisation.
 
 
 ```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_pp4.tex"), fig.cap="Figure 5: Inserting edges between remaining nodes"}
@@ -240,8 +243,10 @@ disjoint part of the original graph is removed.
 
 ## Routing
 
-The routing function is greatly influenced by a undefined value that
-@saerens2009randomized refer to as $\eta$. Part of this paper is to understand
+The routing function is greatly influenced by an nondimensional value that
+@saerens2009randomized refer to as $\eta$. Its value describes the global
+entropy that the routing algorithm uses. 
+Part of this paper is to understand
 the influence that different $\eta$ have on the calculation times and routing
 results.
 
@@ -300,16 +305,30 @@ influence of $\eta$ on such statistics.
 
 ## Routing probabilities
 
+Figure 7 shows the probabilistic routing results on a road graph and shows very
+clearly the influence that different $\eta$ have on the results. The red line on
+the graph indicates the shortest path between a start and end point. The line
+thickness indicates the traversal probability on each edge on the way between
+the same two points. As discussed above, high $\eta$ mean a low global entropy
+and vice versa. Low global entropy means that the proposed edge traversal
+probabilities are higher when they are close to the ideal path. On the map this
+almost looks like the traversal probabilities resembling the shortest path. Only
+very close alternative routes that don't necessitate large detours also have
+elevated probabilities. On the other hand, low $\eta$ lead to the probabilities
+"seeping away" from the ideal path. This can be observed by looking at the edges
+that are quite thin for high $\eta$, but constantly become thicker with smaller
+$\eta$. This effect also implies that the edges with higher probabilities for
+large $\eta$ will decrease in probability as the others around it will increase.
+
 ![Figure 7: Varying probabilities for different global entropy parameters](eta.gif)
 
-## Speed
-
-Figure 8 shows how the calculation time is affected by the graph size. It also
-gives an indication of the large performance difference between probabilistic
-routing and classic shortest path solutions at the example of Dijkstra's
-algorithm. The graph also indicates that different values for $\eta$ also have an
-influence on calculation time. Specifically, lower values for $\eta$ appear to be
-leading to longer calculation times.
+Figure 8 shows the effects caused by different $\eta$ on the routing results
+described above on a numeric scale. Each line represents one pair of start and
+end points on a graph. The coloured dots sitting on that line indicate the value
+of $\eta$ used for the calculation. As stated above, high global entropy means
+that more edges of a graph are likely to being traversed, thereby increasing the
+expected mean distance of the trips. The rampant increase in expected distance
+also indicates that for smaller $\eta$, slight changes have quite a big effect.
 
 ```{r echo=FALSE, fig.cap="Figure 8: Performance analysis of omsprob"}
 ttl <- "Estimated mean distances for different values of global entropy"
@@ -330,31 +349,16 @@ plt <- ggplot2::ggplot (data = dat) +
 plt
 ```
 
-## Comparison with shortest path solutions
+## Speed
 
-```{r echo=FALSE, fig.cap="Figure 9: Comparison of probabilistic and shortest path solutions"}
-ttl <- "Distance differences between shortest and probabilistic routes"
-legendlab <- substitute (paste ("Global entropy [", eta, "]"))
+Figure 9 shows how the calculation time is affected by the graph size. It also
+gives an indication of the large performance difference between probabilistic
+routing and classic shortest path solutions at the example of Dijkstra's
+algorithm. The graph also indicates that different values for $\eta$ also have
+an influence on calculation time. Specifically, lower values for $\eta$ appear
+to be leading to longer calculation times.
 
-plt <- ggplot2::ggplot (data = dat) +
-    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = d_prob,
-                                      colour = factor (eta)), size = 1) +
-    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = d_shortest,
-                                      colour = "Shortest Path"), size = 1.5) +
-    ggplot2::labs (title = ttl,
-                   x = "Shortest Distance [km]",
-                   y = "Probabilistic distance [km]") +
-    ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
-    ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
-                    legend.box.background = ggplot2::element_rect ()) +
-    ggplot2::scale_colour_discrete (name = legendlab)
-
-plt
-```
-
-## Scalability
-
-```{r echo=FALSE, fig.cap="Figure 10: Scalability of probabilistic routing"}
+```{r echo=FALSE, fig.cap="Figure 9: Scalability of probabilistic routing"}
 num <- dim (dat) [1] / dat$region_num %>% unique %>% length
 
 rbn_vals_mn <- vector (length = length (unique (dat$region_num)) * num,
@@ -379,11 +383,9 @@ plt <- ggplot2::ggplot (data = dat) +
                                         ymax = rbn_vals_mx),
                           fill = "#81A88D", alpha = 0.3) +
     ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = t_prob,
-                                      colour = eta)) +
+                                      colour = factor (eta))) +
     ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = d_shortest,
                                       colour = "Shortest Path"), size = 1) +
-    ggplot2::geom_point (ggplot2::aes (x = n_vtx_comp, y = dl_time),
-                         shape = 4) +
     ggplot2::labs (title = ttl,
                    x = "Distance of shortest path [m]",
                    y = "Time (median of n = 30 runs) [ms]") +
@@ -395,11 +397,62 @@ plt <- ggplot2::ggplot (data = dat) +
 plt
 ```
 
+## Comparison with shortest path solutions
+
+Figure 10 shows the calculated probabilistic distances for different $\eta$ in
+comparison with the shortest path distances. As expected, all probabilistic
+distances are longer than the shortest path. The graph also shows how sensitive
+$\eta$ becomes when approximating 0. Note that a change in $\eta$ from 0.003 to
+0.001 leads to an estimated distance of almost twice the length. Another
+observation that can be made is that the probabilistic distances have high alter
+quite a lot from one another. Table 1 shows the standard deviations of the
+expected distances for different $\eta$. And like the distances, their standard
+deviations are very sensitive to $\eta$. Another possible reason for spikes in
+the probabilistic distances could be the number of vertices in the road graph,
+because a more complex road graph would allow more movement between a start and
+end point than a very simple one would. So on a very simple graph, all movement
+would be restricted on few edges, even with a hight $\eta$.
+
+```{r echo=FALSE, results = 'asis'}
+v <- aggregate (dat$d_prob, by = list (eta = dat$eta), FUN = sd)
+colnames (v) [2 ]<- "Standard deviation [km]"
+knitr::kable (v, digits = 3,
+              caption = "Table 1: Variances in probabilistic distance")
+```
+
+```{r echo=FALSE, fig.cap="Figure 10: Comparison of probabilistic and shortest path solutions"}
+ttl <- "Distance differences between shortest and probabilistic routes"
+legendlab <- substitute (paste ("Global entropy [", eta, "]"))
+
+plt <- ggplot2::ggplot (data = dat) +
+    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = d_prob,
+                                      colour = factor (eta)), size = 1) +
+    ggplot2::geom_point (ggplot2::aes (x = d_shortest, y = d_prob),
+                         size = 0.7) +
+    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = d_shortest,
+                                      colour = "Shortest Path"), size = 1.5) +
+    ggplot2::geom_point (ggplot2::aes (x = d_shortest, y = d_shortest),
+                        size = 0.7) +
+    ggplot2::labs (title = ttl,
+                   x = "Shortest Distance [km]",
+                   y = "Probabilistic distance [km]") +
+    ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
+    ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
+                    legend.box.background = ggplot2::element_rect ()) +
+    ggplot2::scale_colour_discrete (name = legendlab)
+
+plt
+```
+
+## Scalability
+
+
 # Discussion and outlook
 
 # References
 
 [^1]: https://www.routino.org/xml/routino-profiles.xml
 [^2]: https://www.r-project.org/
-[^3]https://cran.r-project.org/
-[^4]: http://wiki.openstreetmap.org/wiki/Key:highway
+[^3]: https://cran.r-project.org/
+[^4]: http://wiki.openstreetmap.org/wiki/Overpass_API
+[^5]: http://wiki.openstreetmap.org/wiki/Key:highway
