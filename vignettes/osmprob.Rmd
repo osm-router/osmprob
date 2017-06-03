@@ -47,33 +47,35 @@ dat$eta %<>% as.numeric
 
 # Introduction
 
-`osmprob` is an R package that allows users to calculate traversal probabilities
-and the estimated travel distance between two points on a graph based on the
-methods introduced in @saerens2009randomized. It also contains methods that
-simplify the process of downloading and preprocessing road data on which the
-routing can be performed. This step also includes weighting the edges according
-to a specified means of transport. The values used for weighting are derived
-from the Routino weighting profiles[^1]. Finally, the results can be visualised
-with built-in mapping functions.
+`osmprob` is an *R* package that allows users to calculate traversal
+probabilities and the estimated travel distance between two points on a graph
+based on the methods introduced in @saerens2009randomized. It also contains
+methods that simplify the process of downloading and preprocessing road data on
+which the routing can be performed. This step also includes weighting the edges
+according to a specified means of transport. The values used for weighting are
+derived from the Routino weighting profiles[^1]. Finally, the results can be
+visualised with built-in mapping functions.
 
-## R packages
+## *R* packages
 
-R is a programming language that is maintained by the R Foundation for
+*R* is a programming language that is maintained by the *R* Foundation for
 Statistical Computing[^2] and is freely available under the GNU General Public
-License. R uses packages, which allow users to access additional functionality.
-These packages are written and maintained by numerous contributors and can be
-accessed via the Comprehensive R Archive Network (CRAN)[^3]. The packages are
-built according to a specific structure, which is explained in @wickham2015r.
-This software was also built in form of a package. One reason why this format of
-software was chosen was because of its interoperability. R is platform
-independent an can therefore be used on the most common operating systems. Its
-free software license and therefore the availability of all source code to the
-user, makes it an excellent research tool, as it allows all results to be
-completely reproducible. Looking at papers like @baker20161, that focus on
-problems with the reproducibility of other scientists' experiments, the
-necessity of such scientific practices becomes apparent.
+License. *R* uses the concept of packages, which allow users to access
+additional functionality from external sources. These packages are written and
+maintained by numerous contributors and can be accessed via the Comprehensive R
+Archive Network (CRAN)[^3]. The packages are built according to a specific
+structure, which is explained in @wickham2015r, which leads to high
+interoperability of the contributed software. This software was also built in
+form of a package. One reason why this format was chosen was because of its
+interoperability. *R* is platform independent an can therefore be used on the
+most common operating systems. Its free software license and therefore the
+availability of all source code to the user, makes it an excellent research
+tool, as it allows all results to be completely reproducible. Looking at papers
+like @baker20161, that focus on problems with the reproducibility of other
+scientists' experiments, the necessity of such scientific practices becomes
+apparent.
 
-## Nomenclature
+## Nomenclature in this paper
 
 "**path** `noun | \ˈpath, ˈpäth\` [...] a sequence of arcs in a network that can
 be traced continuously without retracing any arc"  
@@ -84,15 +86,16 @@ travel or action"
 @mwRoute
 
 Usually, the results produced by routing software like implementations of
-Dijkstra's algorithm (@dijkstra1959note) are least-cost edge sequences called
-paths or routes. An overview about routing algorithms can be found in
-@hall2012handbook. And whilst some of these rely on probabilities in order to
-simulate realistic route choice behaviour, the eventual routing results are
-still paths. Implementations of the Cross-Nested Logit, Probit and the Logit
+Dijkstra's algorithm as described in @dijkstra1959note are least-cost edge
+sequences called paths or routes. An overview about routing algorithms can be
+found in @hall2012handbook. And whilst some of these rely on probabilities in
+order to simulate realistic route choice behaviour, the eventual routing results
+are still paths. Implementations of the Cross-Nested Logit, Probit and the Logit
 Kernel model can be found in @ben2004route. It is important to clarify that the
-routing results produced by this software are not paths, but a set of traversal
-probabilities of all edges on the graph. For lack of more fitting terminology,
-they will be referred to as routes in this paper.
+routing results produced by `osmprob` are not paths, but a set of traversal
+probabilities of all edges on the graph and other values derived from that. For
+lack of more fitting terminology, they will be referred to as routing results in
+this paper.
 
 ## Road data
 
@@ -100,7 +103,8 @@ The road data used in this package is taken from the OpenStreetMap project,
 a platform that provides open geodata on a global scale. It is maintained by the
 @OpenStreetMap. The data is downloaded using the `osmdata` package, which acts
 as an efficient handler for the Overpass API[^4] and conveniently downloads and
-formats OpenStreetMap data. The package is authored and maintained by @osmdata.
+formats OpenStreetMap data and can therefore be seamlessly integrated in the
+routing workflow. The package is authored and maintained by @osmdata.
 
 # Methods
 
@@ -112,31 +116,35 @@ discussion of @saerens2009randomized is omitted at this point.
 ## Preprocessing
 
 The OpenStreetMap road data can not be used in its raw form by `osmprob`, but
-has to be preprocessed first in order to produce robust results and to lower
+has to be preprocessed first in order to produce robust results and to minimise
 calculation time. @dasu2003exploratory claim that data preprocessing in data
-analysis takes up 80% of the time. This makes a robust and efficient
-preprocessing routine necessary. For this reason, `osmprob` features a
-completely automated preprocessing routine, that allows users to input
-coordinates of a desired region and have the entire download and data cleaning
-process run in the background.  The computationally expensive parts of this
-process were implemented in C++ using the `Rcpp` package, which brings large
-improvements in performance @rcpp2011. The preprocessing includes three steps:
+analysis takes up 80% of the time, which shows that it is worthwhile to invest
+in the development of a robust and efficient means of data preprocessing. For
+this reason, `osmprob` features a completely automated preprocessing routine,
+that allows users to input coordinates of a desired region and have the entire
+download and data cleaning process run in one go. The computationally expensive
+parts of this process were implemented in C++ using the `Rcpp` package, which
+according to @rcpp2011 brings large improvements in performance. The
+preprocessing process includes three steps:
 
 - Identifying and isolating the largest connected component in the graph
 - Removing vertices that are not needed to preserve the graph's topology
 - Mapping the edges of the processed graph back on to the original graph
 
-The following sections illustrate the methods used for preprocessing.
+As there was no software available that performs these steps reliably and highly
+performant, they had to be implemented as a part this package. The following
+sections illustrate the details of each preprocessing step.
 
 ### Identifying largest graph component
 
 Graph based routing algorithms do not work on a disconnected graph. But when
 downloading subsets of OpenStreetMap data based on a bounding box, the resulting
-graph may consist of several disconnected components, as figure 1 illustrates.
-One way to obtain a single connected component, is to identify all separate
-connected components inside a bounding box, then select one and delete all
-others. In this package, the selection is based on the number of vertices in the
-component, which is practical for most routing applications.
+graph may consist of several disconnected components, as illustrated by the
+different colours for the vertices showed in figure 1. One way to obtain a
+single connected component, is to identify all separate connected components
+inside a bounding box, then select one and delete all others. In this package,
+the selection is based on the number of vertices in the component, which is
+practical for most routing applications.
 
 ```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_pp1.tex"), fig.cap="Figure 1: Original data, consisting of different graph components"}
 ```
@@ -244,11 +252,17 @@ disjoint part of the original graph is removed.
 ## Routing
 
 The routing function is greatly influenced by an nondimensional value that
-@saerens2009randomized refer to as $\eta$. Its value describes the global
-entropy that the routing algorithm uses. 
-Part of this paper is to understand
-the influence that different $\eta$ have on the calculation times and routing
-results.
+@saerens2009randomized refer to as $\eta$. Its value is used to quantify the
+global entropy that the routing algorithm uses in that for $\eta$ approximating
+0, the global entropy rises. Part of this paper is to understand the influence
+that different $\eta$ have on the calculation times and routing results and how
+to tune $\eta$ in a way that it leads to good routing results.
+
+# Installation
+
+```{r eval=FALSE}
+devtools::install ("osm-router/osmprob")
+```
 
 # Usage
 
@@ -258,9 +272,8 @@ including an optional buffer around the points and downloads all OpenStreetMap
 data tagged as `key = highway`[^4] in it.
 
 ```{r eval=FALSE}
-devtools::load_all (export_all = FALSE)
-start_pt <- c (11.58, 48.14)
-end_pt <- c (11.585, 48.145)
+start_pt <- c (10.5350035429,47.6034937672)
+end_pt <- c (10.5384796858,47.6071612749)
 graph <- download_graph (start_pt, end_pt)
 ```
 
@@ -274,20 +287,49 @@ route_start <- pts[1]
 route_end <- pts [2]
 ```
 
-At the moment, there are two routing algorithms implemented in this package.
-`get_shortest_path` returns the shortest path as calculated using an
-implementation of Dijkstra's algorithm.
+At the moment, there are two routing algorithms implemented in this package and
+accessible by using `get_shortest_path` and `get_probability`. For the sake of
+consistency, the object returned by both functions is a ´list´ containing a
+`data.frame` with all relevant edges as a first item and the calculated distance
+as a second item `get_shortest_path` returns the shortest path as calculated
+using an implementation of Dijkstra's algorithm. The call `path$d` in the
+following example is used to access the path's calculated distance in km.
 
 ```{r eval=FALSE}
 path <- get_shortest_path (graph, route_start, route_end)
+path$d # 0.1427
 ```
 
-The `get_probability` function calculates the traversal probability for the
-entire input graph. It returns the entire input graph with an additional column
-containing the traversal probability for each edge.
+`get_probability` calculates the traversal probability for the entire input
+graph. It returns the entire input graph with an additional column containing
+the traversal probability for each edge. Like `get_shortest_path`, it returns a
+`list` object. The first entry is a `data.frame` with all edge IDs, which have
+now two additional columns, which contain the routing probabilities for all
+edges in different formats:
+
+* `prob`: The local routing probabilities from every vertex to all its
+  neighbouring vertices. These values are the ones originally calculated by in
+  the routing algorithm. The probability densities and expected mean travel
+  distance is derived from them.
+* `dens`: The global routing probabilities or routing densities. These values
+  are derived from `prob` and indicate how likely an edge on graph will be
+  traversed on the way from start to end. As these values are easier to
+  interpret than `prob`, they are used for graph visualisation.
+
+The second item in the list is the expected travel distance which is based on
+the calculated traversal probabilities. Its minimal possible value is the length
+of the shortest path and gets higher with increased global entropy, which can be
+done using lower values for $\eta$ (`eta`). Note that the distance rises very
+abrupt for $\eta$ approximating 0. The results section contains more information
+about the effects of $\eta$ on the routing results.
 
 ```{r eval=FALSE}
-prob <- get_probability (graph, route_start, route_end, eta = 1)
+prob <- get_probability (graph, route_start, route_end, eta = 0.9)
+prob$d # 0.1934
+prob <- get_probability (graph, route_start, route_end, eta = 0.7)
+prob$d # 0.2001
+prob <- get_probability (graph, route_start, route_end, eta = 0.3)
+prob$d # 0.2418
 ```
 
 Finally, the routing results can be visualised in a **shiny** **leaflet** web
@@ -355,8 +397,8 @@ Figure 9 shows how the calculation time is affected by the graph size. It also
 gives an indication of the large performance difference between probabilistic
 routing and classic shortest path solutions at the example of Dijkstra's
 algorithm. The graph also indicates that different values for $\eta$ also have
-an influence on calculation time. Specifically, lower values for $\eta$ appear
-to be leading to longer calculation times.
+an influence on calculation time. Specifically, low $\eta$ and thus high global
+entropies appear to be leading to longer calculation times.
 
 ```{r echo=FALSE, fig.cap="Figure 9: Scalability of probabilistic routing"}
 num <- dim (dat) [1] / dat$region_num %>% unique %>% length
@@ -415,8 +457,8 @@ would be restricted on few edges, even with a hight $\eta$.
 
 ```{r echo=FALSE, results = 'asis'}
 v <- aggregate (dat$d_prob, by = list (eta = dat$eta), FUN = sd)
-colnames (v) [2 ]<- "Standard deviation [km]"
-knitr::kable (v, digits = 3,
+colnames (v) [2] <- "Standard deviation [km]"
+knitr::kable (v, digits = 3, format = "pandoc",
               caption = "Table 1: Variances in probabilistic distance")
 ```
 
@@ -444,8 +486,15 @@ plt <- ggplot2::ggplot (data = dat) +
 plt
 ```
 
-## Scalability
+## Limitations
 
+In some test regions it was not possible to calculate probabilistic routes due
+to unexpected behaviour of `osmprob`. This includes program crashes, as well as
+the generation of unreasonably high values of estimated travel distances. The
+reasons leading these effects are yet to be identified. One possible explanation
+could that under certain circumstances the software is attempting to perform
+routing on ill-formed graphs. This may happen when a graph is complete, but
+certain vertices are inaccessible due to directed one-way edges leading to them.
 
 # Discussion and outlook
 
