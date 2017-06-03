@@ -75,7 +75,7 @@ get_probability <- function (graphs, start_node, end_node, eta=1)
     graphs$compact <- cbind (netdf, 'dens' = probability$dens,
                              'prob' = probability$prob)
     mapped <- map_probabilities (graphs, probability$dist)
-    list ('probability' = mapped$original, 'distance' = probability$dist)
+    list ('probability' = mapped$original, 'd' = probability$dist)
 }
 
 #' Calculate the shortest path between two nodes on a graph
@@ -122,7 +122,7 @@ get_shortest_path <- function (graphs, start_node, end_node)
     path_compact <- allids [path + 1]
     mapped <- map_shortest (graphs = graphs, shortest = path_compact)
     distance <- sum (mapped$d)
-    list ('shortest' = mapped, 'distance' = distance)
+    list ('shortest' = mapped, 'd' = distance)
 }
 
 

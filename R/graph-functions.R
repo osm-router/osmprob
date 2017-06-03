@@ -41,7 +41,7 @@ map_probabilities <- function (graphs, d)
     indx <- match (graphs$map [, 1], graphs$compact$edge_id)
     graphs$original$dens <- graphs$compact$dens [indx]
     graphs$original$prob <- graphs$compact$prob [indx]
-    graphs$distance <- d
+    graphs$d <- d
     return (graphs)
 }
 
