@@ -1,8 +1,9 @@
 #' Plot the graph network as a Shiny Leaflet app in a browser.
 #'
-#' @param graph \code{data.frame} containing the street graph to be
-#' displayed.
-#' @param shortest \code{vector} containing the shortest path.
+#' @param graph \code{list} containing the probabilistic routing result of the
+#' road graph.
+#' @param shortest \code{list} containing the shortest path routing results of
+#' the road graph.
 #'
 #' @examples
 #' \dontrun{
@@ -23,8 +24,8 @@ plot_map <- function (graph, shortest)
 {
     # graph and shortest_path can't be passed as a parameter, so it is passed to
     # the server function via an environment variable
-    input_graph <<- graph
-    shortest_path <<- shortest
+    input_graph <<- graph [[1]]
+    shortest_path <<- shortest [[1]]
     shiny::shinyApp(ui, server)
 }
 
@@ -51,8 +52,8 @@ popup <- function (fromid, toid, weight, prob)
 {
   paste ("<b>From ID: </b>", fromid,
          "</br><b>To ID: </b>", toid,
-         "</br><b>Weight: </b>", format (round (weight, 3), nsmall = 3),
-         "</br><b>Probability: </b>", format (round (prob, 3), nsmall = 3))
+         "</br><b>Weight: </b>", format (round (as.numeric (weight), 3), nsmall = 3),
+         "</br><b>Probability: </b>", format (round (as.numeric (prob), 3), nsmall = 3))
 }
 
 #' Generate \code{leaflet} HTML widget containing a web map
@@ -64,7 +65,7 @@ popup <- function (fromid, toid, weight, prob)
 #' @noRd
 get_map <- function (dat, short)
 {
-    dat <- subset (dat, !is.na (dat$probability))
+    dat <- subset (dat, !is.na (dat$prob))
     grp_prb <- "Probabilities"
     grp_srt <- "Shortest Path"
     grp_se <- "Start and end points"
@@ -79,9 +80,9 @@ get_map <- function (dat, short)
                       options = leaflet::leafletOptions ()) %>%
     leaflet::addProviderTiles ('CartoDB.DarkMatter', group = "base") %>%
     leaflet::addPolylines (color = ~pal (print_weights), opacity = 1.0,
-                           weight = getWidth (3, 8, dat$probability),
+                           weight = getWidth (3, 8, dat$dens),
                            popup = popup (dat$from_id, dat$to_id,
-                                          dat$d_weighted, dat$probability),
+                                          dat$d_weighted, dat$dens),
                            group = grp_prb) %>%
     leaflet::addPolylines (data = short, color = "#FF0000", opacity = 1.0,
                            weight = 4, group = grp_srt,

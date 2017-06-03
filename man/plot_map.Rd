@@ -7,10 +7,11 @@
 plot_map(graph, shortest)
 }
 \arguments{
-\item{graph}{\code{data.frame} containing the street graph to be
-displayed.}
+\item{graph}{\code{list} containing the probabilistic routing result of the
+road graph.}
 
-\item{shortest}{\code{vector} containing the shortest path.}
+\item{shortest}{\code{list} containing the shortest path routing results of
+the road graph.}
 }
 \description{
 Plot the graph network as a Shiny Leaflet app in a browser.
