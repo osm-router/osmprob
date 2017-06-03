@@ -49,12 +49,16 @@ dat$eta %<>% as.numeric
 
 `osmprob` is an *R* package that allows users to calculate traversal
 probabilities and the estimated travel distance between two points on a graph
-based on the methods introduced in @saerens2009randomized. It also contains
-methods that simplify the process of downloading and preprocessing road data on
-which the routing can be performed. This step also includes weighting the edges
-according to a specified means of transport. The values used for weighting are
-derived from the Routino weighting profiles[^1]. Finally, the results can be
-visualised with built-in mapping functions.
+based on the methods introduced in @saerens2009randomized. It is intended to
+serve as a tool for researchers in fields related to city planning, logistics or
+transportation in general. With it, they can estimate realistic travelling
+distances and patterns by simply executing a few lines of code. The package also
+contains methods that simplify the process of downloading and preprocessing road
+data on which the routing can be performed. This step also includes weighting
+the edges according to a specified means of transport. The values used for
+weighting are derived from the Routino weighting profiles[^1], but can also be
+adjusted manually. Finally, the results can either be visualised with built-in
+mapping functions or used for further analysis.
 
 ## *R* packages
 
@@ -75,7 +79,7 @@ like @baker20161, that focus on problems with the reproducibility of other
 scientists' experiments, the necessity of such scientific practices becomes
 apparent.
 
-## Nomenclature in this paper
+## Nomenclature of routing results
 
 "**path** `noun | \ˈpath, ˈpäth\` [...] a sequence of arcs in a network that can
 be traced continuously without retracing any arc"  
@@ -117,14 +121,14 @@ discussion of @saerens2009randomized is omitted at this point.
 
 The OpenStreetMap road data can not be used in its raw form by `osmprob`, but
 has to be preprocessed first in order to produce robust results and to minimise
-calculation time. @dasu2003exploratory claim that data preprocessing in data
+calculation time. According to @dasu2003exploratory, data preprocessing in data
 analysis takes up 80% of the time, which shows that it is worthwhile to invest
 in the development of a robust and efficient means of data preprocessing. For
 this reason, `osmprob` features a completely automated preprocessing routine,
 that allows users to input coordinates of a desired region and have the entire
 download and data cleaning process run in one go. The computationally expensive
 parts of this process were implemented in C++ using the `Rcpp` package, which
-according to @rcpp2011 brings large improvements in performance. The
+brings large improvements in performance, as has been shown by @rcpp2011. The
 preprocessing process includes three steps:
 
 - Identifying and isolating the largest connected component in the graph
@@ -139,21 +143,20 @@ sections illustrate the details of each preprocessing step.
 
 Graph based routing algorithms do not work on a disconnected graph. But when
 downloading subsets of OpenStreetMap data based on a bounding box, the resulting
-graph may consist of several disconnected components, as illustrated by the
-different colours for the vertices showed in figure 1. One way to obtain a
-single connected component, is to identify all separate connected components
-inside a bounding box, then select one and delete all others. In this package,
-the selection is based on the number of vertices in the component, which is
-practical for most routing applications.
+graph may consist of several disconnected smaller graphs or components, as
+illustrated by the different colours for the vertices showed in figure 1. In
+this example, the graph consists of four components, so three of them are going
+to be removed in this process. One way to obtain a single connected component,
+is to number all separate connected components inside a bounding box
+individually, then pick the one component best suitable for the routing process
+and delete all others. In this package, the selection is based on the number of
+vertices in the component, which is practical for most routing applications.
 
 ```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_pp1.tex"), fig.cap="Figure 1: Original data, consisting of different graph components"}
 ```
 
 The following sample of pseudocode illustrates how the largest graph component
 is identified.
-
-<!-- todo: clarify: component, compact graph, neighbours, write out
-pseudocode -->
 
 ```{r eval=FALSE}
     component_number = 0
@@ -163,7 +166,7 @@ pseudocode -->
         comp_num.at (vertex) = -1
 
     for vertex in all_vertices
-        set component_numbers # initialize empty set of component numbers
+        set component_numbers # initialise empty set of component numbers
 
         # insert component numbers of current and all neighbouring vertices
         component_numbers.insert (comp_num.at (vertex))
@@ -201,8 +204,8 @@ Nodes sharing the same component number are necessarily part of one connected
 unit and are disjoint from any nodes with different component numbers.
 Therefore, the component number with the highest frequency c~max~ is indicative
 of the largest connected component. Now all nodes with component number !=
-c~max~ can be stripped off the original graph, which results in one connected
-graph.
+c~max~ can be stripped off the original graph, which results in exactly one
+connected graph.
 
 ```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_pp2.tex"), fig.cap="Figure 2: Identifying largest component"}
 ```
@@ -212,9 +215,10 @@ graph.
 All nodes that are not necessary for routing are removed from the graph. This
 means that nodes that only have two neighbours and are connected to both of them
 either by one-way streets or two-way streets can be removed and the original
-edges replaced with new ones connecting the remaining vertices. This is
-illustrated in figure 3. Node `B` can be removed in graph 1) and 2), but not in
-3).
+edges replaced with new ones connecting the remaining vertices. This constraint
+is illustrated in figure 3. Node `B` can be removed in graph 1) and 2), but not
+in 3). Applying it to the preprocessing routine ensures that all topological
+information of the original graph is preserved.
 
 ```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_rm_vertex.tex"), fig.cap="Figure 3: Intermediate nodes in one-way, two-way and mixed streets"}
 ```
@@ -222,6 +226,7 @@ illustrated in figure 3. Node `B` can be removed in graph 1) and 2), but not in
 Applying these rules to the input graph removes all unnecessary intermediate
 vertices, leaving only the vertices that will be part of the final compact
 graph.
+
 
 ```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_pp3.tex"), fig.cap="Figure 4: Removing intermediate nodes"}
 ```
@@ -236,8 +241,69 @@ more edges leading to and from vertices, all edges keep their distinct IDs and
 can at any point be mapped back on the original graph. This way, the routing can
 be performed on the compact graph, whilst using the original graph's edge
 weights for the calculations and later on its geographical features for
-visualisation.
+visualisation. The following piece of pseudocode illustrates how vertices and
+edges to be removed are identified, replaced with new edges that have
+appropriate attributes and finally how these changes in the graph are tracked in
+a map of new and replaced edge IDs in order to be able to trace back what parts
+of the original graph are represented by their compact counterparts.
 
+```{r eval=FALSE}
+    # initialise unique edge ID of replacement edge
+    new_edge_id = max (all_edges.get_ids ()) + 1
+
+    # initialise map with replacement edge ID as key and a set of edge IDs as
+    # value
+    replacements = map (replacement_id, edge_id [])
+
+    for vertex in all_vertices
+
+        # if a vertex has exactly two neighbouring vertices, it can be replaced
+        if (vertex.num_neighbours () == 2)
+
+            # initialise values for replacement edge
+            new_edge_weight = 0
+            new_edge_start
+            new_edge_end
+            # initialise counter for number of edges to be replaced
+            edges_replaced = 0
+
+            for edge in all_edges
+                # if current vertex is part of the current edge, replace edge
+                if (edge.get_start () == vertex || edge.get_end () == vertex)
+
+                    # depending on which of the two edges linked to the current
+                    # vertex is selected, set new edge parameters and update
+                    # neighbours of the neighbouring vertices
+                    if (edge.get_start () == vertex)
+                        new_edge_end () = edge.get_end ()
+                        neighbour_1 = vertex.get_neighbour_from ()
+                        neighbour_1.set_neighbour_to (edge.get_end ())
+                    if (edge.get_end () == vertex)
+                        new_edge_start = edge.get_start ()
+                        neighbour_2 = vertex.get_neighbour_to ()
+                        neighbour_2.set_neighbour_to (edge.get_start ())
+
+                    # update new edge parameters
+                    new_edge_weight += edge.get_weight ()
+
+                    # update map of replaced edge IDs
+                    edges_rep = replacements.get (new_edge_id)
+                    edges_rep.insert (edge.get_id ())
+                    replacements.set (new_edge_id)
+
+                    # remove edge and increment edge counter 
+                    edge.remove ()
+                    edges_replaced ++
+
+                    # if both edges are found and removed, insert new one and
+                    # remove current vertex
+                    if (edges_replaced == 2)
+                        replacement = edge (new_edge_start, new_edge_end,
+                                            new_edge_weight, new_edge_id)
+                        edges.insert_edge (replacement)
+                        vertex.remove ()
+                        new_edge_id ++ # increment new edge ID for next edge
+```
 
 ```{r, fig.align="center", echo=FALSE, engine='tikz',fig.ext='svg', code=readLines("graph_pp4.tex"), fig.cap="Figure 5: Inserting edges between remaining nodes"}
 ```
@@ -245,12 +311,14 @@ visualisation.
 Figure 6 shows a real world example of the principles outlined above. The
 original graph displayed in blue is replaced by the red compact graph that only
 contains the nodes necessary to maintain the original topology. The small
-disjoint part of the original graph is removed.
+disjoint part of the original graph has been removed, as it is not accessible
+from the main graph and can therefore not be used in the routing process.
 
 ![Figure 6: Comparison between compact and original graph on street data](graph_orig_compact.png)
 
 ## Routing
 
+After the preprocessing is done, the graph can be used for routing purposes.
 The routing function is greatly influenced by an nondimensional value that
 @saerens2009randomized refer to as $\eta$. Its value is used to quantify the
 global entropy that the routing algorithm uses in that for $\eta$ approximating
@@ -288,12 +356,13 @@ route_end <- pts [2]
 ```
 
 At the moment, there are two routing algorithms implemented in this package and
-accessible by using `get_shortest_path` and `get_probability`. For the sake of
-consistency, the object returned by both functions is a ´list´ containing a
-`data.frame` with all relevant edges as a first item and the calculated distance
-as a second item `get_shortest_path` returns the shortest path as calculated
-using an implementation of Dijkstra's algorithm. The call `path$d` in the
-following example is used to access the path's calculated distance in km.
+accessible by using `get_shortest_path` and `get_probability`, respectively. For
+the sake of consistency, the object returned by both functions is a `list`
+containing a `data.frame` with all relevant edges as a first item and the
+calculated distance as a second item. `get_shortest_path` returns the shortest
+path as calculated using an implementation of Dijkstra's algorithm. The call
+`path$d` in the following example is used to access the path's calculated
+distance in km.
 
 ```{r eval=FALSE}
 path <- get_shortest_path (graph, route_start, route_end)
@@ -301,27 +370,29 @@ path$d # 0.1427
 ```
 
 `get_probability` calculates the traversal probability for the entire input
-graph. It returns the entire input graph with an additional column containing
-the traversal probability for each edge. Like `get_shortest_path`, it returns a
-`list` object. The first entry is a `data.frame` with all edge IDs, which have
-now two additional columns, which contain the routing probabilities for all
-edges in different formats:
+graph. It returns the entire input graph with additional columns containing the
+global and local traversal probability for each edge. Like `get_shortest_path`,
+it returns a `list` object. The first entry is a `data.frame` with all edge, to
+which have been added two additional columns. They contain the routing
+probabilities for all edges in two different formats:
 
 * `prob`: The local routing probabilities from every vertex to all its
-  neighbouring vertices. These values are the ones originally calculated by in
-  the routing algorithm. The probability densities and expected mean travel
-  distance is derived from them.
+  neighbouring vertices. These values are the ones originally calculated in the
+  routing algorithm. The probability densities and expected mean travel distance
+  is derived from them. Because all values of `prob` add up to 1 on a local
+  scale, they are hard to interpret on a global scale. This is why it is also
+  necessary to calculate the global routing probabilities.
 * `dens`: The global routing probabilities or routing densities. These values
-  are derived from `prob` and indicate how likely an edge on graph will be
+  are derived from `prob` and indicate how likely an edge on the graph will be
   traversed on the way from start to end. As these values are easier to
   interpret than `prob`, they are used for graph visualisation.
 
-The second item in the list is the expected travel distance which is based on
-the calculated traversal probabilities. Its minimal possible value is the length
-of the shortest path and gets higher with increased global entropy, which can be
-done using lower values for $\eta$ (`eta`). Note that the distance rises very
-abrupt for $\eta$ approximating 0. The results section contains more information
-about the effects of $\eta$ on the routing results.
+The second item in the returned list is the expected travel distance which is
+based on the calculated traversal probabilities. Its minimal possible value is
+the length of the shortest path and gets higher with increased global entropy,
+which can be done using lower values for $\eta$ (`eta`). Note that the distance
+rises very abrupt for $\eta$ approximating 0. The results section contains more
+information about the effects of $\eta$ on the routing results.
 
 ```{r eval=FALSE}
 prob <- get_probability (graph, route_start, route_end, eta = 0.9)
@@ -330,10 +401,12 @@ prob <- get_probability (graph, route_start, route_end, eta = 0.7)
 prob$d # 0.2001
 prob <- get_probability (graph, route_start, route_end, eta = 0.3)
 prob$d # 0.2418
+prob <- get_probability (graph, route_start, route_end, eta = 0.01)
+prob$d # 1.3040
 ```
 
-Finally, the routing results can be visualised in a **shiny** **leaflet** web
-map.
+Finally, the routing results can be visualised with the **shiny** **leaflet**
+mapping function.
 
 ```{r eval=FALSE}
 plot_map (prob, path)
@@ -342,25 +415,26 @@ plot_map (prob, path)
 # Results
 
 The following section discusses the results achieved using `osmprob`. It also
-shows performance analysis from real world use cases and further shows the
-influence of $\eta$ on such statistics.
+evaluates performance analysis from real world use cases and further shows the
+influence that different $\eta$ have on such statistics.
 
 ## Routing probabilities
 
 Figure 7 shows the probabilistic routing results on a road graph and shows very
 clearly the influence that different $\eta$ have on the results. The red line on
 the graph indicates the shortest path between a start and end point. The line
-thickness indicates the traversal probability on each edge on the way between
-the same two points. As discussed above, high $\eta$ mean a low global entropy
-and vice versa. Low global entropy means that the proposed edge traversal
-probabilities are higher when they are close to the ideal path. On the map this
-almost looks like the traversal probabilities resembling the shortest path. Only
-very close alternative routes that don't necessitate large detours also have
-elevated probabilities. On the other hand, low $\eta$ lead to the probabilities
-"seeping away" from the ideal path. This can be observed by looking at the edges
-that are quite thin for high $\eta$, but constantly become thicker with smaller
-$\eta$. This effect also implies that the edges with higher probabilities for
-large $\eta$ will decrease in probability as the others around it will increase.
+thickness on the green lines indicates the traversal probability on each edge on
+the way between the same two points. As discussed above, high $\eta$ mean a low
+global entropy and vice versa. Low global entropy means that the proposed edge
+traversal probabilities are higher when they are close to the ideal path. On the
+map this almost looks like the traversal probabilities resembling the shortest
+path. Only very close alternative routes that don't necessitate large detours
+also have elevated probabilities. On the other hand, low $\eta$ lead to the
+probabilities "seeping away" from the ideal path. This can be observed by
+looking at the edges that are quite thin for high $\eta$, but constantly become
+thicker with smaller $\eta$, which is consistent with the initial expectations
+This effect also implies that the edges with higher probabilities for large
+$\eta$ will decrease in probability as the others around it will increase.
 
 ![Figure 7: Varying probabilities for different global entropy parameters](eta.gif)
 
@@ -393,14 +467,57 @@ plt
 
 ## Speed
 
-Figure 9 shows how the calculation time is affected by the graph size. It also
-gives an indication of the large performance difference between probabilistic
-routing and classic shortest path solutions at the example of Dijkstra's
-algorithm. The graph also indicates that different values for $\eta$ also have
-an influence on calculation time. Specifically, low $\eta$ and thus high global
-entropies appear to be leading to longer calculation times.
+Figures 9 and 10 show how the calculation time is affected by the graph size and
+the network distance between start and end point. They also give an indication
+of the performance difference between probabilistic routing and classic shortest
+path solutions at the example of Dijkstra's algorithm. The graphs also indicate
+that different values for $\eta$ may also have an influence on calculation time.
+Specifically, low $\eta$ and thus high global entropies appear to be leading to
+longer calculation times. There are two negative outliers in the probabilistic
+routing calculation times. As they both occurred on graphs with very few
+vertices, these values show how big the influence of graph complexity on routing
+calculation time is.
 
-```{r echo=FALSE, fig.cap="Figure 9: Scalability of probabilistic routing"}
+```{r echo=FALSE, fig.cap="Figure 9: Calculation times for different shortest path alternatives"}
+num <- dim (dat) [1] / dat$region_num %>% unique %>% length
+
+rbn_vals_mn <- vector (length = length (unique (dat$region_num)) * num,
+                       mode = "numeric")
+rbn_vals_mx <- vector (length = length (unique (dat$region_num)) * num,
+                       mode = "numeric")
+
+ct <- 1
+for (i in unique (dat$region_num))
+{
+    rbn_vals_mn [ct:(ct + 6)] <- min (dat$t_prob [dat$region_num == i])
+    rbn_vals_mx [ct:(ct + 6)] <- max (dat$t_prob [dat$region_num == i])
+    ct <- ct + num
+}
+
+ttl <- "Calculation times for network distances
+and values of global entropy"
+legendlab <- substitute (paste ("Global entropy [", eta, "]"))
+
+plt <- ggplot2::ggplot (data = dat) +
+    ggplot2::geom_ribbon (ggplot2::aes (x = d_shortest, ymin = rbn_vals_mn,
+                                        ymax = rbn_vals_mx),
+                          fill = "#81A88D", alpha = 0.3) +
+    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = t_prob,
+                                      colour = factor (eta))) +
+    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = t_shortest,
+                                      colour = "Shortest Path"), size = 1) +
+    ggplot2::labs (title = ttl,
+                   x = "Distance of shortest path [km]",
+                   y = "Time (median of n = 30 runs) [ms]") +
+    ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
+    ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
+                    legend.box.background = ggplot2::element_rect ()) +
+    ggplot2::scale_colour_discrete (name = legendlab)
+
+plt
+```
+
+```{r echo=FALSE, fig.cap="Figure 10: Calculation times for different graph sizes"}
 num <- dim (dat) [1] / dat$region_num %>% unique %>% length
 
 rbn_vals_mn <- vector (length = length (unique (dat$region_num)) * num,
@@ -426,10 +543,10 @@ plt <- ggplot2::ggplot (data = dat) +
                           fill = "#81A88D", alpha = 0.3) +
     ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = t_prob,
                                       colour = factor (eta))) +
-    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = d_shortest,
+    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = t_shortest,
                                       colour = "Shortest Path"), size = 1) +
     ggplot2::labs (title = ttl,
-                   x = "Distance of shortest path [m]",
+                   x = "Number of vertices in graph",
                    y = "Time (median of n = 30 runs) [ms]") +
     ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
     ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
@@ -441,19 +558,27 @@ plt
 
 ## Comparison with shortest path solutions
 
-Figure 10 shows the calculated probabilistic distances for different $\eta$ in
+```{r echo=FALSE}
+flt <- seq (dat$d_shortest)
+sd_short <- dat$d_shortest [seq (1, length (flt), 7)] %>% sd %>% round (3) %>%
+    format (nsmall = 3)
+```
+
+Figure 11 shows the calculated probabilistic distances for different $\eta$ in
 comparison with the shortest path distances. As expected, all probabilistic
 distances are longer than the shortest path. The graph also shows how sensitive
 $\eta$ becomes when approximating 0. Note that a change in $\eta$ from 0.003 to
 0.001 leads to an estimated distance of almost twice the length. Another
 observation that can be made is that the probabilistic distances have high alter
 quite a lot from one another. Table 1 shows the standard deviations of the
-expected distances for different $\eta$. And like the distances, their standard
-deviations are very sensitive to $\eta$. Another possible reason for spikes in
-the probabilistic distances could be the number of vertices in the road graph,
-because a more complex road graph would allow more movement between a start and
-end point than a very simple one would. So on a very simple graph, all movement
-would be restricted on few edges, even with a hight $\eta$.
+expected distances for different $\eta$, which are very high in comparison with
+the standard deviation of the shortest paths (`r sd_short`). And like the
+distances, their standard deviations are very sensitive to $\eta$. Another
+possible reason for the spikes in the probabilistic distances could be the
+number of vertices in the road graph, because a more complex road graph would
+allow more movement between a start and end point than a very simple one would.
+So on a very simple graph, all movement would be restricted on few edges, even
+with high $\eta$.
 
 ```{r echo=FALSE, results = 'asis'}
 v <- aggregate (dat$d_prob, by = list (eta = dat$eta), FUN = sd)
@@ -462,7 +587,7 @@ knitr::kable (v, digits = 3, format = "pandoc",
               caption = "Table 1: Variances in probabilistic distance")
 ```
 
-```{r echo=FALSE, fig.cap="Figure 10: Comparison of probabilistic and shortest path solutions"}
+```{r echo=FALSE, fig.cap="Figure 11: Comparison of probabilistic and shortest path solutions: distance"}
 ttl <- "Distance differences between shortest and probabilistic routes"
 legendlab <- substitute (paste ("Global entropy [", eta, "]"))
 
@@ -486,15 +611,40 @@ plt <- ggplot2::ggplot (data = dat) +
 plt
 ```
 
+```{r echo=FALSE, fig.cap="Figure 12: Comparison of probabilistic and shortest path solutions: graph complexity"}
+ttl <- "Distance differences between shortest and probabilistic routes"
+legendlab <- substitute (paste ("Global entropy [", eta, "]"))
+
+plt <- ggplot2::ggplot (data = dat) +
+    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = d_prob,
+                                      colour = factor (eta)), size = 1) +
+    ggplot2::geom_point (ggplot2::aes (x = n_vtx_comp, y = d_prob),
+                         size = 0.7) +
+    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = d_shortest,
+                                      colour = "Shortest Path"), size = 1.5) +
+    ggplot2::geom_point (ggplot2::aes (x = n_vtx_comp, y = d_shortest),
+                        size = 0.7) +
+    ggplot2::labs (title = ttl,
+                   x = "Number of vertices",
+                   y = "Probabilistic distance [km]") +
+    ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
+    ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
+                    legend.box.background = ggplot2::element_rect ()) +
+    ggplot2::scale_colour_discrete (name = legendlab)
+
+plt
+```
+
 ## Limitations
 
 In some test regions it was not possible to calculate probabilistic routes due
 to unexpected behaviour of `osmprob`. This includes program crashes, as well as
 the generation of unreasonably high values of estimated travel distances. The
 reasons leading these effects are yet to be identified. One possible explanation
-could that under certain circumstances the software is attempting to perform
+could be that under certain circumstances the software is attempting to perform
 routing on ill-formed graphs. This may happen when a graph is complete, but
-certain vertices are inaccessible due to directed one-way edges leading to them.
+certain vertices are inaccessible due to directed edges leading only away from
+and not towards them.
 
 # Discussion and outlook
 
