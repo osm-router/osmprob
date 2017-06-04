@@ -26,7 +26,8 @@
 #' \dontrun{
 #' start_pt <- (11.580, 48.140)
 #' end_pt <- (11.585, 48.145)
-#' graph <- download_graph (start_pt, end_pt)
+#' graph <- download_graph (start_pt = start_pt, end_pt = end_pt,
+#' weighting_profile = "bicycle", buffer = 0)
 #' }
 download_graph <- function (start_pt, end_pt, weighting_profile = "bicycle",
                             buffer = 0)

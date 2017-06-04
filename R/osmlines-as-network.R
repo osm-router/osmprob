@@ -13,8 +13,8 @@
 #' \dontrun{
 #' q <- osmdata::opq (bbox = c (11.58, 48.14, 11.585, 48.145))
 #' q <- osmdata::add_feature (q, key = 'highway')
-#' x <- osmdata::osmdata_sf(q)
-#' net <- osmlines_as_network (x)
+#' lines <- osmdata::osmdata_sf(q)
+#' net <- osmlines_as_network (lns = lines, profile_name = "bicycle")
 #' }
 osmlines_as_network <- function (lns, profile_name = "bicycle")
 {

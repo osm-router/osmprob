@@ -27,7 +27,7 @@ start_pt <- graph$from_id [1]
 end_pt <- graph$to_id [100]
 prob <- get_probability (graph, start_pt, end_pt)
 short <- get_shortest_path (graph, start_pt, end_pt)
-plot_map (prob, short)
+plot_map (graph = prob, shortest = short)
 }
 
 }
