@@ -5,9 +5,10 @@ date: "`r Sys.Date()`"
 output:
     html_document:
         toc: true
+        toc_float: true
         toc_depth: 2
         number_sections: true
-        theme: journal
+        theme: readable
 header-includes: 
     - \usepackage{tikz}
 link-citations: true
