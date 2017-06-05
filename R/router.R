@@ -71,8 +71,8 @@ get_probability <- function (graphs, start_node, end_node, eta=1)
     check_graph_format (graphs)
     netdf <- graphs$compact
 
-    start_node %<>% as.character %>% as.numeric
-    end_node %<>% as.character %>% as.numeric
+    start_node %<>% as.character
+    end_node %<>% as.character
 
     probability <- r_router_prob (graphs, start_node, end_node, eta)
 
@@ -112,8 +112,8 @@ get_shortest_path <- function (graphs, start_node, end_node)
     netdf <- data.frame (netdf$from_id, netdf$to_id, netdf$d_weighted)
     cnames <- c ('from_id', 'to_id', 'd_weighted')
     names (netdf) <- cnames
-    netdf$from_id <- as.numeric (as.character (netdf$from_id))
-    netdf$to_id <- as.numeric (as.character (netdf$to_id))
+    netdf$from_id %<>% as.character
+    netdf$to_id %<>% as.character
     allids <- c (netdf$from_id, netdf$to_id)
     allids <- unique (sort (allids))
     if (!start_node %in% allids)
@@ -157,13 +157,13 @@ r_router_prob <- function (graph, start_node, end_node, eta)
                          'xto' = graph$compact$to_id,
                          'd' = graph$compact$d,
                          'd_weighted' = graph$compact$d_weighted)
-    netdf$xfr %<>% as.character %>% as.numeric
-    netdf$xto %<>% as.character %>% as.numeric
+    netdf$xfr %<>% as.character
+    netdf$xto %<>% as.character
     allids <- c (netdf$xfr, netdf$xto) %>% sort %>% unique 
 
     # Insert connection to first node
-    node1_id <- min (allids) - 1
-    netdf <- rbind (c (node1_id, start_node, 0), netdf)
+    node1_id <- allids %>% sort %>% tail (1) %>% paste0 ("a")
+    netdf <- rbind (c (node1_id, start_node, 0, 0), netdf)
     allids <- c (node1_id, allids)
     origin <- 1
     dest <- which (allids == end_node)
@@ -172,6 +172,8 @@ r_router_prob <- function (graph, start_node, end_node, eta)
     netdf <- cbind ('ifr' = match (netdf$xfr, allids),
                     'ito' = match (netdf$xto, allids),
                     netdf)
+    netdf$d %<>% as.numeric
+    netdf$d_weighted %<>% as.numeric
 
     # Then begin the actual routing calculation
     nv <- length (allids)

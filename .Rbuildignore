@@ -9,3 +9,4 @@ makefile$
 ^appveyor\.yml$
 ^CONDUCT\.md$
 ^docs$
+^_pkgdown.yml
