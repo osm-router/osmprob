@@ -4,7 +4,7 @@
 \name{osmprob}
 \alias{osmprob}
 \alias{osmprob-package}
-\title{Description: Calculates probabilistic routes on a OSM street graph}
+\title{Calculates probabilistic routes on a OSM street graph}
 \description{
 Downloads and preprocesses OpenStreetMap (OSM) data using \code{osmdata} and
 performs probabilistic routing on the graph. The result is a

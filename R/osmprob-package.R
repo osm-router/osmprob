@@ -1,4 +1,4 @@
-#' Description: Calculates probabilistic routes on a OSM street graph
+#' Calculates probabilistic routes on a OSM street graph
 #'
 #' Downloads and preprocesses OpenStreetMap (OSM) data using \code{osmdata} and
 #' performs probabilistic routing on the graph. The result is a
