@@ -23,9 +23,13 @@ Calculate the shortest path between two nodes on a graph
 }
 \examples{
 \dontrun{
-  dat <- readRDS ("../compact-ways-munich.Rda") \%>\% make_compact_graph
-  st <- dat$compact$from_id [1]
-  en <- dat$compact$to_id [10]
-  get_shortest_path (graphs = dat, start_node = st, end_node = en)
+  graph <- road_data_sample
+  start_pt <- c (11.603,48.163)
+  end_pt <- c (11.608,48.167)
+  pts <- select_vertices_by_coordinates (graph, start_pt, end_pt)
+  route_start <- pts[1]
+  route_end <- pts [2]
+  get_shortest_path (graphs = graph, start_node = route_start,
+  end_node = route_end)
 }
 }

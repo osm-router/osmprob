@@ -21,7 +21,7 @@
 #'                               1, 2, 4, 3, 5, 0, 2, 4),
 #'                      d = c (7., 9., 14., 7., 10., 15., 9., 10., 11., 2.,
 #'                             15., 11., 6., 6., 9., 14., 2., 9.))
-#' osm_router (netdf, 1, 5)
+#' osm_router (netdf = netdf, start_node = 1, end_node = 5, eta = 1)
 #' }
 osm_router <- function (netdf, start_node, end_node, eta=1)
 {
@@ -57,10 +57,14 @@ osm_router <- function (netdf, start_node, end_node, eta=1)
 #'
 #' @examples
 #' \dontrun{
-#'   dat <- readRDS ("../compact-ways-munich.Rda") %>% make_compact_graph
-#'   st <- dat$compact$from_id [1]
-#'   en <- dat$compact$to_id [10]
-#'   get_probability (dat, st, en)
+#'   graph <- road_data_sample
+#'   start_pt <- c (11.603,48.163)
+#'   end_pt <- c (11.608,48.167)
+#'   pts <- select_vertices_by_coordinates (graph, start_pt, end_pt)
+#'   route_start <- pts[1]
+#'   route_end <- pts [2]
+#'   get_probability (graphs = graph, start_node = route_start,
+#'   end_node = route_end, eta = 0.6)
 #' }
 get_probability <- function (graphs, start_node, end_node, eta=1)
 {
@@ -92,10 +96,14 @@ get_probability <- function (graphs, start_node, end_node, eta=1)
 #'
 #' @examples
 #' \dontrun{
-#'   dat <- readRDS ("../compact-ways-munich.Rda") %>% make_compact_graph
-#'   st <- dat$compact$from_id [1]
-#'   en <- dat$compact$to_id [10]
-#'   get_shortest_path (graphs = dat, start_node = st, end_node = en)
+#'   graph <- road_data_sample
+#'   start_pt <- c (11.603,48.163)
+#'   end_pt <- c (11.608,48.167)
+#'   pts <- select_vertices_by_coordinates (graph, start_pt, end_pt)
+#'   route_start <- pts[1]
+#'   route_end <- pts [2]
+#'   get_shortest_path (graphs = graph, start_node = route_start,
+#'   end_node = route_end)
 #' }
 get_shortest_path <- function (graphs, start_node, end_node)
 {
