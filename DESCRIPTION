@@ -1,7 +1,7 @@
 Package: osmprob
 Type: Package
 Title: Calculate Probabilistic Routes
-Version: 1.0
+Version: 0.0.1
 Authors@R: c(
     person ("Andreas", "Petutschnig", email="andreas@petutschnig.de", role=c("aut", "cre")),
     person ("Mark", "Padgham", role="aut"))

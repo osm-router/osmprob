@@ -345,7 +345,7 @@ devtools::install ("osm-router/osmprob")
 The only input needed to download street data are the coordinates of the start
 and end points on the graph. The `download_graph` function builds a bounding box
 including an optional buffer around the points and downloads all OpenStreetMap
-data tagged as `key = highway`[^4] in it.
+data tagged as `key = highway`[^5] in it.
 
 ```{r eval=FALSE}
 start_pt <- c (10.5350035429,47.6034937672)
