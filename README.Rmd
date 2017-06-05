@@ -40,10 +40,14 @@ devtools::check ('.')
 
 ## Test road graph
 
-To prepare the graph for routing, all non-accessible edges are removed using `make_compact_graph ()`, so only the largest connected part of the
-original graph remains. The resulting graph is stored as a `data.frame`. A sample can be found in `tests/compact-ways-munich.Rda`.
-
-After the preprocessing is done, `plotGraph ()` can be used to display the compact sample graph in a `shiny`/`leaflet` web app.
+Downloading and preprocessing the graph is done in the function `download_graph
+()`. To prepare the graph for routing, all non-accessible edges are removed and
+vertices not needed to maintain the graph's topology are removed. The resulting
+data is a `list` containing the original graph, the compact graph and a map of
+edge IDs that connect the two graphs to each other. A preprocessed sample graph
+can be acessed with `road_data_sample`. After the preprocessing and routing is
+done, `plot_map ()` can be used to display the traversal probabilities and
+shortest path in a `shiny`/`leaflet` web app.
 
 ### From sample data
 
