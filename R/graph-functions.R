@@ -7,16 +7,7 @@
 #' @param graph \code{data.frame} of the graph to be processed.
 #' @return \code{data.frame} containing the output graph.
 #'
-#' @examples
-#' \dontrun{
-#' q <- osmdata::opq (bbox = c (11.58, 48.14, 11.585, 48.145))
-#' q <- osmdata::add_feature (q, key = 'highway')
-#' x <- osmdata::osmdata_sf(q)
-#' netw <- osmlines_as_network (x)
-#' graph <- make_compact_graph (graph = netw)
-#' }
-#'
-#' @export
+#' @noRd
 make_compact_graph <- function (graph)
 {
     if (!is (graph, 'data.frame'))

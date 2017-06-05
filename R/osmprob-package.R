@@ -1,4 +1,12 @@
-#' osmprob
+#' Description: Calculates probabilistic routes on a OSM street graph
+#'
+#' Downloads and preprocesses OpenStreetMap (OSM) data using \code{osmdata} and
+#' performs probabilistic routing on the graph. The result is a
+#' \code{data.frame}, where each row represents an edge of the graph that has
+#' one column containing the local and one column containing the global
+#' traversal probability. This data can either be used for further analysis or
+#' displayed in a web broser using a built-in \code{shiny}/\code{leaflet}
+#' function.
 #'
 #' @name osmprob
 #' @docType package

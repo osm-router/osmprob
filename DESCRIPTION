@@ -18,8 +18,7 @@ Imports:
     osmdata,
     RColorBrewer,
     sf,
-    shiny,
-    covr
+    shiny
 LinkingTo:
     Rcpp,
     RcppArmadillo
