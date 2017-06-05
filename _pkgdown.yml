@@ -1,0 +1,45 @@
+title: osmprob
+
+template:
+  params:
+    bootswatch: readable
+
+navbar:
+  title: osmprob
+  type: default
+  left:
+  - text: Reference
+    href: reference/index.html
+  - text: Vignette
+    href: articles/index.html
+  right:
+  - icon: fa-github fa-lg
+    href: https://github.com/osm-router/osmprob
+
+reference:
+- title: Package Description
+  contents:
+  - '`osmprob`'
+- title: Data handling
+  desc: Download and preprocess data; find start and end points on the graph
+  contents:
+  - '`download_graph`'
+  - '`select_vertices_by_coordinates`'
+- title: Routing
+  desc: Shortest path and probabilistic routing functions
+  contents:
+  - '`get_probability`'
+  - '`get_shortest_path`'
+  - '`osm_router`'
+- title: Visualisation
+  contents:
+  - '`plot_map`'
+- title: Data
+  desc: Sample data and weighting profiles for routing
+  contents:
+  - '`road_data_sample`'
+  - '`weighting_profiles`'
+
+articles:
+- title: Package Description
+  contents: '`osmprob`'

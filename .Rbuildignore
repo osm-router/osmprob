@@ -8,3 +8,4 @@ makefile$
 ^tmux-start.bash$
 ^appveyor\.yml$
 ^CONDUCT\.md$
+^docs$
