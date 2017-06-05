@@ -13,9 +13,9 @@ test_that ("osm_router", {
 })
 
 test_that ("get_probability", {
-    graph <- readRDS ("../compact-ways-munich.rds")
-    start_pt <- c (11.58050,48.13986)
-    end_pt <- c (11.58076, 48.14408)
+    graph <- road_data_sample
+    start_pt <- c (11.603, 48.163)
+    end_pt <- c (11.608, 48.167)
     pts <- select_vertices_by_coordinates (graph, start_pt, end_pt)
     route_start <- pts[1]
     route_end <- pts [2]
@@ -28,9 +28,9 @@ test_that ("get_probability", {
 })
 
 test_that ("get_shortest_path", {
-    graph <- readRDS ("../compact-ways-munich.rds")
-    start_pt <- c (11.58050,48.13986)
-    end_pt <- c (11.58076, 48.14408)
+    graph <- road_data_sample
+    start_pt <- c (11.603, 48.163)
+    end_pt <- c (11.608, 48.167)
     pts <- select_vertices_by_coordinates (graph, start_pt, end_pt)
     route_start <- pts[1]
     route_end <- pts [2]

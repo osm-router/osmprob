@@ -1,4 +1,4 @@
-RFILE = routing-algorithm
+RFILE = README
 
 all: knith open 
 

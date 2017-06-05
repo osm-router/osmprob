@@ -40,15 +40,6 @@ devtools::check ('.')
 
 ## Test road graph
 
-A sample graph with OSM data can be found in `tests/osm-ways-munich`. It was downloaded and saved with
-[osmdata](https://github.com/osmdatar/osmdata) like this:
-
-```{r eval=FALSE}
-q <- osmdata::opq (bbox = c (11.58, 48.14, 11.585, 48.145))
-q <- osmdata::add_feature (q, key = 'highway')
-dat <- osmdata::osmdata_xml (q, "osm-ways-munich.osm")
-```
-
 To prepare the graph for routing, all non-accessible edges are removed using `make_compact_graph ()`, so only the largest connected part of the
 original graph remains. The resulting graph is stored as a `data.frame`. A sample can be found in `tests/compact-ways-munich.Rda`.
 
@@ -56,17 +47,16 @@ After the preprocessing is done, `plotGraph ()` can be used to display the compa
 
 ### From sample data
 
-To load, process and display a sample graph, run
+To load, process and display the sample graph included in the package, run
 ```{r eval=FALSE}
-devtools::load_all (export_all = FALSE)
-graph <- readRDS ("tests/compact-ways-munich.rds")
-start_pt <- c (11.58, 48.14)
-end_pt <- c (11.585, 48.145)
+graph <- road_data_sample
+start_pt <- c (11.603, 48.163)
+end_pt <- c (11.608, 48.167)
 pts <- select_vertices_by_coordinates (graph, start_pt, end_pt)
 route_start <- pts[1]
 route_end <- pts [2]
 path <- get_shortest_path (graph, route_start, route_end)
-prob <- get_probability (graph, route_start, route_end, eta = 1)
+prob <- get_probability (graph, route_start, route_end, eta = 0.6)
 plot_map (prob, path)
 ```
 
@@ -74,14 +64,14 @@ plot_map (prob, path)
 
 ```{r eval=FALSE}
 devtools::load_all (export_all = FALSE)
-start_pt <- c (11.58, 48.14)
-end_pt <- c (11.585, 48.145)
+start_pt <- c (11.603, 48.163)
+end_pt <- c (11.608, 48.167)
 graph <- download_graph (start_pt, end_pt)
 pts <- select_vertices_by_coordinates (graph, start_pt, end_pt)
 route_start <- pts[1]
 route_end <- pts [2]
 path <- get_shortest_path (graph, route_start, route_end)
-prob <- get_probability (graph, route_start, route_end, eta = 1)
+prob <- get_probability (graph, route_start, route_end, eta = 0.6)
 plot_map (prob, path)
 ```
 

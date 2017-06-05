@@ -23,7 +23,7 @@ osmlines_as_network <- function (lns, profile_name = "bicycle")
     else if (!is (lns$geometry, 'sfc_LINESTRING'))
         stop ("lns must be an 'sf' collection of 'LINESTRING' objects")
 
-    profiles <- osmprob::weightingProfiles
+    profiles <- osmprob::weighting_profiles
     profiles <- profiles [profiles$name == profile_name, ]
     res <- rcpp_lines_as_network (lns, profiles)
     data.frame (

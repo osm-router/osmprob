@@ -52,8 +52,10 @@ popup <- function (fromid, toid, weight, prob)
 {
   paste ("<b>From ID: </b>", fromid,
          "</br><b>To ID: </b>", toid,
-         "</br><b>Weight: </b>", format (round (as.numeric (weight), 3), nsmall = 3),
-         "</br><b>Probability: </b>", format (round (as.numeric (prob), 3), nsmall = 3))
+         "</br><b>Weight: </b>", format (round (as.numeric (weight), 3),
+                                         nsmall = 3),
+         "</br><b>Probability: </b>", format (round (as.numeric (prob), 3),
+                                              nsmall = 3))
 }
 
 #' Generate \code{leaflet} HTML widget containing a web map
@@ -80,7 +82,7 @@ get_map <- function (dat, short)
                       options = leaflet::leafletOptions ()) %>%
     leaflet::addProviderTiles ('CartoDB.DarkMatter', group = "base") %>%
     leaflet::addPolylines (color = ~pal (print_weights), opacity = 1.0,
-                           weight = getWidth (3, 8, dat$dens),
+                           weight = get_width (3, 8, dat$dens),
                            popup = popup (dat$from_id, dat$to_id,
                                           dat$d_weighted, dat$dens),
                            group = grp_prb) %>%
@@ -109,7 +111,7 @@ get_map <- function (dat, short)
 #' @param weight \code{numeric} value of edge weight.
 #'
 #' @noRd
-getWidth <- function (base, fac, weight) { return (base + fac * weight) }
+get_width <- function (base, fac, weight) { return (base + fac * weight) }
 
 server <- function (input, output, session)
 {
