@@ -38,7 +38,7 @@ osm_router <- function (netdf, start_node, end_node, eta=1)
         colnames (netdf) <- cnames
 
     eta <- eta * nrow (netdf)
-    rcpp_router (netdf, as.integer (start_node), as.integer (end_node), 
+    rcpp_router (netdf, as.integer (start_node), as.integer (end_node),
                  as.numeric (eta))
 }
 
@@ -121,11 +121,11 @@ get_shortest_path <- function (graphs, start_node, end_node)
     if (!end_node %in% allids)
         stop ('end_node is not part of netdf')
     netdf$from_id <- vapply (netdf$from_id, function (x)
-                             { which (allids == x) -1 }, 0.)
+                             which (allids == x) - 1, 0.)
     netdf$to_id <- vapply (netdf$to_id, function (x)
-                           { which (allids == x) -1 }, 0.)
-    start_node <- which (allids == start_node) -1
-    end_node <- which (allids == end_node) -1
+                           which (allids == x) - 1, 0.)
+    start_node <- which (allids == start_node) - 1
+    end_node <- which (allids == end_node) - 1
     path <- rcpp_router_dijkstra (netdf, start_node, end_node)
     path_compact <- allids [path + 1]
     mapped <- map_shortest (graphs = graphs, shortest = path_compact)
@@ -159,13 +159,12 @@ r_router_prob <- function (graph, start_node, end_node, eta)
                          'd_weighted' = graph$compact$d_weighted)
     netdf$xfr %<>% as.character
     netdf$xto %<>% as.character
-    allids <- c (netdf$xfr, netdf$xto) %>% sort %>% unique 
+    allids <- c (netdf$xfr, netdf$xto) %>% sort %>% unique
 
     # Insert connection to first node
     node1_id <- allids %>% sort %>% tail (1) %>% paste0 ("a")
     netdf <- rbind (c (node1_id, start_node, 0, 0), netdf)
     allids <- c (node1_id, allids)
-    origin <- 1
     dest <- which (allids == end_node)
 
     # And add columns of sequential indices for each node
@@ -217,7 +216,7 @@ r_router_prob <- function (graph, start_node, end_node, eta)
     dij <- 0
     if (z1n > 1e-300)
     {
-        N <- (Matrix::Diagonal (nv, as.vector (z1)) %*% W %*% 
+        N <- (Matrix::Diagonal (nv, as.vector (z1)) %*% W %*%
               Matrix::Diagonal(nv, as.vector (zn))) / z1n
 
         Nvec <- N [indx] [-1] # rm 1st element

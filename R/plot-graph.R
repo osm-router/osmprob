@@ -24,20 +24,23 @@ plot_map <- function (graph, shortest)
 {
     # graph and shortest_path can't be passed as a parameter, so it is passed to
     # the server function via an environment variable
-    input_graph <<- graph [[1]]
-    shortest_path <<- shortest [[1]]
-    shiny::shinyApp(ui, server)
+    input_graph <<- graph [[1]] #nolint
+    shortest_path <<- shortest [[1]] #nolint
+    shiny::shinyApp (ui, server) #nolint
 }
 
 input_graph <- ""
 shortest_path <- ""
 
-ln_color <- function (x, color_by) {leaflet::colorQuantile (x, color_by, n = 9)}
+ln_color <- function (x, color_by)
+{
+    leaflet::colorQuantile (x, color_by, n = 9)
+}
 
 ui <- shiny::bootstrapPage (
   shiny::tags$style (type = "text/css", "html, body {width:100%;height:100%}
               .checkbox, .control-label{color: #FFFFFF}"),
-  leaflet::leafletOutput ("map", width = "100%", height = "100%")
+      leaflet::leafletOutput ("map", width = "100%", height = "100%") #nolint
 )
 
 #' Generate text for edge popup fields on the graph
@@ -72,7 +75,7 @@ get_map <- function (dat, short)
     grp_srt <- "Shortest Path"
     grp_se <- "Start and end points"
     colorscheme <- "YlGnBu"
-    print_weights <- dat$d_weighted / sf::st_length (dat) 
+    print_weights <- dat$d_weighted / sf::st_length (dat)
     pal <- ln_color (colorscheme, print_weights)
     start_pt <- sf::st_coordinates (short [1, ])[1, 2:1]
     end_pt <- sf::st_coordinates (utils::tail (short, 1))[1, 2:1]
@@ -111,12 +114,15 @@ get_map <- function (dat, short)
 #' @param weight \code{numeric} value of edge weight.
 #'
 #' @noRd
-get_width <- function (base, fac, weight) { return (base + fac * weight) }
+get_width <- function (base, fac, weight)
+{
+    return (base + fac * weight)
+}
 
 server <- function (input, output, session)
 {
-  graph <- get_graph (input_graph)
-  short <- get_graph (shortest_path)
+  graph <- get_graph (input_graph) #nolint
+  short <- get_graph (shortest_path) #nolint
 
   output$map <- leaflet::renderLeaflet ({
     get_map (graph, short)

@@ -12,16 +12,16 @@ get_graph <- function (dat)
 
     from <- cbind (dat$from_lon, dat$from_lat)
     to <- cbind (dat$to_lon, dat$to_lat)
-    fromTo <- cbind (from, to)
-    graphLines <- list ("LINESTRING", dim (fromTo) [1])
-    for (i in 1:dim (fromTo) [1])
+    from_to <- cbind (from, to)
+    graph_lines <- list ("LINESTRING", dim (from_to) [1])
+    for (i in 1:dim (from_to) [1])
     {
-        pair <- fromTo [i,]
-        graphLines [[i]] <- sf::st_linestring (rbind (c (pair [1], pair [2]),
+        pair <- from_to [i, ]
+        graph_lines [[i]] <- sf::st_linestring (rbind (c (pair [1], pair [2]),
                                                       c (pair [3], pair [4])))
     }
 
-    graph <- sf::st_sfc (graphLines, crs = 4326)
+    graph <- sf::st_sfc (graph_lines, crs = 4326)
     lt_ln <- c ("from_lat", "from_lon", "to_lat", "to_lon")
     dat [lt_ln] <- NULL
     graph <- sf::st_sf (graph, dat)
@@ -42,10 +42,10 @@ get_graph <- function (dat)
 select_vertices_by_coordinates <- function (graph, start_coords, end_coords)
 {
     com <- graph$compact
-    d_start <- sqrt ((start_coords [1] - com$from_lon)^2 +
-                     (start_coords [2] - com$from_lat)^2)
-    d_end <- sqrt ((end_coords [1] - com$to_lon)^2 +
-                     (end_coords [2] - com$to_lat)^2)
+    d_start <- sqrt ( (start_coords [1] - com$from_lon) ^ 2 +
+                     (start_coords [2] - com$from_lat) ^ 2)
+    d_end <- sqrt ( (end_coords [1] - com$to_lon) ^ 2 +
+                     (end_coords [2] - com$to_lat) ^ 2)
 
     st_index <- which.min (d_start)
     en_index <- which.min (d_end)

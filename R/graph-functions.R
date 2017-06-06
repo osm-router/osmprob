@@ -55,17 +55,17 @@ map_shortest <- function (graphs, shortest)
     path <- data.frame (matrix (ncol = length (nms), nrow = dim (map) [1]))
     names (path) <- nms
     n <- 1
-    for (i in seq_along (ways [,1]))
+    for (i in seq_along (ways [, 1]))
     {
-        way <- ways [i,]
-        eId <- comp$edge_id [comp$from_id == way [1] & comp$to_id == way [2]]
-        oIds <- map$id_original [map$id_compact == eId]
-        for (oId in oIds)
+        way <- ways [i, ]
+        e_id <- comp$edge_id [comp$from_id == way [1] & comp$to_id == way [2]]
+        o_ids <- map$id_original [map$id_compact == e_id]
+        for (o_id in o_ids)
         {
-            orig_edge <- orig [orig$edge_id == oId, ]
+            orig_edge <- orig [orig$edge_id == o_id, ]
             if (dim (orig_edge) [1] == 1)
             {
-                path [n,] <- orig_edge
+                path [n, ] <- orig_edge
                 n <- n + 1
             }
         }
