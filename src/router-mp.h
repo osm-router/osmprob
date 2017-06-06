@@ -65,11 +65,11 @@ typedef std::map <vertex_t, std::vector <neighbor> > adjacency_list_t;
 class Graphmp
 {
     protected:
-        const vertex_t _start_node, _end_node;
-        unsigned _num_vertices;
-        const double _eta; // The entropy parameter
         const std::vector <vertex_t> _idfrom, _idto;
         const std::vector <weight_t> _d;
+        const vertex_t _start_node, _end_node;
+        const double _eta; // The entropy parameter
+        unsigned _num_vertices;
 
     public:
         std::set <vertex_t> all_nodes;
@@ -124,7 +124,7 @@ class Graphmp
         void make_n_mat ();
         void make_hxv_vecs ();
         void iterate_q_mat ();
-        int calculate_q_mat (double tol, unsigned max_iter);
+        unsigned calculate_q_mat (double tol, unsigned max_iter);
 };
 
 
@@ -143,7 +143,7 @@ unsigned Graphmp::fillGraph ()
     std::vector <weight_t> d = return_d ();
     std::vector <neighbor> nblist;
 
-    for (int i=0; i<idfrom.size (); i++)
+    for (unsigned i=0; i<idfrom.size (); i++)
     {
         all_nodes.insert (idfrom [i]);
         if (adjlist.find (idfrom [i]) != adjlist.end ())

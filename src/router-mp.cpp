@@ -46,7 +46,7 @@ void Graphmp::make_dq_mats ()
     /* the diagonal of d_mat is 0, otherwise the first row contains only one
      * finite entry for escape from start_node. The last column similarly
      * contains only one finite entry for absorption by end_node. */
-    const unsigned num_vertices = return_num_vertices ();
+    static const unsigned num_vertices = return_num_vertices ();
     //const unsigned start_node = return_start_node ();
     //const unsigned end_node = return_end_node ();
     const unsigned dstart_node = std::distance (all_nodes.begin (),
@@ -60,8 +60,9 @@ void Graphmp::make_dq_mats ()
     q_mat.zeros (num_vertices + 1, num_vertices + 1);
 
     //unsigned q_sums [num_vertices] = {0}; // fails on travis
-    unsigned q_sums [num_vertices]; // Note: 1 shorter than q_mat
-    for (int i=0; i<num_vertices; i++)
+    //unsigned q_sums [num_vertices]; // Note: 1 shorter than q_mat
+    unsigned *q_sums = new unsigned [num_vertices];
+    for (unsigned i=0; i<num_vertices; i++)
         q_sums [i] = 0;
 
     for (auto const &it1 : adjlist)
@@ -88,6 +89,8 @@ void Graphmp::make_dq_mats ()
     q_mat (0, dstart_node + 1) = 1.0;
     q_mat.row (dend_node + 1) = q_mat.row (dend_node + 1) * 
         q_sums [dend_node] / (q_sums [dend_node] + 1.0);
+
+    delete [] q_sums;
 }
 
 
@@ -178,14 +181,14 @@ void Graphmp::iterate_q_mat ()
  ************************************************************************
  ************************************************************************/
 
-int Graphmp::calculate_q_mat (double tol, unsigned max_iter)
+unsigned Graphmp::calculate_q_mat (double tol, unsigned max_iter)
 {
-    int nloops = 0; 
+    unsigned nloops = 0; 
 
     arma::mat q_mat_old;
 
     double delta = 1.0;
-    while (delta > tol & nloops < max_iter)
+    while (delta > tol && nloops < max_iter)
     {
         q_mat_old = q_mat;
         make_hxv_vecs ();
@@ -252,7 +255,7 @@ Rcpp::NumericMatrix rcpp_router (Rcpp::DataFrame netdf,
     // Then fill distances from start to end nodes
     std::vector <weight_t> dout;
     dout.reserve (path.size ());
-    for (int i=0; i<path.size (); i++)
+    for (unsigned i=0; i<path.size (); i++)
         dout.push_back (min_distance [i + 1]);
 
     Rcpp::NumericMatrix res (path.size (), 2);
@@ -292,7 +295,10 @@ Rcpp::NumericVector rcpp_router_prob (Rcpp::DataFrame netdf,
 
     Graphmp g (idfrom, idto, d, start_node, end_node, eta);
 
-    int nloops = g.calculate_q_mat (1.0e-6, 1000000);
+    const unsigned max_iter = 1000000;
+    unsigned nloops = g.calculate_q_mat (1.0e-6, max_iter);
+    if (nloops > max_iter)
+        throw std::runtime_error ("Routing algorithm did not converge");
     // q_mat then has to have first row and first col removed
     const int s = g.q_mat.n_rows;
     g.q_mat = g.q_mat.submat (1, 1, s - 1, s - 1);
