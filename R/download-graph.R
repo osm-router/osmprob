@@ -40,6 +40,26 @@ download_graph <- function (start_pt, end_pt, weighting_profile = "bicycle",
         make_compact_graph
 }
 
+shiftx180 <- function (x)
+{
+    while (x > 180)
+        x <- x - 180
+    while (x < -180)
+        x <- x + 180
+
+    return (x)
+}
+
+shifty90 <- function (y)
+{
+    while (y > 90)
+        y <- y - 90
+    while (y < -90)
+        y <- y + 90
+
+    return (y)
+}
+
 make_bbox <- function (start_pt, end_pt, buffer)
 {
     buffer <- max (buffer, 0)
@@ -54,9 +74,13 @@ make_bbox <- function (start_pt, end_pt, buffer)
     if (end_pt [1] < -180 | end_pt [1] > 180)
         stop ("Longitude of end_pt is invalid.")
 
-    minx <- max (min (start_pt [1], end_pt [1]) * 1 - buffer, -180)
-    miny <- max (min (start_pt [2], end_pt [2]) * 1 - buffer, -90)
-    maxx <- min (max (start_pt [1], end_pt [1]) * 1 + buffer, 180)
-    maxy <- min (max (start_pt [2], end_pt [2]) * 1 + buffer, 90)
+    dx <- abs (start_pt [1] - end_pt [1]) * buffer
+    dy <- abs (start_pt [2] - end_pt [2]) * buffer
+
+    minx <- shiftx180 (min (start_pt [1], end_pt [1]) - dx)
+    maxx <- shiftx180 (max (start_pt [1], end_pt [1]) + dx)
+    miny <- shifty90 (min (start_pt [2], end_pt [2]) - dy)
+    maxy <- shifty90 (max (start_pt [2], end_pt [2]) + dy)
+
     c (minx, miny, maxx, maxy)
 }
