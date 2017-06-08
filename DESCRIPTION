@@ -23,14 +23,16 @@ LinkingTo:
     Rcpp,
     RcppArmadillo
 URL: https://github.com/osm-router/osmprob
-BugReports: https://github.com/osm-router/osmprob
+BugReports: https://github.com/osm-router/osmprob/issues
 RoxygenNote: 6.0.1
 SystemRequirements: C++11
 Suggests:
     geosphere,
-    testthat,
+    ggplot2,
+    inflection,
     knitr,
-    rmarkdown
+    rmarkdown,
+    testthat,
 LazyData: true
 VignetteBuilder: knitr
 Remotes: jimhester/covr
