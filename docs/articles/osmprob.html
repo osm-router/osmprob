@@ -57,7 +57,7 @@
       <h1>Introduction to osmprob</h1>
                         <h4 class="author">Andreas Petutschnig</h4>
             
-            <h4 class="date">2017-06-05</h4>
+            <h4 class="date">2017-06-08</h4>
           </div>
 
     
@@ -291,25 +291,26 @@ prob$d <span class="co"># 1.3040</span></code></pre></div>
 <div id="results" class="section level1">
 <h1 class="hasAnchor">
 <a href="#results" class="anchor"></a>Results</h1>
-<p>The following section discusses the results achieved using <code>osmprob</code>. It also evaluates performance analysis from real world use cases and further shows the influence that different <span class="math inline">\(\eta\)</span> have on such statistics. The tests were run on 18 different randomly selected test regions. To reduce the chance of faulty outliers, the results of all speed measurements given are the median time of runs.</p>
+<p>The following section discusses the results achieved using <code>osmprob</code>. It also evaluates performance analysis from real world use cases and further shows the influence that different <span class="math inline">\(\eta\)</span> have on such statistics. The tests were run on 18 different randomly selected test regions, applying 56 different values for <span class="math inline">\(\eta\)</span> in each case. To reduce the chance of faulty outliers, the results of all speed measurements given are the median time of runs.</p>
 <div id="routing-probabilities" class="section level2">
 <h2 class="hasAnchor">
 <a href="#routing-probabilities" class="anchor"></a>Routing probabilities</h2>
-<p>Figure 7 shows the probabilistic routing results on a road graph and shows very clearly the influence that different <span class="math inline">\(\eta\)</span> have on the results. The red line on the graph indicates the shortest path between a start and end point. The line thickness on the green lines indicates the traversal probability on each edge on the way between the same two points. As discussed above, high <span class="math inline">\(\eta\)</span> mean a low global entropy and vice versa. Low global entropy means that the proposed edge traversal probabilities are higher when they are close to the ideal path. On the map this almost looks like the traversal probabilities resembling the shortest path. Only very close alternative routes that don’t necessitate large detours also have elevated probabilities. On the other hand, low <span class="math inline">\(\eta\)</span> lead to the probabilities “seeping away” from the ideal path. This can be observed by looking at the edges that are quite thin for high <span class="math inline">\(\eta\)</span>, but constantly become thicker with smaller <span class="math inline">\(\eta\)</span>, which is consistent with the initial expectations This effect also implies that the edges with higher probabilities for large <span class="math inline">\(\eta\)</span> will decrease in probability as the others around it will increase.</p>
+<p>Figure 7 shows the probabilistic routing results on a road graph and shows very clearly the influence that different <span class="math inline">\(\eta\)</span> have on the results. The red line on the graph indicates the shortest path between a start and end point. The line thickness on the green lines indicates the traversal probability on each edge on the way between these two points. As discussed above, high <span class="math inline">\(\eta\)</span> mean a low global entropy and vice versa. Low global entropy means that the proposed edge traversal probabilities are higher when they are close to the ideal path. On the street network, this almost looks like the traversal probabilities resembling the shortest path. If this is the case, only very close alternative routes that don’t necessitate large detours also have elevated probabilities. On the other hand, low <span class="math inline">\(\eta\)</span> lead to the probabilities “seeping away” from the ideal path. This can be observed by looking at the edges that are quite thin for high <span class="math inline">\(\eta\)</span>, but constantly become thicker with decreasing <span class="math inline">\(\eta\)</span>, which is consistent with the initial expectations This effect also implies that the edges with higher probabilities for large <span class="math inline">\(\eta\)</span> will decrease in probability as the others around it will increase.</p>
 <div class="figure">
 <img src="eta.gif" alt="Figure 7: Varying probabilities for different global entropy parameters"><p class="caption">Figure 7: Varying probabilities for different global entropy parameters</p>
 </div>
-<p>Figure 8 shows the effects caused by different <span class="math inline">\(\eta\)</span> on the routing results described above on a numeric scale. Each line represents one pair of start and end points on a graph. The coloured dots sitting on that line indicate the value of <span class="math inline">\(\eta\)</span> used for the calculation. As stated above, high global entropy means that more edges of a graph are likely to being traversed, thereby increasing the expected mean distance of the trips. The rampant increase in expected distance also indicates that for low <span class="math inline">\(\eta\)</span>, slight changes have quite a big effect. This may even lead to estimated mean distances bigger than the sum of all edge lengths present in the graph, which is possible because random movement on the graph does not restrict the number of times a given edge can be traversed.</p>
+<p>Figure 8 shows the effects caused by different <span class="math inline">\(\eta\)</span> on the routing results described above on a numeric scale. Each line represents one pair of start and end points on a graph. The coloured dots sitting on that line indicate the value of <span class="math inline">\(\eta\)</span> used for the calculation. As stated above, high global entropy means that more edges of a graph are likely to being traversed, thereby increasing the expected mean distance of the trips. The rampant increase in expected distance also indicates that for low <span class="math inline">\(\eta\)</span>, slight changes have quite a big effect. This may even lead to estimated mean distances bigger than the sum of all edge lengths present in the graph, which is possible because random movement on the graph does not restrict the number of times a given edge can be traversed. The curves in the figure also suggest a way of extracting values for <span class="math inline">\(\eta\)</span>. The points shown in red represent the estimated ideal <span class="math inline">\(\eta\)</span> based on the points of inflexion on the probabilistic distance data.</p>
 <div class="figure">
 <img src="osmprob_files/figure-html/unnamed-chunk-15-1.png" alt="Figure 8: Mean distances for different values of global entropy" width="672"><p class="caption">
 Figure 8: Mean distances for different values of global entropy
 </p>
 </div>
+<p>Using the estimated ideal <span class="math inline">\(\eta\)</span> to determine the realistic mean travel distance, the median value of distances is 1.13 times the shortest distance. Because <span class="math inline">\(\eta\)</span> is the same value for the points of inflexion in all curves, it suggests that there might be one universally applicable value for all applications. A comparison of these estimations and real world data, however would be useful to validate this.</p>
 </div>
 <div id="speed" class="section level2">
 <h2 class="hasAnchor">
 <a href="#speed" class="anchor"></a>Speed</h2>
-<p>Figures 9 and 10 show how the calculation time is affected by the graph size and the network distance between start and end point. They also give an indication of the performance difference between probabilistic routing and classic shortest path solutions at the example of Dijkstra’s algorithm. The graphs also indicate that different values for <span class="math inline">\(\eta\)</span> may also have an influence on calculation time. Specifically, low <span class="math inline">\(\eta\)</span> and thus high global entropies appear to be leading to longer calculation times. There are two negative outliers in the probabilistic routing calculation times. As they both occurred on graphs with very few vertices, these values show how big the influence of graph complexity on routing calculation time is.</p>
+<p>Figures 9 and 10 show how the calculation time is affected by the graph size and the network distance between start and end point. They also give an indication of the performance difference between probabilistic routing and classic shortest path solutions at the example of Dijkstra’s algorithm. The graphs further indicate that different values for <span class="math inline">\(\eta\)</span> may also have an influence on calculation time. Specifically, low <span class="math inline">\(\eta\)</span> and thus high global entropies appear to be leading to longer calculation times. What becomes obvious is that the calculation times for probabilistic routing are consistently higher than the shortest path calculations, which is in accordance to the initial expectations due to the more complex nature of the probabilistic routing process. The speed tests were run using a Intel i5-2400 CPU 3.10GHz × 4 processor.</p>
 <div class="figure">
 <img src="osmprob_files/figure-html/unnamed-chunk-16-1.png" alt="Figure 9: Calculation times for different shortest path alternatives" width="672"><p class="caption">
 Figure 9: Calculation times for different shortest path alternatives
@@ -324,41 +325,53 @@ Figure 10: Calculation times for different graph sizes
 <div id="comparison-with-shortest-path-solutions" class="section level2">
 <h2 class="hasAnchor">
 <a href="#comparison-with-shortest-path-solutions" class="anchor"></a>Comparison with shortest path solutions</h2>
-<p>Figure 11 shows the calculated probabilistic distances for different <span class="math inline">\(\eta\)</span> in comparison with the shortest path distances. As expected, all probabilistic distances are longer than the shortest path. The graph also shows how sensitive <span class="math inline">\(\eta\)</span> becomes when approximating 0. Note that a change in <span class="math inline">\(\eta\)</span> from 0.003 to 0.001 leads to an estimated distance of almost twice the length. Another observation that can be made is that the probabilistic distances have high alter quite a lot from one another. Table 1 shows the standard deviations of the expected distances for different <span class="math inline">\(\eta\)</span>, which are very high in comparison with the standard deviation of the shortest paths (0.402). And like the distances, their standard deviations are very sensitive to <span class="math inline">\(\eta\)</span>. Another possible reason for the spikes in the probabilistic distances could be the number of vertices in the road graph, because a more complex road graph would allow more movement between a start and end point than a very simple one would. So on a very simple graph, all movement would be restricted on few edges, even with high <span class="math inline">\(\eta\)</span>.</p>
+<p>Figure 11 shows the calculated probabilistic distances for different <span class="math inline">\(\eta\)</span> in comparison with the shortest path distances. As expected, all probabilistic distances are longer than the shortest path. The graph also shows how sensitive <span class="math inline">\(\eta\)</span> becomes when approximating 0. Note that a change in <span class="math inline">\(\eta\)</span> from 0.003 to 0.001 leads to an estimated distance of almost twice the length. Another observation that can be made is that the probabilistic distances alter quite a lot from one another. Table 1 shows the standard deviations of the expected distances for different <span class="math inline">\(\eta\)</span>, which are very high in comparison with the standard deviation of the shortest paths (0.068). And like the distances, their standard deviations are very sensitive to <span class="math inline">\(\eta\)</span>. Another possible reason for the spikes in the probabilistic distances could be the number of vertices in the road graph, because a more complex road graph would allow more movement between a start and end point than a very simple one would. So on a very simple graph, all movement would be restricted on few edges, even with high <span class="math inline">\(\eta\)</span>.</p>
 <table class="table">
-<caption>Table 1: Variances in probabilistic distance</caption>
+<caption>Table 1: Variances in probabilistic distance (split into deciles)</caption>
 <thead><tr class="header">
-<th align="right">eta</th>
+<th align="right">eta &lt;</th>
 <th align="right">Standard deviation [km]</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td align="right">0.001</td>
-<td align="right">5.700</td>
+<td align="right">0.0004</td>
+<td align="right">0.0289</td>
 </tr>
 <tr class="even">
-<td align="right">0.003</td>
-<td align="right">2.738</td>
+<td align="right">0.0013</td>
+<td align="right">0.0294</td>
 </tr>
 <tr class="odd">
-<td align="right">0.006</td>
-<td align="right">1.778</td>
+<td align="right">0.0045</td>
+<td align="right">0.0294</td>
 </tr>
 <tr class="even">
-<td align="right">0.010</td>
-<td align="right">1.316</td>
+<td align="right">0.0158</td>
+<td align="right">0.0376</td>
 </tr>
 <tr class="odd">
-<td align="right">0.020</td>
-<td align="right">0.897</td>
+<td align="right">0.0566</td>
+<td align="right">0.0870</td>
 </tr>
 <tr class="even">
-<td align="right">0.040</td>
-<td align="right">0.640</td>
+<td align="right">0.1995</td>
+<td align="right">0.2277</td>
 </tr>
 <tr class="odd">
-<td align="right">0.060</td>
-<td align="right">0.542</td>
+<td align="right">0.7126</td>
+<td align="right">0.5038</td>
+</tr>
+<tr class="even">
+<td align="right">2.5119</td>
+<td align="right">0.8145</td>
+</tr>
+<tr class="odd">
+<td align="right">8.9716</td>
+<td align="right">1.0007</td>
+</tr>
+<tr class="even">
+<td align="right">31.6228</td>
+<td align="right">1.0726</td>
 </tr>
 </tbody>
 </table>
@@ -367,22 +380,17 @@ Figure 10: Calculation times for different graph sizes
 Figure 11: Comparison of probabilistic and shortest path solutions: distance
 </p>
 </div>
-<div class="figure">
-<img src="osmprob_files/figure-html/unnamed-chunk-21-1.png" alt="Figure 12: Comparison of probabilistic and shortest path solutions: graph complexity" width="672"><p class="caption">
-Figure 12: Comparison of probabilistic and shortest path solutions: graph complexity
-</p>
-</div>
 </div>
 <div id="limitations" class="section level2">
 <h2 class="hasAnchor">
 <a href="#limitations" class="anchor"></a>Limitations</h2>
-<p>In some test regions it was not possible to calculate probabilistic routes due to unexpected behaviour of <code>osmprob</code>. This includes program crashes, as well as the generation of unreasonably high values of estimated travel distances. The reasons leading these effects are yet to be identified. One possible explanation could be that under certain circumstances the software is attempting to perform routing on ill-formed graphs. This may happen when a graph is complete, but certain vertices are inaccessible due to directed edges leading only away from and not towards them. Another issue is the size of <span class="math inline">\(\eta\)</span> in the routing process. Because there is no way yet to scale <span class="math inline">\(\eta\)</span> properly, the routing results may be unrealistic in some cases and have to be used with caution.</p>
+<p>In some test regions it was not possible to calculate probabilistic routes due to unexpected behaviour of <code>osmprob</code>. This includes program crashes, as well as the generation of unreasonably high values of estimated travel distances. The reasons leading these effects are yet to be identified. One possible explanation could be that under certain circumstances the software is attempting to perform routing on ill-formed graphs. This may happen when a graph is complete, but certain vertices are inaccessible due to directed edges leading only away from and not towards them. But despite these issues, the software performed as expected and could be used to produce viable results.</p>
 </div>
 </div>
 <div id="discussion-and-outlook" class="section level1">
 <h1 class="hasAnchor">
 <a href="#discussion-and-outlook" class="anchor"></a>Discussion and outlook</h1>
-<p>The results show that <code>osmprob</code> can be used to adequately perform probabilistic routing tasks. The resulting traversal probabilities appear to represent realistic movement patterns for their respective <span class="math inline">\(\eta\)</span>. A reliable way to dimension <span class="math inline">\(\eta\)</span> for satisfactory results, however, is yet to be found. A possible solution for this issue could be to compare real world movement data with calculated results for different <span class="math inline">\(\eta\)</span> and investigate, which <span class="math inline">\(\eta\)</span> leads to results best representing the data.</p>
+<p>The results show that <code>osmprob</code> can be used to not only adequately perform probabilistic routing tasks and is therefore fit for use in real world applications, it also supports the user in the process of data collection and preprocessing. This makes it very easy also for inexperienced users to facilitate the methods presented in this paper. The resulting traversal probabilities appear to represent realistic movement patterns for their respective <span class="math inline">\(\eta\)</span>. The method for estimating <span class="math inline">\(\eta\)</span>, however, is still to be investigated further. While the method of estimating <span class="math inline">\(\eta\)</span> based on the behaviour of mean distances suggests good results, a comparison with real world movement data would be useful to validate and refine it.</p>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1 class="hasAnchor">
