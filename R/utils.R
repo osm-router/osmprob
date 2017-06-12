@@ -39,6 +39,15 @@ get_graph <- function (dat)
 #' that are closest to the start and end coordinates
 #'
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' road <- road_data_sample
+#' start_pt <- c (11.603, 48.163)
+#' end_pt <- c (11.608, 48.167)
+#' pts <- select_vertices_by_coordinates (graph = road, start_coords = start_pt,
+#'                                        end_coords = end_pt)
+#' }
 select_vertices_by_coordinates <- function (graph, start_coords, end_coords)
 {
     com <- graph$compact

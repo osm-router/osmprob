@@ -37,13 +37,8 @@ bibliography: osmprob-refs.bib
 
 ```{r echo=FALSE}
 library (magrittr)
-dat <- read.csv2 ("benchmark_osmprob.csv", stringsAsFactors = FALSE)
-dat$t_shortest %<>% as.numeric
-dat$t_prob %<>% as.numeric
-dat$dl_time %<>% as.numeric
-dat$d_shortest %<>% as.numeric
-dat$d_prob %<>% as.numeric
-dat$eta %<>% as.numeric
+dat <- readRDS ("dat_benchmark.rds")
+dat_distance <- readRDS ("dat_distance.rds")
 ```
 
 # Introduction
@@ -425,9 +420,9 @@ plot_map (prob, path)
 The following section discusses the results achieved using `osmprob`. It also
 evaluates performance analysis from real world use cases and further shows the
 influence that different $\eta$ have on such statistics. The tests were run on
-18 different randomly selected test regions. To reduce the chance of faulty
-outliers, the results of all speed measurements given are the median time of
-runs.
+18 different randomly selected test regions, applying 56 different values for
+$\eta$ in each case. To reduce the chance of faulty outliers, the results of all
+speed measurements given are the median time of runs.
 
 ## Routing probabilities
 
@@ -435,17 +430,18 @@ Figure 7 shows the probabilistic routing results on a road graph and shows very
 clearly the influence that different $\eta$ have on the results. The red line on
 the graph indicates the shortest path between a start and end point. The line
 thickness on the green lines indicates the traversal probability on each edge on
-the way between the same two points. As discussed above, high $\eta$ mean a low
+the way between these two points. As discussed above, high $\eta$ mean a low
 global entropy and vice versa. Low global entropy means that the proposed edge
 traversal probabilities are higher when they are close to the ideal path. On the
-map this almost looks like the traversal probabilities resembling the shortest
-path. Only very close alternative routes that don't necessitate large detours
-also have elevated probabilities. On the other hand, low $\eta$ lead to the
-probabilities "seeping away" from the ideal path. This can be observed by
-looking at the edges that are quite thin for high $\eta$, but constantly become
-thicker with smaller $\eta$, which is consistent with the initial expectations
-This effect also implies that the edges with higher probabilities for large
-$\eta$ will decrease in probability as the others around it will increase.
+street network, this almost looks like the traversal probabilities resembling
+the shortest path. If this is the case, only very close alternative routes that
+don't necessitate large detours also have elevated probabilities. On the other
+hand, low $\eta$ lead to the probabilities "seeping away" from the ideal path.
+This can be observed by looking at the edges that are quite thin for high
+$\eta$, but constantly become thicker with decreasing $\eta$, which is
+consistent with the initial expectations This effect also implies that the edges
+with higher probabilities for large $\eta$ will decrease in probability as the
+others around it will increase.
 
 ![Figure 7: Varying probabilities for different global entropy parameters](eta.gif)
 
@@ -458,114 +454,109 @@ expected mean distance of the trips. The rampant increase in expected distance
 also indicates that for low $\eta$, slight changes have quite a big effect. This
 may even lead to estimated mean distances bigger than the sum of all edge
 lengths present in the graph, which is possible because random movement on the
-graph does not restrict the number of times a given edge can be traversed.
+graph does not restrict the number of times a given edge can be traversed. The
+curves in the figure also suggest a way of extracting values for $\eta$. The
+points shown in red represent the estimated ideal $\eta$ based on the points of
+inflexion on the probabilistic distance data.
 
 ```{r echo=FALSE, fig.cap="Figure 8: Mean distances for different values of global entropy"}
 ttl <- "Estimated mean distances for different values of global entropy"
-xlab <- substitute (paste ("Global entropy [",eta, "]"))
+xlab <- substitute (paste ("Global entropy [",eta, "] (log scale)"))
 legendlab <- substitute (paste ("Global entropy [", eta, "]"))
+
+inf_pts <- vector (length = length (unique (dat$region_num)), mode = "numeric")
+for (i in seq (unique (dat$region_num)))
+{
+    rn <- dat$region_num [i]
+    dists <- dat$d_prob [dat$region_num == rn]
+    inf <- inflection::ede (unique (dat$eta), dists, 0)
+    inf_pts [i] <- inf [1]
+}
+extr <- inf_pts + (0:(length (inf_pts) - 1) * length (unique (dat$eta)))
+inf_plot <- dat [extr,]
+inf_ln <- unique (inf_plot$eta) %>% round (3)
+inc_factor <- (inf_plot$d_prob / inf_plot$d_shortest) %>% median %>%
+    round (2) %>% format (2)
 
 plt <- ggplot2::ggplot (data = dat) +
     ggplot2::geom_line (ggplot2::aes (x = eta, y = d_prob, group = region_num),
-                        colour = "#ababab") +
-    ggplot2::geom_point (ggplot2::aes (x = eta, y = d_prob,
-                                       colour = factor (eta)), size = 2) +
-    ggplot2::labs (title = ttl, x = xlab, y = "Distance [km]") +
+                        colour = "#333333") +
+    ggplot2::geom_point (ggplot2::aes (x = eta, y = d_prob), size = 0.5) +
+    ggplot2::geom_point (data = inf_plot, ggplot2::aes (x = eta, y = d_prob),
+                         size = 1.5, colour = "#FF0000") +
+    ggplot2::labs (title = ttl, x = xlab, y = "Distance [km] (log scale)") +
     ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
     ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
                     legend.box.background = ggplot2::element_rect ()) +
-    ggplot2::scale_colour_discrete (name = legendlab)
+    ggplot2::scale_colour_discrete (name = legendlab) +
+    ggplot2::geom_vline (xintercept = inf_ln, colour = "#FF0000", linetype =
+                         "dashed") +
+    ggplot2::scale_x_continuous (trans = "log",
+                                 breaks = c (0.001, 0.01, 0.1, 1, 7, inf_ln)) +
+    ggplot2::scale_y_continuous (trans = "log",
+                                 breaks = c (0.1, seq (2, 8, by = 2) / 10, 1.5,
+                                             1:4))
 
 plt
 ```
+
+Using the estimated ideal $\eta$ to determine the realistic mean travel
+distance, the median value of distances is `r inc_factor` times the shortest
+distance. Because $\eta$ is the same value for the points of inflexion in all
+curves, it suggests that there might be one universally applicable value for all
+applications. A comparison of these estimations and real world data, however
+would be useful to validate this.
 
 ## Speed
 
 Figures 9 and 10 show how the calculation time is affected by the graph size and
 the network distance between start and end point. They also give an indication
 of the performance difference between probabilistic routing and classic shortest
-path solutions at the example of Dijkstra's algorithm. The graphs also indicate
-that different values for $\eta$ may also have an influence on calculation time.
-Specifically, low $\eta$ and thus high global entropies appear to be leading to
-longer calculation times. There are two negative outliers in the probabilistic
-routing calculation times. As they both occurred on graphs with very few
-vertices, these values show how big the influence of graph complexity on routing
-calculation time is.
+path solutions at the example of Dijkstra's algorithm. The graphs further
+indicate that different values for $\eta$ may also have an influence on
+calculation time. Specifically, low $\eta$ and thus high global entropies
+appear to be leading to longer calculation times. What becomes obvious is that
+the calculation times for probabilistic routing are consistently higher than the
+shortest path calculations, which is in accordance to the initial expectations
+due to the more complex nature of the probabilistic routing process. The speed
+tests were run using a Intel i5-2400 CPU 3.10GHz × 4 processor.
 
 ```{r echo=FALSE, fig.cap="Figure 9: Calculation times for different shortest path alternatives"}
-num <- dim (dat) [1] / dat$region_num %>% unique %>% length
-
-rbn_vals_mn <- vector (length = length (unique (dat$region_num)) * num,
-                       mode = "numeric")
-rbn_vals_mx <- vector (length = length (unique (dat$region_num)) * num,
-                       mode = "numeric")
-
-ct <- 1
-for (i in unique (dat$region_num))
-{
-    rbn_vals_mn [ct:(ct + 6)] <- min (dat$t_prob [dat$region_num == i])
-    rbn_vals_mx [ct:(ct + 6)] <- max (dat$t_prob [dat$region_num == i])
-    ct <- ct + num
-}
+clrs <- RColorBrewer::brewer.pal (name = "YlGnBu", 9) [3:9]
 
 ttl <- "Calculation times for network distances
 and values of global entropy"
 legendlab <- substitute (paste ("Global entropy [", eta, "]"))
 
 plt <- ggplot2::ggplot (data = dat) +
-    ggplot2::geom_ribbon (ggplot2::aes (x = d_shortest, ymin = rbn_vals_mn,
-                                        ymax = rbn_vals_mx),
-                          fill = "#81A88D", alpha = 0.3) +
-    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = t_prob,
-                                      colour = factor (eta))) +
-    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = t_shortest,
-                                      colour = "Shortest Path"), size = 1) +
+    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = 1000 * t_prob, group = eta, colour = eta)) +
+    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = 1000 * t_shortest), size = 1) +
     ggplot2::labs (title = ttl,
                    x = "Distance of shortest path [km]",
                    y = "Time (median of n = 30 runs) [ms]") +
     ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
     ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
                     legend.box.background = ggplot2::element_rect ()) +
-    ggplot2::scale_colour_discrete (name = legendlab)
+    ggplot2::scale_colour_gradientn (colours = clrs, name = legendlab)
 
 plt
 ```
 
 ```{r echo=FALSE, fig.cap="Figure 10: Calculation times for different graph sizes"}
-num <- dim (dat) [1] / dat$region_num %>% unique %>% length
-
-rbn_vals_mn <- vector (length = length (unique (dat$region_num)) * num,
-                       mode = "numeric")
-rbn_vals_mx <- vector (length = length (unique (dat$region_num)) * num,
-                       mode = "numeric")
-
-ct <- 1
-for (i in unique (dat$region_num))
-{
-    rbn_vals_mn [ct:(ct + 6)] <- min (dat$t_prob [dat$region_num == i])
-    rbn_vals_mx [ct:(ct + 6)] <- max (dat$t_prob [dat$region_num == i])
-    ct <- ct + num
-}
-
 ttl <- "Calculation times for different graph sizes
 and values of global entropy"
 legendlab <- substitute (paste ("Global entropy [", eta, "]"))
 
 plt <- ggplot2::ggplot (data = dat) +
-    ggplot2::geom_ribbon (ggplot2::aes (x = n_vtx_comp, ymin = rbn_vals_mn,
-                                        ymax = rbn_vals_mx),
-                          fill = "#81A88D", alpha = 0.3) +
-    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = t_prob,
-                                      colour = factor (eta))) +
-    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = t_shortest,
-                                      colour = "Shortest Path"), size = 1) +
+    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = t_prob, group = eta, colour = eta)) +
+    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = t_shortest), size = 1) +
     ggplot2::labs (title = ttl,
                    x = "Number of vertices in graph",
                    y = "Time (median of n = 30 runs) [ms]") +
     ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
     ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
                     legend.box.background = ggplot2::element_rect ()) +
-    ggplot2::scale_colour_discrete (name = legendlab)
+    ggplot2::scale_colour_gradientn (colours = clrs, name = legendlab)
 
 plt
 ```
@@ -583,68 +574,43 @@ comparison with the shortest path distances. As expected, all probabilistic
 distances are longer than the shortest path. The graph also shows how sensitive
 $\eta$ becomes when approximating 0. Note that a change in $\eta$ from 0.003 to
 0.001 leads to an estimated distance of almost twice the length. Another
-observation that can be made is that the probabilistic distances have high alter
-quite a lot from one another. Table 1 shows the standard deviations of the
-expected distances for different $\eta$, which are very high in comparison with
-the standard deviation of the shortest paths (`r sd_short`). And like the
-distances, their standard deviations are very sensitive to $\eta$. Another
-possible reason for the spikes in the probabilistic distances could be the
-number of vertices in the road graph, because a more complex road graph would
-allow more movement between a start and end point than a very simple one would.
-So on a very simple graph, all movement would be restricted on few edges, even
-with high $\eta$.
+observation that can be made is that the probabilistic distances alter quite a
+lot from one another. Table 1 shows the standard deviations of the expected
+distances for different $\eta$, which are very high in comparison with the
+standard deviation of the shortest paths (`r sd_short`). And like the distances,
+their standard deviations are very sensitive to $\eta$. Another possible reason
+for the spikes in the probabilistic distances could be the number of vertices in
+the road graph, because a more complex road graph would allow more movement
+between a start and end point than a very simple one would.  So on a very simple
+graph, all movement would be restricted on few edges, even with high $\eta$.
 
 ```{r echo=FALSE, results = 'asis'}
 v <- aggregate (dat$d_prob, by = list (eta = dat$eta), FUN = sd)
-colnames (v) [2] <- "Standard deviation [km]"
-knitr::kable (v, digits = 3, format = "pandoc",
-              caption = "Table 1: Variances in probabilistic distance")
+qnt <- c (1:10) / 10
+vperc <- lapply (v, quantile, probs = qnt, name = FALSE) %>% data.frame
+colnames (vperc) [1] <- "eta <"
+colnames (vperc) [2] <- "Standard deviation [km]"
+knitr::kable (vperc, digits = 4, format = "pandoc",
+              caption = "Table 1: Variances in probabilistic distance
+              (split into deciles)")
 ```
 
 ```{r echo=FALSE, fig.cap="Figure 11: Comparison of probabilistic and shortest path solutions: distance"}
-ttl <- "Distance differences between shortest and probabilistic routes"
+ttl <- "Number of traversed edges for shortest
+and probabilistic routes"
 legendlab <- substitute (paste ("Global entropy [", eta, "]"))
 
-plt <- ggplot2::ggplot (data = dat) +
-    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = d_prob,
-                                      colour = factor (eta)), size = 1) +
-    ggplot2::geom_point (ggplot2::aes (x = d_shortest, y = d_prob),
-                         size = 0.7) +
-    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = d_shortest,
-                                      colour = "Shortest Path"), size = 1.5) +
-    ggplot2::geom_point (ggplot2::aes (x = d_shortest, y = d_shortest),
-                        size = 0.7) +
+plt <- ggplot2::ggplot (data = dat_distance) +
+    ggplot2::geom_line (ggplot2::aes (x = d_shortest, y = d_prob, group = eta, colour = eta)) +
     ggplot2::labs (title = ttl,
-                   x = "Shortest Distance [km]",
-                   y = "Probabilistic distance [km]") +
+                   x = "Shortest Distance",
+                   y = "Probabilistic distance") +
     ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
     ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
                     legend.box.background = ggplot2::element_rect ()) +
-    ggplot2::scale_colour_discrete (name = legendlab)
-
-plt
-```
-
-```{r echo=FALSE, fig.cap="Figure 12: Comparison of probabilistic and shortest path solutions: graph complexity"}
-ttl <- "Distance differences between shortest and probabilistic routes"
-legendlab <- substitute (paste ("Global entropy [", eta, "]"))
-
-plt <- ggplot2::ggplot (data = dat) +
-    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = d_prob,
-                                      colour = factor (eta)), size = 1) +
-    ggplot2::geom_point (ggplot2::aes (x = n_vtx_comp, y = d_prob),
-                         size = 0.7) +
-    ggplot2::geom_line (ggplot2::aes (x = n_vtx_comp, y = d_shortest,
-                                      colour = "Shortest Path"), size = 1.5) +
-    ggplot2::geom_point (ggplot2::aes (x = n_vtx_comp, y = d_shortest),
-                        size = 0.7) +
-    ggplot2::labs (title = ttl,
-                   x = "Number of vertices",
-                   y = "Probabilistic distance [km]") +
-    ggplot2::theme_bw (base_family = "TeX Gyre Bonum") +
-    ggplot2::theme (plot.title = ggplot2::element_text(hjust = 0.5),
-                    legend.box.background = ggplot2::element_rect ()) +
-    ggplot2::scale_colour_discrete (name = legendlab)
+    ggplot2::scale_colour_gradientn (colours = clrs, name = legendlab,
+                                     trans = "log",
+                                     breaks = c (0.0001, 0.001, 0.01,0.1, 1, 7))
 
 plt
 ```
@@ -658,19 +624,22 @@ reasons leading these effects are yet to be identified. One possible explanation
 could be that under certain circumstances the software is attempting to perform
 routing on ill-formed graphs. This may happen when a graph is complete, but
 certain vertices are inaccessible due to directed edges leading only away from
-and not towards them. Another issue is the size of $\eta$ in the routing
-process. Because there is no way yet to scale $\eta$ properly, the routing
-results may be unrealistic in some cases and have to be used with caution.
+and not towards them. But despite these issues, the software performed as
+expected and could be used to produce viable results.
+
 
 # Discussion and outlook
 
-The results show that `osmprob` can be used to adequately perform probabilistic
-routing tasks. The resulting traversal probabilities appear to represent
-realistic movement patterns for their respective $\eta$. A reliable way to
-dimension $\eta$ for satisfactory results, however, is yet to be found. A
-possible solution for this issue could be to compare real world movement data
-with calculated results for different $\eta$ and investigate, which $\eta$ leads
-to results best representing the data.
+The results show that `osmprob` can be used to not only adequately perform
+probabilistic routing tasks and is therefore fit for use in real world
+applications, it also supports the user in the process of data collection and
+preprocessing. This makes it very easy also for inexperienced users to
+facilitate the methods presented in this paper.  The resulting traversal
+probabilities appear to represent realistic movement patterns for their
+respective $\eta$. The method for estimating $\eta$, however, is still to be
+investigated further. While the method of estimating $\eta$ based on the
+behaviour of mean distances suggests good results, a comparison with real world
+movement data would be useful to validate and refine it.
 
 # References
 
