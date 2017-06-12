@@ -43,11 +43,6 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 
-void R_init_osmprob(DllInfo* info) {
-    R_registerRoutines(info, NULL, NULL, NULL, NULL);
-    R_useDynamicSymbols(info, TRUE);
-}
-
 typedef long long vertex_t;
 typedef double weight_t;
 

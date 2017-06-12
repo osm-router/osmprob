@@ -13,7 +13,7 @@
 #'
 #' @noRd
 rcpp_make_compact_graph <- function(graph) {
-    .Call('osmprob_rcpp_make_compact_graph', PACKAGE = 'osmprob', graph)
+    .Call(osmprob_rcpp_make_compact_graph, graph)
 }
 
 #' rcpp_lines_as_network
@@ -27,7 +27,7 @@ rcpp_make_compact_graph <- function(graph) {
 #'
 #' @noRd
 rcpp_lines_as_network <- function(sf_lines, pr) {
-    .Call('osmprob_rcpp_lines_as_network', PACKAGE = 'osmprob', sf_lines, pr)
+    .Call(osmprob_rcpp_lines_as_network, sf_lines, pr)
 }
 
 #' rcpp_router
@@ -43,7 +43,7 @@ rcpp_lines_as_network <- function(sf_lines, pr) {
 #'
 #' @noRd
 rcpp_router <- function(netdf, start_nodei, end_nodei, eta) {
-    .Call('osmprob_rcpp_router', PACKAGE = 'osmprob', netdf, start_nodei, end_nodei, eta)
+    .Call(osmprob_rcpp_router, netdf, start_nodei, end_nodei, eta)
 }
 
 #' rcpp_router_prob
@@ -59,7 +59,7 @@ rcpp_router <- function(netdf, start_nodei, end_nodei, eta) {
 #'
 #' @noRd
 rcpp_router_prob <- function(netdf, start_node, end_node, eta) {
-    .Call('osmprob_rcpp_router_prob', PACKAGE = 'osmprob', netdf, start_node, end_node, eta)
+    .Call(osmprob_rcpp_router_prob, netdf, start_node, end_node, eta)
 }
 
 #' rcpp_router_dijkstra
@@ -74,6 +74,6 @@ rcpp_router_prob <- function(netdf, start_node, end_node, eta) {
 #'
 #' @noRd
 rcpp_router_dijkstra <- function(netdf, start_node, end_node) {
-    .Call('osmprob_rcpp_router_dijkstra', PACKAGE = 'osmprob', netdf, start_node, end_node)
+    .Call(osmprob_rcpp_router_dijkstra, netdf, start_node, end_node)
 }
 

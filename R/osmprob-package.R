@@ -24,5 +24,5 @@
 #' @importFrom magrittr extract %>% %<>%
 #' @importFrom methods is
 #' @importFrom sf st_sf st_sfc st_linestring
-#' @useDynLib osmprob
+#' @useDynLib osmprob, .registration = TRUE
 NULL
