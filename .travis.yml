@@ -4,16 +4,14 @@ sudo: required
 cache: packages
 
 matrix:
-    allow_failures: # temporarily enabled. TODO: disable
-        -os: osx
     include:
         - os: linux
           r: release
           dist: trusty # 14.04
           env: R_CODECOV=true
-          #- os: linux #temporarily disabled. TODO: enable
-          #r: devel
-          #- os: osx
+         - os: linux
+          r: devel
+          #- os: osx #temporarily disabled. TODO: enable
           #r: release
           #before_install: ''
           #disable_homebrew: true
