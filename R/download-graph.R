@@ -37,7 +37,7 @@ download_graph <- function (start_pt, end_pt, weighting_profile = "bicycle",
     query <- osmdata::add_feature (query, key = 'highway')
     dat <- osmdata::osmdata_sf (query)
     osmlines_as_network (dat, profile_name = weighting_profile) %>%
-        make_compact_graph
+        make_compact_graph ()
 }
 
 shiftx180 <- function (x)
