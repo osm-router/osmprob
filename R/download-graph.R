@@ -33,9 +33,9 @@ download_graph <- function (start_pt, end_pt, weighting_profile = "bicycle",
                             buffer = 0)
 {
     bbx <- make_bbox (start_pt, end_pt, buffer)
-    query <- osmdata::opq (bbox = bbx)
-    query <- osmdata::add_feature (query, key = 'highway')
-    dat <- osmdata::osmdata_sf (query)
+    dat <- osmdata::opq (bbox = bbx) %>%
+        osmdata::add_feature (query, key = 'highway') %>%
+        osmdata::osmdata_sf (query)
     osmlines_as_network (dat, profile_name = weighting_profile) %>%
         make_compact_graph ()
 }
