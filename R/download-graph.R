@@ -16,6 +16,7 @@
 #' @param buffer Positive value that defines by how much (in percent) should the
 #' downloaded data extend the bounding box defined by \code{start_pt} and
 #' \code{end_pt}.
+#' @param quiet If FALSE, print progress information to screen.
 #'
 #' @return graphs \code{list} containing the original street graph, a minimized
 #' graph map linking the two to each other.
@@ -30,12 +31,16 @@
 #' weighting_profile = "bicycle", buffer = 0)
 #' }
 download_graph <- function (start_pt, end_pt, weighting_profile = "bicycle",
-                            buffer = 0)
+                            buffer = 0, quiet = TRUE)
 {
     bbx <- make_bbox (start_pt, end_pt, buffer)
+    if (!quiet)
+        message ('Extracting street network from OpenStreetMap ...')
     dat <- osmdata::opq (bbox = bbx) %>%
         osmdata::add_feature (key = 'highway') %>%
         osmdata::osmdata_sf ()
+    if (!quiet)
+        message ('Converting network to graph  ...')
     osmlines_as_network (dat, profile_name = weighting_profile) %>%
         make_compact_graph ()
 }

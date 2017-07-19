@@ -4,7 +4,8 @@
 \alias{download_graph}
 \title{Download OSM road graph and preprocess it}
 \usage{
-download_graph(start_pt, end_pt, weighting_profile = "bicycle", buffer = 0)
+download_graph(start_pt, end_pt, weighting_profile = "bicycle", buffer = 0,
+  quiet = TRUE)
 }
 \arguments{
 \item{start_pt}{Two numeric values (latitude, longitude) as start point
@@ -19,6 +20,8 @@ coordinates.}
 \item{buffer}{Positive value that defines by how much (in percent) should the
 downloaded data extend the bounding box defined by \code{start_pt} and
 \code{end_pt}.}
+
+\item{quiet}{If FALSE, print progress information to screen.}
 }
 \value{
 graphs \code{list} containing the original street graph, a minimized
