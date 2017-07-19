@@ -9,7 +9,7 @@ typedef int osm_edge_id_t;
 struct osm_vertex_t
 {
     private:
-        std::set <osm_id_t> in, out;
+        std::unordered_set <osm_id_t> in, out;
         double lat, lon;
 
     public:
@@ -21,9 +21,9 @@ struct osm_vertex_t
         void set_lon (double lon) { this -> lon = lon; }
         double getLat () { return lat; }
         double getLon () { return lon; }
-        std::set <osm_id_t> get_all_neighbours ()
+        std::unordered_set <osm_id_t> get_all_neighbours ()
         {
-            std::set <osm_id_t> all_neighbours = in;
+            std::unordered_set <osm_id_t> all_neighbours = in;
             all_neighbours.insert (out.begin (), out.end ());
             return all_neighbours;
         }
@@ -87,7 +87,7 @@ struct osm_edge_t
         }
 };
 
-typedef std::map <osm_id_t, osm_vertex_t> vertex_map;
+typedef std::unordered_map <osm_id_t, osm_vertex_t> vertex_map;
 typedef std::vector <osm_edge_t> edge_vector;
 typedef std::map <int, std::set <int>> replacement_map;
 int edge_ids = 1;
@@ -139,7 +139,8 @@ void graph_from_df (Rcpp::DataFrame gr, vertex_map &vm, edge_vector &e)
     }
 }
 
-void get_largest_graph_component (vertex_map &v, std::map <osm_id_t, int> &com,
+void get_largest_graph_component (vertex_map &v,
+        std::unordered_map <osm_id_t, int> &com,
         int &largest_id)
 {
     int component_number = 0;
@@ -152,7 +153,7 @@ void get_largest_graph_component (vertex_map &v, std::map <osm_id_t, int> &com,
         std::set <int> comps;
         osm_id_t vtxId = it -> first;
         osm_vertex_t vtx = it -> second;
-        std::set <osm_id_t> neighbors = vtx.get_all_neighbours ();
+        std::unordered_set <osm_id_t> neighbors = vtx.get_all_neighbours ();
         comps.insert (com.at (vtxId));
         for (auto n:neighbors)
             comps.insert (com.at (n));
@@ -195,7 +196,7 @@ void get_largest_graph_component (vertex_map &v, std::map <osm_id_t, int> &com,
 }
 
 void remove_small_graph_components (vertex_map &v, edge_vector &e,
-        std::map <osm_id_t, int> &components, int &largest_num)
+        std::unordered_map <osm_id_t, int> &components, int &largest_num)
 {
     for (auto comp = components.begin (); comp != components.end (); comp ++)
         if (comp -> second != largest_num)
@@ -219,7 +220,7 @@ void remove_intermediate_vertices (vertex_map &v, edge_vector &e, replacement_ma
         osm_id_t id = vert -> first;
         osm_vertex_t vt = vert -> second;
 
-        std::set <osm_id_t> n_all = vt.get_all_neighbours ();
+        std::unordered_set <osm_id_t> n_all = vt.get_all_neighbours ();
         bool is_intermediate_single = vt.is_intermediate_single ();
         bool is_intermediate_double = vt.is_intermediate_double ();
 
@@ -332,7 +333,7 @@ Rcpp::List rcpp_make_compact_graph (Rcpp::DataFrame graph)
     vertex_map vertices;
     edge_vector edges;
     replacement_map rep_map;
-    std::map <osm_id_t, int> components;
+    std::unordered_map <osm_id_t, int> components;
     int largest_component;
 
     graph_from_df (graph, vertices, edges);
