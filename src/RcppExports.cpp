@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // rcpp_make_compact_graph
 Rcpp::List rcpp_make_compact_graph(Rcpp::DataFrame graph);
-RcppExport SEXP osmprob_rcpp_make_compact_graph(SEXP graphSEXP) {
+RcppExport SEXP _osmprob_rcpp_make_compact_graph(SEXP graphSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -19,7 +19,7 @@ END_RCPP
 }
 // rcpp_lines_as_network
 Rcpp::List rcpp_lines_as_network(const Rcpp::List& sf_lines, Rcpp::DataFrame pr);
-RcppExport SEXP osmprob_rcpp_lines_as_network(SEXP sf_linesSEXP, SEXP prSEXP) {
+RcppExport SEXP _osmprob_rcpp_lines_as_network(SEXP sf_linesSEXP, SEXP prSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -31,7 +31,7 @@ END_RCPP
 }
 // rcpp_router
 Rcpp::NumericMatrix rcpp_router(Rcpp::DataFrame netdf, int start_nodei, int end_nodei, double eta);
-RcppExport SEXP osmprob_rcpp_router(SEXP netdfSEXP, SEXP start_nodeiSEXP, SEXP end_nodeiSEXP, SEXP etaSEXP) {
+RcppExport SEXP _osmprob_rcpp_router(SEXP netdfSEXP, SEXP start_nodeiSEXP, SEXP end_nodeiSEXP, SEXP etaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -45,7 +45,7 @@ END_RCPP
 }
 // rcpp_router_prob
 Rcpp::NumericVector rcpp_router_prob(Rcpp::DataFrame netdf, long long start_node, long long end_node, double eta);
-RcppExport SEXP osmprob_rcpp_router_prob(SEXP netdfSEXP, SEXP start_nodeSEXP, SEXP end_nodeSEXP, SEXP etaSEXP) {
+RcppExport SEXP _osmprob_rcpp_router_prob(SEXP netdfSEXP, SEXP start_nodeSEXP, SEXP end_nodeSEXP, SEXP etaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -59,7 +59,7 @@ END_RCPP
 }
 // rcpp_router_dijkstra
 Rcpp::NumericVector rcpp_router_dijkstra(Rcpp::DataFrame netdf, int start_node, int end_node);
-RcppExport SEXP osmprob_rcpp_router_dijkstra(SEXP netdfSEXP, SEXP start_nodeSEXP, SEXP end_nodeSEXP) {
+RcppExport SEXP _osmprob_rcpp_router_dijkstra(SEXP netdfSEXP, SEXP start_nodeSEXP, SEXP end_nodeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
