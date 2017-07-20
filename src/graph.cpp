@@ -66,7 +66,7 @@ struct osm_edge_t
         bool replaced_by_compact = false;
         std::string highway;
         osm_id_t get_from_vertex () { return from; }
-        osm_id_t getToVertex () { return to; }
+        osm_id_t get_to_vertex () { return to; }
         osm_edge_id_t getID () { return id; }
         std::set <int> is_replacement_for () { return replacing_edges; }
         bool in_original () { return in_original_graph; }
@@ -87,20 +87,47 @@ struct osm_edge_t
         }
 };
 
-typedef std::unordered_map <osm_id_t, osm_vertex_t> vertex_map;
-typedef std::vector <osm_edge_t> edge_vector;
-typedef std::map <int, std::set <int>> replacement_map;
-int edge_ids = 1;
+typedef std::unordered_map <osm_id_t, osm_vertex_t> vertex_map_t;
+typedef std::vector <osm_edge_t> edge_vector_t;
+typedef std::unordered_map <int, osm_edge_t> edge_map_t;
+typedef std::unordered_map <osm_id_t, std::set <int>> vert2edge_map_t;
+typedef std::map <int, std::set <int>> replacement_map_t;
 
-void graph_from_df (Rcpp::DataFrame gr, vertex_map &vm, edge_vector &e)
+void add_to_edge_map (vert2edge_map_t &vert2edge_map, osm_id_t vid, int eid)
 {
-    edge_ids = 1;
+    std::set <int> edge_ids;
+    if (vert2edge_map.find (vid) == vert2edge_map.end ())
+    {
+        edge_ids.insert (eid);
+        vert2edge_map.emplace (vid, edge_ids);
+    } else
+    {
+        edge_ids = vert2edge_map [vid];
+        edge_ids.insert (eid);
+        vert2edge_map [vid] = edge_ids;
+    }
+}
+
+void erase_from_edge_map (vert2edge_map_t &vert2edge_map, osm_id_t vid, int eid)
+{
+    std::set <int> edge_ids = vert2edge_map [vid];
+    if (edge_ids.find (eid) != edge_ids.end ())
+    {
+        edge_ids.erase (eid);
+        vert2edge_map [vid] = edge_ids;
+    }
+}
+
+void graph_from_df (Rcpp::DataFrame gr, vertex_map_t &vm, edge_vector_t &e,
+        edge_map_t &edge_map, vert2edge_map_t &vert2edge_map)
+{
     Rcpp::StringVector from = gr ["from_id"];
     Rcpp::StringVector to = gr ["to_id"];
     Rcpp::NumericVector from_lon = gr ["from_lon"];
     Rcpp::NumericVector from_lat = gr ["from_lat"];
     Rcpp::NumericVector to_lon = gr ["to_lon"];
     Rcpp::NumericVector to_lat = gr ["to_lat"];
+    Rcpp::NumericVector edge_id = gr ["edge_id"];
     Rcpp::NumericVector dist = gr ["d"];
     Rcpp::NumericVector weight = gr ["d_weighted"];
     Rcpp::StringVector hw = gr ["highway"];
@@ -115,7 +142,7 @@ void graph_from_df (Rcpp::DataFrame gr, vertex_map &vm, edge_vector &e)
             osm_vertex_t fromV = osm_vertex_t ();
             fromV.set_lat (from_lat [i]);
             fromV.set_lon (from_lon [i]);
-            vm.insert (std::make_pair(from_id, fromV));
+            vm.emplace (from_id, fromV);
         }
         osm_vertex_t from_vtx = vm.at (from_id);
         from_vtx.add_neighbour_out (to_id);
@@ -126,7 +153,7 @@ void graph_from_df (Rcpp::DataFrame gr, vertex_map &vm, edge_vector &e)
             osm_vertex_t toV = osm_vertex_t ();
             toV.set_lat (to_lat [i]);
             toV.set_lon (to_lon [i]);
-            vm.insert (std::make_pair(to_id, toV));
+            vm.emplace (to_id, toV);
         }
         osm_vertex_t to_vtx = vm.at (to_id);
         to_vtx.add_neighbour_in (from_id);
@@ -134,16 +161,18 @@ void graph_from_df (Rcpp::DataFrame gr, vertex_map &vm, edge_vector &e)
 
         std::set <int> replacementEdges;
         osm_edge_t edge = osm_edge_t (from_id, to_id, dist [i], weight [i],
-                std::string (hw [i]), edge_ids ++, replacementEdges, true);
+                std::string (hw [i]), edge_id [i], replacementEdges, true);
         e.push_back (edge);
+        edge_map.emplace (edge_id [i], edge);
+        add_to_edge_map (vert2edge_map, from_id, edge_id [i]);
+        add_to_edge_map (vert2edge_map, to_id, edge_id [i]);
     }
 }
 
-void get_largest_graph_component (vertex_map &v,
+void get_largest_graph_component (vertex_map_t &v,
         std::unordered_map <osm_id_t, int> &com,
         int &largest_id)
 {
-    int component_number = 0;
     // initialize components map
     for (auto it = v.begin (); it != v.end (); ++ it)
         com.insert (std::make_pair (it -> first, -1));
@@ -188,25 +217,31 @@ void get_largest_graph_component (vertex_map &v,
     //int maxsize = comp_sizes [largest_id];
 }
 
-void remove_small_graph_components (vertex_map &v, edge_vector &e,
+void remove_small_graph_components (vertex_map_t &vertex_map,
+        edge_vector_t &edge_map,
         std::unordered_map <osm_id_t, int> &components, int &largest_num)
 {
     for (auto comp = components.begin (); comp != components.end (); comp ++)
         if (comp -> second != largest_num)
-            v.erase (comp -> first);
-    auto eIt = e.begin ();
-    while (eIt != e.end ())
+            vertex_map.erase (comp -> first);
+    auto eIt = edge_map.begin ();
+    while (eIt != edge_map.end ())
     {
         osm_id_t fId = eIt -> get_from_vertex ();
-        if (v.find (fId) == v.end ())
-            eIt = e.erase (eIt);
+        if (vertex_map.find (fId) == vertex_map.end ())
+            eIt = edge_map.erase (eIt);
         else
             eIt ++;
     }
 }
 
-void remove_intermediate_vertices (vertex_map &v, edge_vector &e, replacement_map &reps)
+void remove_intermediate_vertices (vertex_map_t &v, edge_vector_t &e, replacement_map_t &reps)
 {
+    int max_edge_id = 0;
+    for (auto i: e)
+        if (i.getID () > max_edge_id)
+            max_edge_id = i.getID ();
+
     auto vert = v.begin ();
     while (vert != v.end ())
     {
@@ -221,10 +256,10 @@ void remove_intermediate_vertices (vertex_map &v, edge_vector &e, replacement_ma
         {
             osm_id_t id_from_new, id_to_new;
 
-            for (auto n_id:n_all)
+            for (auto n_id: n_all)
             {
                 osm_id_t replacement_id;
-                for (auto repl:n_all)
+                for (auto repl: n_all)
                     if (repl != n_id)
                         replacement_id = repl;
                 osm_vertex_t nVtx = v.at (n_id);
@@ -250,12 +285,12 @@ void remove_intermediate_vertices (vertex_map &v, edge_vector &e, replacement_ma
                 if (!edge -> replaced_by_compact)
                 {
                     osm_id_t e_from = edge -> get_from_vertex ();
-                    osm_id_t e_to = edge -> getToVertex ();
+                    osm_id_t e_to = edge -> get_to_vertex ();
                     if (e_from == id || e_to == id)
                     {
                         std::set <int> comp_replacements =
                             reps [edge -> getID ()];
-                        comp_replacements.insert (edge_ids);
+                        comp_replacements.insert (max_edge_id);
                         reps [edge -> getID ()] = comp_replacements;
 
                         for (int k:comp_replacements)
@@ -289,13 +324,13 @@ void remove_intermediate_vertices (vertex_map &v, edge_vector &e, replacement_ma
                                 weight_new = weight_new / 2;
                                 osm_edge_t edge_new = osm_edge_t (id_to_new,
                                         id_from_new, dist_new, weight_new,
-                                        hw_new, edge_ids ++, replacing_edges,
+                                        hw_new, max_edge_id ++, replacing_edges,
                                         false);
                                 e.push_back (edge_new);
                             }
                             osm_edge_t edge_new = osm_edge_t (id_from_new,
                                     id_to_new, dist_new, weight_new, hw_new,
-                                    edge_ids ++, replacing_edges, false);
+                                    max_edge_id ++, replacing_edges, false);
                             e.push_back (edge_new);
                             break;
                         }
@@ -307,6 +342,101 @@ void remove_intermediate_vertices (vertex_map &v, edge_vector &e, replacement_ma
         }
         vert ++;
     }
+}
+
+
+void contract_graph (vertex_map_t &vertex_map, edge_map_t &edge_map,
+        vert2edge_map_t &vert2edge_map)
+{
+    std::unordered_set <osm_id_t> verts;
+    for (auto v: vertex_map)
+        verts.insert (v.first);
+
+    int max_edge_id = 0;
+    for (auto e: edge_map)
+        if (e.second.getID () > max_edge_id)
+            max_edge_id = e.second.getID ();
+    max_edge_id++;
+
+    std::set <int> edges_to_erase;
+
+    while (verts.size () > 0)
+    {
+        std::unordered_set <osm_id_t>::iterator vid = verts.begin ();
+        osm_id_t vtx_id = vertex_map.find (*vid)->first;
+        osm_vertex_t vtx = vertex_map.find (*vid)->second;
+        std::set <int> edges = vert2edge_map [vtx_id];
+
+        if ((vtx.is_intermediate_single () || vtx.is_intermediate_double ()) &&
+                (edges.size () == 2 || edges.size () == 4))
+        {
+            // remove intervening vertex:
+            auto nbs = vtx.get_all_neighbours (); // unordered_set <osm_id_t>
+            std::vector <osm_id_t> two_nbs;
+            for (osm_id_t nb: nbs)
+                two_nbs.push_back (nb);
+
+            osm_vertex_t vt_from = vertex_map [two_nbs [0]],
+                vt_to = vertex_map [two_nbs [1]];
+
+            vt_from.replace_neighbour (vtx_id, two_nbs [1]);
+            vt_to.replace_neighbour (vtx_id, two_nbs [0]);
+            vertex_map [two_nbs [0]] = vt_from;
+            vertex_map [two_nbs [1]] = vt_to;
+
+            vertex_map.erase (vtx_id);
+
+            // construct new edge and remove old ones
+            float d_to = 0.0, d_from = 0.0, wt_to = 0.0, wt_from = 0.0;
+            std::set <int> replacement_edges;
+            replacement_edges.clear ();
+            std::string hw;
+            for (int e: edges)
+            {
+                replacement_edges.insert (e);
+                osm_edge_t ei = edge_map.find (e)->second;
+                // NOTE: There is no check that types of highways are consistent!
+                hw = ei.highway;
+                if (ei.get_from_vertex () == two_nbs [0] ||
+                        ei.get_to_vertex () == two_nbs [1])
+                {
+                    d_to += ei.dist;
+                    wt_to += ei.weight;
+                } else if (ei.get_from_vertex () == two_nbs [1] ||
+                        ei.get_to_vertex () == two_nbs [0])
+                {
+                    d_from += ei.dist;
+                    wt_from += ei.weight;
+                }
+                edges_to_erase.insert (e);
+                erase_from_edge_map (vert2edge_map, two_nbs [0], e);
+                erase_from_edge_map (vert2edge_map, two_nbs [1], e);
+            }
+
+            if (d_to > 0.0)
+            {
+                osm_edge_t new_edge = osm_edge_t (two_nbs [0], two_nbs [1],
+                        d_to, wt_to, hw, max_edge_id, replacement_edges, false);
+                add_to_edge_map (vert2edge_map, two_nbs [0], max_edge_id);
+                add_to_edge_map (vert2edge_map, two_nbs [1], max_edge_id);
+                edge_map.emplace (max_edge_id++, new_edge);
+            }
+            if (d_from > 0.0)
+            {
+                osm_edge_t new_edge = osm_edge_t (two_nbs [1], two_nbs [0],
+                        d_from, wt_from, hw, max_edge_id, replacement_edges,
+                        false);
+                add_to_edge_map (vert2edge_map, two_nbs [0], max_edge_id);
+                add_to_edge_map (vert2edge_map, two_nbs [1], max_edge_id);
+                edge_map.emplace (max_edge_id++, new_edge);
+            }
+            vert2edge_map.erase (vtx_id);
+        }
+        verts.erase (vtx_id);
+    }
+
+    for (int e: edges_to_erase)
+        edge_map.erase (e);
 }
 
 //' rcpp_make_compact_graph
@@ -323,71 +453,71 @@ void remove_intermediate_vertices (vertex_map &v, edge_vector &e, replacement_ma
 // [[Rcpp::export]]
 Rcpp::List rcpp_make_compact_graph (Rcpp::DataFrame graph)
 {
-    vertex_map vertices;
-    edge_vector edges;
-    replacement_map rep_map;
+    vertex_map_t vertices;
+    edge_vector_t edges;
+    edge_map_t edge_map;
+    replacement_map_t rep_map;
     std::unordered_map <osm_id_t, int> components;
     int largest_component;
+    vert2edge_map_t vert2edge_map;
 
-    graph_from_df (graph, vertices, edges);
+    graph_from_df (graph, vertices, edges, edge_map, vert2edge_map);
     get_largest_graph_component (vertices, components, largest_component);
-    remove_small_graph_components (vertices, edges, components,
-            largest_component);
-    remove_intermediate_vertices (vertices, edges, rep_map);
+    //remove_small_graph_components (vertices, edges, components,
+    //        largest_component);
+    vertex_map_t vertices2 = vertices;
+    edge_map_t edge_map2 = edge_map;
+    contract_graph (vertices2, edge_map2, vert2edge_map);
+    //remove_intermediate_vertices (vertices, edges, rep_map);
 
-    Rcpp::StringVector from_compact, to_compact, highway_compact, from_og,
-        to_og, highway_og;
-    Rcpp::NumericVector from_lat_compact, from_lon_compact, to_lat_compact,
-    to_lon_compact, dist_compact, weight_compact, edgeid_compact, from_lat_og,
-    from_lon_og, to_lat_og, to_lon_og, dist_og, weight_og, edgeid_og;
+    int nedges = edge_map2.size ();
 
-    std::vector <std::pair <osm_id_t, osm_id_t>> e_pairs;
+    Rcpp::StringVector from_compact (nedges), to_compact (nedges),
+        highway_compact (nedges), from_og (nedges),
+        to_og (nedges), highway_og (nedges);
+    Rcpp::NumericVector from_lat_compact (nedges), from_lon_compact (nedges),
+        to_lat_compact (nedges), to_lon_compact (nedges), dist_compact (nedges),
+        weight_compact (nedges), edgeid_compact (nedges), from_lat_og (nedges),
+        from_lon_og (nedges), to_lat_og (nedges), to_lon_og (nedges),
+        dist_og (nedges), weight_og (nedges), edgeid_og (nedges);
 
-    Rcpp::NumericVector rp_orig, rp_comp;
-    for (auto e:edges)
+    int map_size = 0; // size of original -> contracted map
+    for (auto e = edge_map2.begin (); e != edge_map2.end (); ++e)
     {
-        osm_id_t from = e.get_from_vertex ();
-        osm_id_t to = e.getToVertex ();
-        osm_vertex_t from_vtx = vertices.at (from);
-        osm_vertex_t to_vtx = vertices.at (to);
+        osm_id_t from = e->second.get_from_vertex ();
+        osm_id_t to = e->second.get_to_vertex ();
+        osm_vertex_t from_vtx = vertices2.at (from);
+        osm_vertex_t to_vtx = vertices2.at (to);
 
-        if (!e.replaced_by_compact)
-        {
-            from_compact.push_back (from);
-            to_compact.push_back (to);
-            highway_compact.push_back (e.highway);
-            dist_compact.push_back (e.dist);
-            weight_compact.push_back (e.weight);
-            from_lat_compact.push_back (from_vtx.getLat ());
-            from_lon_compact.push_back (from_vtx.getLon ());
-            to_lat_compact.push_back (to_vtx.getLat ());
-            to_lon_compact.push_back (to_vtx.getLon ());
-            edgeid_compact.push_back (e.getID ());
-        }
-        if (e.in_original ())
-        {
-            int edge_id = e.getID ();
-            from_og.push_back (from);
-            to_og.push_back (to);
-            highway_og.push_back (e.highway);
-            dist_og.push_back (e.dist);
-            weight_og.push_back (e.weight);
-            from_lat_og.push_back (from_vtx.getLat ());
-            from_lon_og.push_back (from_vtx.getLon ());
-            to_lat_og.push_back (to_vtx.getLat ());
-            to_lon_og.push_back (to_vtx.getLon ());
-            edgeid_og.push_back (edge_id);
-            rp_orig.push_back (edge_id);
-            if (rep_map.find (edge_id) == rep_map.end ())
-                rp_comp.push_back (edge_id);
-            else
-            {
-                std::set <int> replacements = rep_map [edge_id];
-                rp_comp.push_back (*replacements.rbegin ());
-            }
-        }
+        int en = std::distance (edge_map2.begin (), e);
+
+        from_compact (en) = from;
+        to_compact (en) = to;
+        highway_compact (en) = e->second.highway;
+        dist_compact (en) = e->second.dist;
+        weight_compact (en) = e->second.weight;
+        from_lat_compact (en) = from_vtx.getLat ();
+        from_lon_compact (en) = from_vtx.getLon ();
+        to_lat_compact (en) = to_vtx.getLat ();
+        to_lon_compact (en) = to_vtx.getLon ();
+        edgeid_compact (en) = e->second.getID ();
+
+        map_size += e->second.is_replacement_for ().size ();
     }
 
+    Rcpp::NumericVector rp_orig (map_size), rp_comp (map_size);
+    int pos = 0;
+    for (auto e = edge_map2.begin (); e != edge_map2.end (); ++e)
+    {
+        int eid = e->second.getID ();
+        std::set <int> edges = e->second.is_replacement_for ();
+        for (auto ei: edges)
+        {
+            rp_comp (pos) = eid;
+            rp_orig (pos++) = ei;
+        }
+    }
+    
     Rcpp::DataFrame compact = Rcpp::DataFrame::create (
             Rcpp::Named ("from_id") = from_compact,
             Rcpp::Named ("to_id") = to_compact,
@@ -400,24 +530,12 @@ Rcpp::List rcpp_make_compact_graph (Rcpp::DataFrame graph)
             Rcpp::Named ("to_lon") = to_lon_compact,
             Rcpp::Named ("highway") = highway_compact);
 
-    Rcpp::DataFrame og = Rcpp::DataFrame::create (
-            Rcpp::Named ("from_id") = from_og,
-            Rcpp::Named ("to_id") = to_og,
-            Rcpp::Named ("edge_id") = edgeid_og,
-            Rcpp::Named ("d") = dist_og,
-            Rcpp::Named ("d_weighted") = weight_og,
-            Rcpp::Named ("from_lat") = from_lat_og,
-            Rcpp::Named ("from_lon") = from_lon_og,
-            Rcpp::Named ("to_lat") = to_lat_og,
-            Rcpp::Named ("to_lon") = to_lon_og,
-            Rcpp::Named ("highway") = highway_og);
-
     Rcpp::DataFrame rel = Rcpp::DataFrame::create (
             Rcpp::Named ("id_compact") = rp_comp,
             Rcpp::Named ("id_original") = rp_orig);
 
     return Rcpp::List::create (
             Rcpp::Named ("compact") = compact,
-            Rcpp::Named ("original") = og,
+            Rcpp::Named ("original") = graph,
             Rcpp::Named ("map") = rel);
 }

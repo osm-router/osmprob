@@ -19,6 +19,7 @@ osmlines_as_network <- function (lns, profile_name = "bicycle")
     profiles <- profiles [profiles$name == profile_name, ]
     res <- rcpp_lines_as_network (lns, profiles)
     data.frame (
+                edge_id = seq (nrow (res [[1]])),
                 from_id = as.character (res [[2]] [, 1]),
                 from_lon = res [[1]] [, 1],
                 from_lat = res [[1]] [, 2],
