@@ -148,32 +148,40 @@ void get_largest_graph_component (vertex_map &v,
     for (auto it = v.begin (); it != v.end (); ++ it)
         com.insert (std::make_pair (it -> first, -1));
 
+    std::unordered_set <osm_id_t> all_verts, component, nbs_todo, nbs_done;
     for (auto it = v.begin (); it != v.end (); ++ it)
+        all_verts.insert (it -> first);
+    osm_id_t vt = (*all_verts.begin ());
+    nbs_todo.insert (vt);
+    int compnum = 0;
+    while (all_verts.size () > 0)
     {
-        std::set <int> comps;
-        osm_id_t vtxId = it -> first;
-        osm_vertex_t vtx = it -> second;
-        std::unordered_set <osm_id_t> neighbors = vtx.get_all_neighbours ();
-        comps.insert (com.at (vtxId));
-        for (auto n:neighbors)
-            comps.insert (com.at (n));
-        int largest_comp_num = *comps.rbegin ();
-        if (largest_comp_num == -1)
-            largest_comp_num = component_number ++;
-        com.at (vtxId) = largest_comp_num;
-        for (auto n:neighbors)
-            com.at (n) = largest_comp_num;
-        for (auto c = com.begin (); c != com.end (); ++ c)
+        vt = (*nbs_todo.begin ());
+        component.insert (vt);
+        com.at (vt) = compnum;
+        all_verts.erase (vt);
+
+        osm_vertex_t vtx = v.find (vt)->second;
+        std::unordered_set <osm_id_t> nbs = vtx.get_all_neighbours ();
+        for (auto n: nbs)
         {
-            osm_id_t cOsm = c -> first;
-            int cNum = c -> second;
-            if (comps.find (cNum) != comps.end () && cNum != -1)
-                com.at (cOsm) = largest_comp_num;
+            component.insert (n);
+            com.at (vt) = compnum;
+            if (nbs_done.find (n) == nbs_done.end ())
+                nbs_todo.insert (n);
+        }
+        nbs_todo.erase (vt);
+        nbs_done.insert (vt);
+
+        if (nbs_todo.size () == 0 && all_verts.size () > 0)
+        {
+            nbs_todo.insert (*all_verts.begin ());
+            compnum++;
         }
     }
 
     std::set <int> unique_components;
-    for (auto c:com)
+    for (auto c: com)
         unique_components.insert (c.second);
 
     int largest_component_value = -1;
