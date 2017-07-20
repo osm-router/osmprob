@@ -180,27 +180,12 @@ void get_largest_graph_component (vertex_map &v,
         }
     }
 
-    std::set <int> unique_components;
+    std::vector <int> comp_sizes (compnum, 0);
     for (auto c: com)
-        unique_components.insert (c.second);
-
-    int largest_component_value = -1;
-    std::map <int, int> component_size;
-    for (auto uc:unique_components)
-    {
-        int com_size = 0;
-        for (auto c:com)
-        {
-            if (c.second == uc)
-                com_size ++;
-        }
-        if (com_size > largest_component_value)
-        {
-            largest_component_value = com_size;
-            largest_id = uc;
-        }
-        component_size.insert (std::make_pair (uc, com_size));
-    }
+        comp_sizes [c.second]++;
+    auto maxi = std::max_element (comp_sizes.begin (), comp_sizes.end ());
+    largest_id = std::distance (comp_sizes.begin (), maxi);
+    //int maxsize = comp_sizes [largest_id];
 }
 
 void remove_small_graph_components (vertex_map &v, edge_vector &e,
