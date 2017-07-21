@@ -317,6 +317,7 @@ void contract_graph (vertex_map_t &vertex_map, edge_map_t &edge_map,
 //' Removes nodes and edges from a graph that are not needed for routing
 //'
 //' @param graph graph to be processed
+//' @param quiet If TRUE, display progress
 //' @return \code{Rcpp::List} containing one \code{data.frame} with the compact
 //' graph, one \code{data.frame} with the original graph and one
 //' \code{data.frame} containing information about the relating edge ids of the
@@ -324,7 +325,7 @@ void contract_graph (vertex_map_t &vertex_map, edge_map_t &edge_map,
 //'
 //' @noRd
 // [[Rcpp::export]]
-Rcpp::List rcpp_make_compact_graph (Rcpp::DataFrame graph)
+Rcpp::List rcpp_make_compact_graph (Rcpp::DataFrame graph, bool quiet)
 {
     vertex_map_t vertices;
     edge_map_t edge_map;
@@ -332,13 +333,33 @@ Rcpp::List rcpp_make_compact_graph (Rcpp::DataFrame graph)
     int largest_component;
     vert2edge_map_t vert2edge_map;
 
+    if (!quiet)
+    {
+        Rcpp::Rcout << "Constructing graph ... ";
+        Rcpp::Rcout.flush ();
+    }
     graph_from_df (graph, vertices, edge_map, vert2edge_map);
+    if (!quiet)
+    {
+        Rcpp::Rcout << std::endl << "Determining connected components ... ";
+        Rcpp::Rcout.flush ();
+    }
     get_largest_graph_component (vertices, components, largest_component);
 
+    if (!quiet)
+    {
+        Rcpp::Rcout << std::endl << "Removing intermediate nodes ... ";
+        Rcpp::Rcout.flush ();
+    }
     vertex_map_t vertices2 = vertices;
     edge_map_t edge_map2 = edge_map;
     contract_graph (vertices2, edge_map2, vert2edge_map);
 
+    if (!quiet)
+    {
+        Rcpp::Rcout << std::endl << "Mapping compact to original graph ... ";
+        Rcpp::Rcout.flush ();
+    }
     int nedges = edge_map2.size ();
 
     // These vectors are all for the contracted graph:
@@ -400,6 +421,9 @@ Rcpp::List rcpp_make_compact_graph (Rcpp::DataFrame graph)
     Rcpp::DataFrame rel = Rcpp::DataFrame::create (
             Rcpp::Named ("id_compact") = edge_id_comp,
             Rcpp::Named ("id_original") = edge_id_orig);
+
+    if (!quiet)
+        Rcpp::Rcout << std::endl;
 
     return Rcpp::List::create (
             Rcpp::Named ("compact") = compact,

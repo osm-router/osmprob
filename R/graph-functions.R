@@ -5,14 +5,15 @@
 #' not connected to the largest coherent part of the graph.
 #'
 #' @param graph \code{data.frame} of the graph to be processed.
+#' @param quiet If FALSE, print progress information to screen.
 #' @return \code{data.frame} containing the output graph.
 #'
 #' @noRd
-make_compact_graph <- function (graph)
+make_compact_graph <- function (graph, quiet = FALSE)
 {
     if (!is (graph, 'data.frame'))
         stop ('graph must be of type data.frame')
-    rcpp_make_compact_graph (graph)
+    rcpp_make_compact_graph (graph, quiet = quiet)
 }
 
 #' Maps probabilities from the compact graph back on to the original graph

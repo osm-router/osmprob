@@ -7,13 +7,14 @@
 using namespace Rcpp;
 
 // rcpp_make_compact_graph
-Rcpp::List rcpp_make_compact_graph(Rcpp::DataFrame graph);
-RcppExport SEXP _osmprob_rcpp_make_compact_graph(SEXP graphSEXP) {
+Rcpp::List rcpp_make_compact_graph(Rcpp::DataFrame graph, bool quiet);
+RcppExport SEXP _osmprob_rcpp_make_compact_graph(SEXP graphSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::DataFrame >::type graph(graphSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_make_compact_graph(graph));
+    Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_compact_graph(graph, quiet));
     return rcpp_result_gen;
 END_RCPP
 }

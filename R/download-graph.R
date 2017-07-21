@@ -42,7 +42,7 @@ download_graph <- function (start_pt, end_pt, weighting_profile = "bicycle",
     if (!quiet)
         message ('Converting network to graph  ...')
     osmlines_as_network (dat, profile_name = weighting_profile) %>%
-        make_compact_graph ()
+        make_compact_graph (quiet = quiet)
 }
 
 shiftx180 <- function (x)

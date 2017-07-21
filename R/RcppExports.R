@@ -6,14 +6,15 @@
 #' Removes nodes and edges from a graph that are not needed for routing
 #'
 #' @param graph graph to be processed
+#' @param quiet If TRUE, display progress
 #' @return \code{Rcpp::List} containing one \code{data.frame} with the compact
 #' graph, one \code{data.frame} with the original graph and one
 #' \code{data.frame} containing information about the relating edge ids of the
 #' original and compact graph.
 #'
 #' @noRd
-rcpp_make_compact_graph <- function(graph) {
-    .Call(`_osmprob_rcpp_make_compact_graph`, graph)
+rcpp_make_compact_graph <- function(graph, quiet) {
+    .Call(`_osmprob_rcpp_make_compact_graph`, graph, quiet)
 }
 
 #' rcpp_lines_as_network
