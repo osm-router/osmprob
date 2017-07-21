@@ -24,5 +24,6 @@ Calculate a distance matrix between all pairs of a given list of points
 Different points may map on to the same network locations, in which
 case they are excluded from distance calculation. The function returns an
 index which can be used to directly extract the \code{xy} points which map on
-to unique locations.
+to unique locations. Note also that distance calculations are currently
+undirected, so the distance from A to B will equal that from B to A.
 }
