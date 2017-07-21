@@ -11,6 +11,7 @@
 #' @name osmprob
 #' @docType package
 #' @importFrom Rcpp evalCpp
+#' @importFrom igraph distances E graph
 #' @importFrom leaflet addPolylines addProviderTiles removeShape colorNumeric
 #' @importFrom leaflet fitBounds leaflet leafletOptions leafletProxy 
 #' @importFrom leaflet leafletOutput renderLeaflet

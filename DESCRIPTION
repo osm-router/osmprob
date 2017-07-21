@@ -11,6 +11,7 @@ Description: Calculates probabilistic routes on a OSM street graph and displays
 License: GPL-3 + file LICENSE
 Imports:
     Rcpp (>= 0.12.6),
+    igraph,
     leaflet,
     Matrix,
     magrittr,
