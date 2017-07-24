@@ -7,12 +7,12 @@
 #' @note Different points may map on to the same network locations, in which
 #' case they are excluded from distance calculation. The function returns an
 #' index which can be used to directly extract the \code{xy} points which map on
-#' to unique locations. Note also that distance calculations are currently
-#' undirected, so the distance from A to B will equal that from B to A.
+#' to unique locations.
 #'
 #' @return A list of two items: A matrix of distances between all pairs of
 #' points listed in \code{xy}, and an index of points in \code{xy} which map on
-#' to unique graph nodes.
+#' to unique graph nodes. The distance from point \code{a} to point \code{b} is
+#' `$d [a, b]`.
 #'
 #' @export
 distance_matrix <- function (graph, xy)
@@ -20,7 +20,7 @@ distance_matrix <- function (graph, xy)
     edges <- cbind (paste0 (graph$compact$from_id),
                     paste0 (graph$compact$to_id))
     edges <- as.vector (t (edges))
-    igr <- igraph::graph (edges, dir = TRUE)
+    igr <- igraph::make_directed_graph (edges)
     igraph::E (igr)$weight <- graph$compact$d
 
     nodes <- snap_to_graph (graph, xy)
@@ -28,7 +28,7 @@ distance_matrix <- function (graph, xy)
     nodes <- nodes [indx]
 
     list (indx = indx,
-          d = igraph::distances (igr, v = nodes, to = nodes, mode = "all"))
+          d = igraph::distances (igr, v = nodes, to = nodes, mode = "out"))
 }
 
 #' quick and dirty snap xy points to closest graph nodes

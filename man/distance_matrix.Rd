@@ -15,7 +15,8 @@ between which distances are to be calcualted.}
 \value{
 A list of two items: A matrix of distances between all pairs of
 points listed in \code{xy}, and an index of points in \code{xy} which map on
-to unique graph nodes.
+to unique graph nodes. The distance from point \code{a} to point \code{b} is
+`$d [a, b]`.
 }
 \description{
 Calculate a distance matrix between all pairs of a given list of points
@@ -24,6 +25,5 @@ Calculate a distance matrix between all pairs of a given list of points
 Different points may map on to the same network locations, in which
 case they are excluded from distance calculation. The function returns an
 index which can be used to directly extract the \code{xy} points which map on
-to unique locations. Note also that distance calculations are currently
-undirected, so the distance from A to B will equal that from B to A.
+to unique locations.
 }
