@@ -369,15 +369,18 @@ Rcpp::List rcpp_make_compact_graph (Rcpp::DataFrame graph, bool quiet)
         to_lat_vec (nedges), to_lon_vec (nedges), dist_vec (nedges),
         weight_vec (nedges), edgeid_vec (nedges);
 
-    int map_size = 0; // size of edge map contracted -> original
+    unsigned int map_size = 0; // size of edge map contracted -> original
+    unsigned int en = 0;
+    std::map <int, osm_edge_t> edge_ordered;
     for (auto e = edge_map2.begin (); e != edge_map2.end (); ++e)
+        edge_ordered.emplace (e->first, e->second);
+
+    for (auto e = edge_ordered.begin (); e != edge_ordered.end (); ++e)
     {
         osm_id_t from = e->second.get_from_vertex ();
         osm_id_t to = e->second.get_to_vertex ();
         osm_vertex_t from_vtx = vertices2.at (from);
         osm_vertex_t to_vtx = vertices2.at (to);
-
-        int en = std::distance (edge_map2.begin (), e);
 
         from_vec (en) = from;
         to_vec (en) = to;
@@ -391,11 +394,12 @@ Rcpp::List rcpp_make_compact_graph (Rcpp::DataFrame graph, bool quiet)
         edgeid_vec (en) = e->second.getID ();
 
         map_size += e->second.is_replacement_for ().size ();
+        en++;
     }
 
     Rcpp::NumericVector edge_id_orig (map_size), edge_id_comp (map_size);
     int pos = 0;
-    for (auto e = edge_map2.begin (); e != edge_map2.end (); ++e)
+    for (auto e = edge_ordered.begin (); e != edge_ordered.end (); ++e)
     {
         int eid = e->second.getID ();
         std::set <int> edges = e->second.is_replacement_for ();
