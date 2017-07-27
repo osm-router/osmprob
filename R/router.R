@@ -1,10 +1,10 @@
 #' Calculate routing probabilities for a data.frame
 #'
-#' @param graphs \code{list} containing the two graphs and a map linking the two
-#' to each other.
-#' @param start_node Starting node for shortest path route
-#' @param end_node Ending node for shortest path route
-#' @param eta The parameter controlling the entropy (scale is arbitrary)
+#' @param graph \code{list} containing the two graphs and a map linking the two
+#' to each other OR just a plain graph.
+#' @param start_node Starting node for shortest path route.
+#' @param end_node Ending node for shortest path route.
+#' @param eta The parameter controlling the entropy (scale is arbitrary).
 #'
 #' @return \code{list} containing the \code{data.frame} of the graph elements
 #' with the routing probabilities and the estimated probabilistic distance.
@@ -19,23 +19,47 @@
 #'   pts <- select_vertices_by_coordinates (graph, start_pt, end_pt)
 #'   route_start <- pts[1]
 #'   route_end <- pts [2]
-#'   get_probability (graphs = graph, start_node = route_start,
+#'   get_probability (graph = graph, start_node = route_start,
 #'   end_node = route_end, eta = 0.6)
 #' }
-get_probability <- function (graphs, start_node, end_node, eta=1)
+get_probability <- function (graph, start_node, end_node, eta = 1)
 {
-    check_graph_format (graphs)
-    netdf <- graphs$compact
+    check_graph_format (graph)
+    is_simple <- !is (graph, "list")
+
+    if (is_simple)
+    {
+        netdf <- data.frame ("xfr" = graph$from_id,
+                             "xto" = graph$to_id,
+                             "d" = graph$d,
+                             "d_weighted" = graph$d_weighted)
+    }
+    else
+    {
+        netdf <- data.frame ('xfr' = graph$compact$from_id,
+                             'xto' = graph$compact$to_id,
+                             'd' = graph$compact$d,
+                             'd_weighted' = graph$compact$d_weighted)
+    }
 
     start_node %<>% as.character
     end_node %<>% as.character
 
-    probability <- r_router_prob (graphs, start_node, end_node, eta)
+    prob <- r_router_prob (netdf, start_node, end_node, eta)
 
-    graphs$compact <- cbind (netdf, 'dens' = probability$dens,
-                             'prob' = probability$prob)
-    mapped <- map_probabilities (graphs, probability$dist)
-    list ('probability' = mapped$original, 'd' = probability$dist)
+    if (is_simple)
+    {
+        graph$dens <- prob$dens
+        graph$prob <- prob$prob
+        prob <- graph
+    }
+    else {
+        graph$compact <- cbind (graph$compact, 'dens' = prob$dens,
+                                 'prob' = prob$prob)
+        mapped <- map_probabilities (graph, prob$dist)
+        prob <- list ('probability' = mapped$original, 'd' = prob$dist)
+    }
+    prob
 }
 
 #' Calculate the shortest path between two nodes on a graph
@@ -92,11 +116,11 @@ get_shortest_path <- function (graphs, start_node, end_node)
 
 #' Probabilistic router adapted from \code{gdistance} code
 #'
-#' @param graphs \code{list} containing the two graphs and a map linking the two
-#' to each other.
-#' @param start_node Starting node for shortest path route given as OSM ID
-#' @param end_node Ending node for shortest path route given as OSM ID
-#' @param eta The parameter controlling the entropy (scale is arbitrary)
+#' @param netdf \code{data.frame} containing the graph to perform the routing
+#' on.
+#' @param start_node Starting node for shortest path route given as OSM ID.
+#' @param end_node Ending node for shortest path route given as OSM ID.
+#' @param eta The parameter controlling the entropy (scale is arbitrary).
 #'
 #' @return A list of three items, the first two of which match the edges in the
 #' compact graph:
@@ -107,12 +131,8 @@ get_shortest_path <- function (graphs, start_node, end_node)
 #' }
 #'
 #' @noRd
-r_router_prob <- function (graph, start_node, end_node, eta)
+r_router_prob <- function (netdf, start_node, end_node, eta)
 {
-    netdf <- data.frame ('xfr' = graph$compact$from_id,
-                         'xto' = graph$compact$to_id,
-                         'd' = graph$compact$d,
-                         'd_weighted' = graph$compact$d_weighted)
     netdf$xfr %<>% as.character
     netdf$xto %<>% as.character
     allids <- c (netdf$xfr, netdf$xto) %>% sort %>% unique

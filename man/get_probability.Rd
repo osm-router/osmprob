@@ -4,17 +4,17 @@
 \alias{get_probability}
 \title{Calculate routing probabilities for a data.frame}
 \usage{
-get_probability(graphs, start_node, end_node, eta = 1)
+get_probability(graph, start_node, end_node, eta = 1)
 }
 \arguments{
-\item{graphs}{\code{list} containing the two graphs and a map linking the two
-to each other.}
+\item{graph}{\code{list} containing the two graphs and a map linking the two
+to each other OR just a plain graph.}
 
-\item{start_node}{Starting node for shortest path route}
+\item{start_node}{Starting node for shortest path route.}
 
-\item{end_node}{Ending node for shortest path route}
+\item{end_node}{Ending node for shortest path route.}
 
-\item{eta}{The parameter controlling the entropy (scale is arbitrary)}
+\item{eta}{The parameter controlling the entropy (scale is arbitrary).}
 }
 \value{
 \code{list} containing the \code{data.frame} of the graph elements
@@ -31,7 +31,7 @@ Calculate routing probabilities for a data.frame
   pts <- select_vertices_by_coordinates (graph, start_pt, end_pt)
   route_start <- pts[1]
   route_end <- pts [2]
-  get_probability (graphs = graph, start_node = route_start,
+  get_probability (graph = graph, start_node = route_start,
   end_node = route_end, eta = 0.6)
 }
 }

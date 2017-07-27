@@ -76,18 +76,27 @@ map_shortest <- function (graphs, shortest)
 
 #' Checks if all necessary data are present in the graphs
 #'
-#' @param graphs \code{list} containing the two graphs and a map linking the two
-#' to each other.
+#' @param graph \code{list} containing the two graphs and a map linking the two
+#' to each other OR just a plain graph.
 #'
 #' @noRd
-check_graph_format <- function (graphs)
+check_graph_format <- function (graph)
 {
-    if (!all (c ('compact', 'original', 'map') %in% names (graphs)))
-        stop ('graphs must contain data.frames compact, original and map.')
-    netdf <- graphs$compact
-    if (!(is (netdf, 'data.frame')))
-        stop ('graphs must contain a data.frame')
-    if (!all (c ('from_id', 'to_id', 'd_weighted') %in% names (netdf)))
-        stop ('compact graph must contain columns from_id, to_id and
-              d_weighted')
+    if (is (graph, "list"))
+    {
+        if (!all (c ("compact", "original", "map") %in% names (graph)))
+            stop ("graph must contain data.frames compact, original and map.")
+        com_graph <- graph$compact
+        if (!(is (com_graph, "data.frame")))
+            stop ("graph must contain a data.frame")
+        if (!all (c ("from_id", "to_id", "d", "d_weighted") %in%
+                  names (com_graph)))
+            stop (paste0 ("compact graph must contain columns from_id, to_id, ",
+                          "d and d_weighted"))
+    } else
+    {
+        if (!all (c ("from_id", "to_id", "d", "d_weighted") %in% names (graph)))
+            stop (paste0 ("compact graph must contain columns from_id, to_id, ",
+                          "d and d_weighted"))
+    }
 }

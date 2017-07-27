@@ -10,7 +10,7 @@ test_that ("get_probability", {
     testthat::expect_is (way$probability, "data.frame")
     testthat::expect_error (
        get_probability ("wrong data format", 0, 5, eta = 1.0),
-       "graphs must contain data.frames compact, original and map.")
+       "compact graph must contain columns from_id, to_id, d and d_weighted")
 })
 
 test_that ("get_shortest_path", {
