@@ -68,7 +68,7 @@
 <div id="install" class="section level2">
 <h2 class="hasAnchor">
 <a href="#install" class="anchor"></a>Install</h2>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">devtools::<span class="kw">install_github</span> (<span class="st">'osm-router/osmprob'</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">devtools<span class="op">::</span><span class="kw">install_github</span> (<span class="st">'osm-router/osmprob'</span>)</code></pre></div>
 </div>
 <div id="test-road-graph" class="section level2">
 <h2 class="hasAnchor">
@@ -91,7 +91,7 @@ prob &lt;-<span class="st"> </span><span class="kw"><a href="reference/get_proba
 <div id="from-osm-data" class="section level3">
 <h3 class="hasAnchor">
 <a href="#from-osm-data" class="anchor"></a>From OSM data</h3>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">devtools::<span class="kw">load_all</span> (<span class="dt">export_all =</span> <span class="ot">FALSE</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">devtools<span class="op">::</span><span class="kw">load_all</span> (<span class="dt">export_all =</span> <span class="ot">FALSE</span>)
 start_pt &lt;-<span class="st"> </span><span class="kw">c</span> (<span class="fl">11.603</span>, <span class="fl">48.163</span>)
 end_pt &lt;-<span class="st"> </span><span class="kw">c</span> (<span class="fl">11.608</span>, <span class="fl">48.167</span>)
 graph &lt;-<span class="st"> </span><span class="kw"><a href="reference/download_graph.html">download_graph</a></span> (start_pt, end_pt)

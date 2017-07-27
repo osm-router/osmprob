@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Download OSM road graph and preprocess it — download_graph • osmprob</title>
+<title>Calculate a distance matrix between all pairs of a given list of points — distance_matrix • osmprob</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -76,64 +76,44 @@
       <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Download OSM road graph and preprocess it</h1>
+    <h1>Calculate a distance matrix between all pairs of a given list of points</h1>
     </div>
 
     
-    <p>This function uses <code>osmdata</code> to download a OSM street graph. The extent
-of the downloaded area is defined by the start and end coordinates of the
-desired path plus a buffer, that extends the bounding box in all directions.
-The graph is then preprocessed for routing purposes, which includes removing
-topologically unnecessary parts and calculating edge weights based on the
-selected weighting profile.</p>
+    <p>Calculate a distance matrix between all pairs of a given list of points</p>
     
 
-    <pre class="usage"><span class='fu'>download_graph</span>(<span class='no'>start_pt</span>, <span class='no'>end_pt</span>, <span class='kw'>weighting_profile</span> <span class='kw'>=</span> <span class='st'>"bicycle"</span>, <span class='kw'>buffer</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='kw'>quiet</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
+    <pre class="usage"><span class='fu'>distance_matrix</span>(<span class='no'>graph</span>, <span class='no'>xy</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>start_pt</th>
-      <td><p>Two numeric values (latitude, longitude) as start point
-coordinates.</p></td>
+      <th>graph</th>
+      <td><p>Graphs extracted from <a href='download_graph.html'>download_graph</a>.</p></td>
     </tr>
     <tr>
-      <th>end_pt</th>
-      <td><p>Two numeric values (latitude, longitude) as end point
-coordinates.</p></td>
-    </tr>
-    <tr>
-      <th>weighting_profile</th>
-      <td><p>Name of the used weighting profile.
-<code>osmprob::weighting_profiles</code> contains all available profiles.</p></td>
-    </tr>
-    <tr>
-      <th>buffer</th>
-      <td><p>Positive value that defines by how much (in percent) should the
-downloaded data extend the bounding box defined by <code>start_pt</code> and
-<code>end_pt</code>.</p></td>
-    </tr>
-    <tr>
-      <th>quiet</th>
-      <td><p>If FALSE, print progress information to screen.</p></td>
+      <th>xy</th>
+      <td><p>Matrix of two columns containing latitudes and longitudes of points
+between which distances are to be calcualted.</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>graphs <code>list</code> containing the original street graph, a minimized
-graph map linking the two to each other.</p>
+    <p>A list of two items: A matrix of distances between all pairs of
+points listed in <code>xy</code>, and an index of points in <code>xy</code> which map on
+to unique graph nodes. The distance from point <code>a</code> to point <code>b</code> is
+`$d [a, b]`.</p>
+    
+    <h2 class="hasAnchor" id="note"><a class="anchor" href="#note"></a>Note</h2>
+
+    <p>Different points may map on to the same network locations, in which
+case they are excluded from distance calculation. The function returns an
+index which can be used to directly extract the <code>xy</code> points which map on
+to unique locations.</p>
     
 
-    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'>not_run</span>({
-  <span class='no'>start_pt</span> <span class='kw'>&lt;-</span> <span class='fu'>c</span> (<span class='fl'>11.580</span>, <span class='fl'>48.140</span>)
-  <span class='no'>end_pt</span> <span class='kw'>&lt;-</span> <span class='fu'>c</span> (<span class='fl'>11.585</span>, <span class='fl'>48.145</span>)
-  <span class='no'>graph</span> <span class='kw'>&lt;-</span> <span class='fu'>download_graph</span> (<span class='kw'>start_pt</span> <span class='kw'>=</span> <span class='no'>start_pt</span>, <span class='kw'>end_pt</span> <span class='kw'>=</span> <span class='no'>end_pt</span>,
-  <span class='kw'>weighting_profile</span> <span class='kw'>=</span> <span class='st'>"bicycle"</span>, <span class='kw'>buffer</span> <span class='kw'>=</span> <span class='fl'>0</span>)
-})</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
@@ -141,9 +121,9 @@ graph map linking the two to each other.</p>
       <li><a href="#arguments">Arguments</a></li>
       
       <li><a href="#value">Value</a></li>
-      
-      <li><a href="#examples">Examples</a></li>
-    </ul>
+
+      <li><a href="#note">Note</a></li>
+          </ul>
 
   </div>
 </div>

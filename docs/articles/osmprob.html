@@ -57,7 +57,7 @@
       <h1>Introduction to osmprob</h1>
                         <h4 class="author">Andreas Petutschnig</h4>
             
-            <h4 class="date">2017-06-08</h4>
+            <h4 class="date">2017-07-27</h4>
           </div>
 
     
@@ -116,40 +116,40 @@ Figure 1: Original data, consisting of different graph components
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">    component_number =<span class="st"> </span><span class="dv">0</span>
 
     <span class="co"># initially, set all component numbers to -1 (invalid)</span>
-    for vertex in all_vertices
-        <span class="kw">comp_num.at</span> (vertex) =<span class="st"> </span>-<span class="dv">1</span>
+    <span class="cf">for</span> vertex <span class="cf">in</span> all_vertices
+        <span class="kw">comp_num.at</span> (vertex) =<span class="st"> </span><span class="op">-</span><span class="dv">1</span>
 
-    for vertex in all_vertices
+    <span class="cf">for</span> vertex <span class="cf">in</span> all_vertices
         set component_numbers <span class="co"># initialise empty set of component numbers</span>
 
         <span class="co"># insert component numbers of current and all neighbouring vertices</span>
         <span class="kw">component_numbers.insert</span> (<span class="kw">comp_num.at</span> (vertex))
-        for neighbour in <span class="kw">vertex.get_neighbours</span> ()
+        <span class="cf">for</span> neighbour <span class="cf">in</span> <span class="kw">vertex.get_neighbours</span> ()
             <span class="kw">component_numbers.insert</span> (neighbour)
 
         <span class="co"># identify biggest component number of current neighbourhood</span>
         largest =<span class="st"> </span><span class="kw">max</span> (component_numbers)
 
         <span class="co"># component number is -1, so this neighbourhood is not in the list yet</span>
-        if largest ==<span class="st"> </span>-<span class="dv">1</span>
+        <span class="cf">if</span> largest <span class="op">==</span><span class="st"> </span><span class="op">-</span><span class="dv">1</span>
             largest =<span class="st"> </span>component_number
-            component_number++
+            component_number<span class="op">++</span>
 
 <span class="st">        </span><span class="co"># assign largest component number to current vertex and its neighbours</span>
 <span class="st">        </span><span class="kw">comp_num.at</span> (vertex) =<span class="st"> </span>largest
-        for neighbour in <span class="kw">vertex.get_neighbours</span> ()
+        <span class="cf">for</span> neighbour <span class="cf">in</span> <span class="kw">vertex.get_neighbours</span> ()
             <span class="kw">comp_num.at</span> (neighbour) =<span class="st"> </span>largest
 
         <span class="co"># every vertex with a component number listed in component_numbers gets</span>
         <span class="co"># the largest component number, thus combining previously disconnected</span>
         <span class="co"># components</span>
-        for cn in comp_num
-            if (<span class="kw">component_numbers.contains</span> (cn) &amp;&amp;<span class="st"> </span>cn.component_number !=<span class="st"> </span>-<span class="dv">1</span>
+        <span class="cf">for</span> cn <span class="cf">in</span> comp_num
+            <span class="cf">if</span> (<span class="kw">component_numbers.contains</span> (cn) <span class="op">&amp;&amp;</span><span class="st"> </span>cn.component_number <span class="op">!=</span><span class="st"> </span><span class="op">-</span><span class="dv">1</span>
                 <span class="kw">comp_num.at</span> (cn) =<span class="st"> </span>largest
 
     <span class="co"># remove remaining vertices</span>
-    for com in comp_num
-        if com !=<span class="st"> </span>largest
+    <span class="cf">for</span> com <span class="cf">in</span> comp_num
+        <span class="cf">if</span> com <span class="op">!=</span><span class="st"> </span>largest
             <span class="kw">allVertices.erase</span> (com)</code></pre></div>
 <p>At this point every node in the graph has been assigned a component number. Nodes sharing the same component number are necessarily part of one connected unit and are disjoint from any nodes with different component numbers. Therefore, the component number with the highest frequency c<sub>max</sub> is indicative of the largest connected component. Now all nodes with component number != c<sub>max</sub> can be stripped off the original graph, which results in exactly one connected graph.</p>
 <div class="figure" style="text-align: center">
@@ -179,16 +179,16 @@ Figure 4: Removing intermediate nodes
 <a href="#inserting-replaced-edges" class="anchor"></a>Inserting replaced edges</h3>
 <p>Removing vertices from a graph implies removing edges. In order to preserve the original graph’s topology, all edges are replaced with topologically equivalent direct edges between the remaining vertices. And even though this can lead to more edges leading to and from vertices, all edges keep their distinct IDs and can at any point be mapped back on the original graph. This way, the routing can be performed on the compact graph, whilst using the original graph’s edge weights for the calculations and later on its geographical features for visualisation. The following piece of pseudocode illustrates how vertices and edges to be removed are identified, replaced with new edges that have appropriate attributes and finally how these changes in the graph are tracked in a map of new and replaced edge IDs in order to be able to trace back what parts of the original graph are represented by their compact counterparts.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">    <span class="co"># initialise unique edge ID of replacement edge</span>
-    new_edge_id =<span class="st"> </span><span class="kw">max</span> (<span class="kw">all_edges.get_ids</span> ()) +<span class="st"> </span><span class="dv">1</span>
+    new_edge_id =<span class="st"> </span><span class="kw">max</span> (<span class="kw">all_edges.get_ids</span> ()) <span class="op">+</span><span class="st"> </span><span class="dv">1</span>
 
     <span class="co"># initialise map with replacement edge ID as key and a set of edge IDs as</span>
     <span class="co"># value</span>
     replacements =<span class="st"> </span><span class="kw">map</span> (replacement_id, edge_id [])
 
-    for vertex in all_vertices
+    <span class="cf">for</span> vertex <span class="cf">in</span> all_vertices
 
         <span class="co"># if a vertex has exactly two neighbouring vertices, it can be replaced</span>
-        if (<span class="kw">vertex.num_neighbours</span> () ==<span class="st"> </span><span class="dv">2</span>)
+        <span class="cf">if</span> (<span class="kw">vertex.num_neighbours</span> () <span class="op">==</span><span class="st"> </span><span class="dv">2</span>)
 
             <span class="co"># initialise values for replacement edge</span>
             new_edge_weight =<span class="st"> </span><span class="dv">0</span>
@@ -197,24 +197,24 @@ Figure 4: Removing intermediate nodes
             <span class="co"># initialise counter for number of edges to be replaced</span>
             edges_replaced =<span class="st"> </span><span class="dv">0</span>
 
-            for edge in all_edges
+            <span class="cf">for</span> edge <span class="cf">in</span> all_edges
                 <span class="co"># if current vertex is part of the current edge, replace edge</span>
-                if (<span class="kw">edge.get_start</span> () ==<span class="st"> </span>vertex ||<span class="st"> </span><span class="kw">edge.get_end</span> () ==<span class="st"> </span>vertex)
+                <span class="cf">if</span> (<span class="kw">edge.get_start</span> () <span class="op">==</span><span class="st"> </span>vertex <span class="op">||</span><span class="st"> </span><span class="kw">edge.get_end</span> () <span class="op">==</span><span class="st"> </span>vertex)
 
                     <span class="co"># depending on which of the two edges linked to the current</span>
                     <span class="co"># vertex is selected, set new edge parameters and update</span>
                     <span class="co"># neighbours of the neighbouring vertices</span>
-                    if (<span class="kw">edge.get_start</span> () ==<span class="st"> </span>vertex)
+                    <span class="cf">if</span> (<span class="kw">edge.get_start</span> () <span class="op">==</span><span class="st"> </span>vertex)
                         <span class="kw">new_edge_end</span> () =<span class="st"> </span><span class="kw">edge.get_end</span> ()
-                        neighbour_1 =<span class="st"> </span><span class="kw">vertex.get_neighbour_from</span> ()
+                        neighbour_<span class="dv">1</span> =<span class="st"> </span><span class="kw">vertex.get_neighbour_from</span> ()
                         <span class="kw">neighbour_1.set_neighbour_to</span> (<span class="kw">edge.get_end</span> ())
-                    if (<span class="kw">edge.get_end</span> () ==<span class="st"> </span>vertex)
+                    <span class="cf">if</span> (<span class="kw">edge.get_end</span> () <span class="op">==</span><span class="st"> </span>vertex)
                         new_edge_start =<span class="st"> </span><span class="kw">edge.get_start</span> ()
-                        neighbour_2 =<span class="st"> </span><span class="kw">vertex.get_neighbour_to</span> ()
+                        neighbour_<span class="dv">2</span> =<span class="st"> </span><span class="kw">vertex.get_neighbour_to</span> ()
                         <span class="kw">neighbour_2.set_neighbour_to</span> (<span class="kw">edge.get_start</span> ())
 
                     <span class="co"># update new edge parameters</span>
-                    new_edge_weight +<span class="er">=</span><span class="st"> </span><span class="kw">edge.get_weight</span> ()
+                    new_edge_weight <span class="op">+</span><span class="er">=</span><span class="st"> </span><span class="kw">edge.get_weight</span> ()
 
                     <span class="co"># update map of replaced edge IDs</span>
                     edges_rep =<span class="st"> </span><span class="kw">replacements.get</span> (new_edge_id)
@@ -223,16 +223,16 @@ Figure 4: Removing intermediate nodes
 
                     <span class="co"># remove edge and increment edge counter </span>
                     <span class="kw">edge.remove</span> ()
-                    edges_replaced ++
+                    edges_replaced <span class="op">++</span>
 
 <span class="st">                    </span><span class="co"># if both edges are found and removed, insert new one and</span>
 <span class="st">                    </span><span class="co"># remove current vertex</span>
-<span class="st">                    </span>if (edges_replaced ==<span class="st"> </span><span class="dv">2</span>)
+<span class="st">                    </span><span class="cf">if</span> (edges_replaced <span class="op">==</span><span class="st"> </span><span class="dv">2</span>)
                         replacement =<span class="st"> </span><span class="kw">edge</span> (new_edge_start, new_edge_end,
                                             new_edge_weight, new_edge_id)
                         <span class="kw">edges.insert_edge</span> (replacement)
                         <span class="kw">vertex.remove</span> ()
-                        new_edge_id ++<span class="st"> </span><span class="co"># increment new edge ID for next edge</span></code></pre></div>
+                        new_edge_id <span class="op">++</span><span class="st"> </span><span class="co"># increment new edge ID for next edge</span></code></pre></div>
 <div class="figure" style="text-align: center">
 <img src="osmprob_files/figure-html/unnamed-chunk-8-1.svg" alt="Figure 5: Inserting edges between remaining nodes" width="672"><p class="caption">
 Figure 5: Inserting edges between remaining nodes
@@ -253,7 +253,7 @@ Figure 5: Inserting edges between remaining nodes
 <div id="installation" class="section level1">
 <h1 class="hasAnchor">
 <a href="#installation" class="anchor"></a>Installation</h1>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">devtools::<span class="kw">install</span> (<span class="st">"osm-router/osmprob"</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">devtools<span class="op">::</span><span class="kw">install</span> (<span class="st">"osm-router/osmprob"</span>)</code></pre></div>
 </div>
 <div id="usage" class="section level1">
 <h1 class="hasAnchor">
@@ -268,7 +268,7 @@ route_start &lt;-<span class="st"> </span>pts[<span class="dv">1</span>]
 route_end &lt;-<span class="st"> </span>pts [<span class="dv">2</span>]</code></pre></div>
 <p>At the moment, there are two routing algorithms implemented in this package and accessible by using <code>get_shortest_path</code> and <code>get_probability</code>, respectively. For the sake of consistency, the object returned by both functions is a <code>list</code> containing a <code>data.frame</code> with all relevant edges as a first item and the calculated distance as a second item. <code>get_shortest_path</code> returns the shortest path as calculated using an implementation of Dijkstra’s algorithm. The call <code>path$d</code> in the following example is used to access the path’s calculated distance in km.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">path &lt;-<span class="st"> </span><span class="kw"><a href="../reference/get_shortest_path.html">get_shortest_path</a></span> (graph, route_start, route_end)
-path$d <span class="co"># 0.1427</span></code></pre></div>
+path<span class="op">$</span>d <span class="co"># 0.1427</span></code></pre></div>
 <p><code>get_probability</code> calculates the traversal probability for the entire input graph. It returns the entire input graph with additional columns containing the global and local traversal probability for each edge. Like <code>get_shortest_path</code>, it returns a <code>list</code> object. The first entry is a <code>data.frame</code> with all edge, to which have been added two additional columns. They contain the routing probabilities for all edges in two different formats:</p>
 <ul>
 <li>
@@ -278,13 +278,13 @@ path$d <span class="co"># 0.1427</span></code></pre></div>
 </ul>
 <p>The second item in the returned list is the expected travel distance which is based on the calculated traversal probabilities. Its minimal possible value is the length of the shortest path and gets higher with increased global entropy, which can be done using lower values for <span class="math inline">\(\eta\)</span> (<code>eta</code>). Note that the distance rises very abrupt for <span class="math inline">\(\eta\)</span> approximating 0. The results section contains more information about the effects of <span class="math inline">\(\eta\)</span> on the routing results.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">prob &lt;-<span class="st"> </span><span class="kw"><a href="../reference/get_probability.html">get_probability</a></span> (graph, route_start, route_end, <span class="dt">eta =</span> <span class="fl">0.9</span>)
-prob$d <span class="co"># 0.1934</span>
+prob<span class="op">$</span>d <span class="co"># 0.1934</span>
 prob &lt;-<span class="st"> </span><span class="kw"><a href="../reference/get_probability.html">get_probability</a></span> (graph, route_start, route_end, <span class="dt">eta =</span> <span class="fl">0.7</span>)
-prob$d <span class="co"># 0.2001</span>
+prob<span class="op">$</span>d <span class="co"># 0.2001</span>
 prob &lt;-<span class="st"> </span><span class="kw"><a href="../reference/get_probability.html">get_probability</a></span> (graph, route_start, route_end, <span class="dt">eta =</span> <span class="fl">0.3</span>)
-prob$d <span class="co"># 0.2418</span>
+prob<span class="op">$</span>d <span class="co"># 0.2418</span>
 prob &lt;-<span class="st"> </span><span class="kw"><a href="../reference/get_probability.html">get_probability</a></span> (graph, route_start, route_end, <span class="dt">eta =</span> <span class="fl">0.01</span>)
-prob$d <span class="co"># 1.3040</span></code></pre></div>
+prob<span class="op">$</span>d <span class="co"># 1.3040</span></code></pre></div>
 <p>Finally, the routing results can be visualised with the <strong>shiny</strong> <strong>leaflet</strong> mapping function.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/plot_map.html">plot_map</a></span> (prob, path)</code></pre></div>
 </div>

@@ -30,7 +30,7 @@ reference:
   contents:
   - '`get_probability`'
   - '`get_shortest_path`'
-  - '`osm_router`'
+  - '`distance_matrix`'
 - title: Visualisation
   contents:
   - '`plot_map`'
