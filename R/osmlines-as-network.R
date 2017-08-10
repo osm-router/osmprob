@@ -17,6 +17,7 @@ osmlines_as_network <- function (lns, profile_name = "bicycle")
 
     profiles <- osmprob::weighting_profiles
     profiles <- profiles [profiles$name == profile_name, ]
+    profiles$value <- profiles$value / 100
     res <- rcpp_lines_as_network (lns, profiles)
     data.frame (
                 edge_id = seq (nrow (res [[1]])),
