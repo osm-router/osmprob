@@ -200,8 +200,8 @@ void get_largest_graph_component (vertex_map_t &v,
             if (nbs_done.find (n) == nbs_done.end ())
                 nbs_todo.insert (n);
         }
-        nbs_todo.erase (vt);
         nbs_done.insert (vt);
+        nbs_todo.erase (vt);
 
         if (nbs_todo.size () == 0 && all_verts.size () > 0)
         {
