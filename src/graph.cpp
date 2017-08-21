@@ -196,7 +196,7 @@ void get_largest_graph_component (vertex_map_t &v,
         for (auto n: nbs)
         {
             component.insert (n);
-            com.at (vt) = compnum;
+            com.at (n) = compnum;
             if (nbs_done.find (n) == nbs_done.end ())
                 nbs_todo.insert (n);
         }
